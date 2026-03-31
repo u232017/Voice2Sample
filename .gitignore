@@ -1,0 +1,32 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Data directory (downloaded sounds and generated features)
+data/
+
+# Trained model files
+*.pkl
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Pytest cache
+.pytest_cache/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db

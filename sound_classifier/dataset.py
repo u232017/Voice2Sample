@@ -15,7 +15,7 @@ class DatasetManager:
     """
 
     def __init__(self, data_dir: str, features_file: str) -> None:
-        """Initialize the manager and ensure directories exist.
+        """Initialize the manager and ensure required directories exist.
 
         Args:
             data_dir: Root directory for storing downloaded sound files.

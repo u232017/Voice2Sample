@@ -28,7 +28,7 @@ class SoundClassificationPipeline:
         n_per_class: int,
         model_type: str = "random_forest",
     ) -> None:
-        """Initialise all pipeline components.
+        """Initialize all pipeline components.
 
         Args:
             api_key: Freesound API key.

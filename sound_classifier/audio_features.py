@@ -4,8 +4,9 @@ from typing import Optional
 
 import numpy as np
 
+es = None
 try:
-    import essentia.standard as es
+    import essentia.standard as es  # type: ignore[no-redef]
     ESSENTIA_AVAILABLE = True
 except ImportError:
     ESSENTIA_AVAILABLE = False
