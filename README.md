@@ -60,6 +60,3 @@ npm run start
 Add a license if/when you’re ready (common choices: MIT, Apache-2.0). Until then, treat this as “all rights reserved” by default.
 
 ---
-
-### Want me to tailor this README?
-Tell me (1) what you’re building (example: “a MIDI visualizer”, “a beat generator”, “a synth”), (2) what language/tools you’re using, and (3) how someone should run it, and I’ll rewrite this README to match your actual project exactly.
