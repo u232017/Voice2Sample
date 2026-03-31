@@ -1,4 +1,4 @@
-# Technology & Music Lab (S101)
+# Music Technology Lab (S101): Automatic Sound Classification
 
 A small lab repository for exploring how **technology and music** intersect—through experiments, prototypes, notes, and short assignments.
 
