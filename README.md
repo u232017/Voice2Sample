@@ -50,12 +50,6 @@ npm run start
 - Keep clear documentation of each experiment (inputs, outputs, learnings)
 - Practice version control and clean repo organization
 
-## Roadmap (suggested)
-- [ ] Add a short lab overview / assignment prompt
-- [ ] Create folders (e.g., `notes/`, `experiments/`, `src/`, `assets/`)
-- [ ] Add first experiment + a brief write-up
-- [ ] Add instructions for running any code
-
 ## License
 Add a license if/when you’re ready (common choices: MIT, Apache-2.0). Until then, treat this as “all rights reserved” by default.
 
