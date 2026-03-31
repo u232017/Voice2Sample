@@ -1,0 +1,8 @@
+requests>=2.28.0
+numpy>=1.23.0
+scipy>=1.9.0
+scikit-learn>=1.1.0
+essentia>=2.1b6
+matplotlib>=3.6.0
+pandas>=1.5.0
+joblib>=1.2.0
