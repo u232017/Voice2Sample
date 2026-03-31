@@ -1,4 +1,4 @@
-# Technology & Music Lab (S101)
+# Technology Music Lab (S101)
 
 A small lab repository for exploring how **technology and music** intersect—through experiments, prototypes, notes, and short assignments.
 
