@@ -35,14 +35,9 @@ This section depends on what you add to the repo. Common patterns:
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
+git clone https://github.com/MTG/freesound-python.git
 pip install -r requeriments.txt
 python main.py
-```
-
-### If this becomes a Node.js project
-```bash
-npm install
-npm run start
 ```
 
 ## Project goals (editable)
