@@ -1,3 +1,4 @@
-freesound
+matplotlib
 numpy
+seaborn
 scikit-learn
