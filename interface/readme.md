@@ -1,1 +1,0 @@
-This folder contains all the work related to the user interface of the project, including design ideas, mockups, flow diagrams, references, and future prototypes. Its purpose is to organize the visual and interaction aspects of the application, helping define how the user will navigate the tool and interact with its main features.
