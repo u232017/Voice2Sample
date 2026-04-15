@@ -24,4 +24,8 @@ An initial interactive prototype of the interface was created in Figma in order 
 - Its purpose is to support the design of the interface before the application is fully developed.
 - At this stage, the demo focuses on structure, usability, and visual presentation rather than final functionality.
 
+## Demo Preview
 
+Here is a preview of the interface demo:
+
+![Preview of the interface demo](Demo%20Interface%20photo.png)
