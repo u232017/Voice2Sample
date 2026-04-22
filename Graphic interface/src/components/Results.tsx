@@ -1,14 +1,26 @@
 import { Play, Pause, Download, ArrowLeft, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FreesoundWaveform } from "./FreesoundWaveform";
+import { freesoundService } from "../freesoundService";
 
-const mockResults = [
-  { id: 1, title: "Synth Bass Hit", category: "Bass", similarity: 94, author: "AudioMaster" },
-  { id: 2, title: "Deep Sub Wobble", category: "Bass", similarity: 89, author: "SoundDesigner" },
-  { id: 3, title: "808 Kick Layered", category: "Drums", similarity: 87, author: "BeatMaker" },
-  { id: 4, title: "Analog Bass Pluck", category: "Bass", similarity: 85, author: "VintageSounds" },
-  { id: 5, title: "Sub Drop Impact", category: "FX", similarity: 82, author: "ProducerX" },
-  { id: 6, title: "Reese Bass Loop", category: "Bass", similarity: 79, author: "DNB_Creator" },
+interface Result {
+  id: number;
+  title: string;
+  category: string;
+  similarity: number;
+  author: string;
+  duration?: string;
+  waveformUrl?: string;
+  previewUrl?: string;
+}
+
+const mockResults: Result[] = [
+  { id: 1, title: "Synth Bass Hit", category: "Bass", similarity: 94, author: "AudioMaster", duration: "3:49" },
+  { id: 2, title: "Deep Sub Wobble", category: "Bass", similarity: 89, author: "SoundDesigner", duration: "7:56" },
+  { id: 3, title: "808 Kick Layered", category: "Drums", similarity: 87, author: "BeatMaker", duration: "2:12" },
+  { id: 4, title: "Analog Bass Pluck", category: "Bass", similarity: 85, author: "VintageSounds", duration: "4:33" },
+  { id: 5, title: "Sub Drop Impact", category: "FX", similarity: 82, author: "ProducerX", duration: "1:47" },
+  { id: 6, title: "Reese Bass Loop", category: "Bass", similarity: 79, author: "DNB_Creator", duration: "5:21" },
 ];
 
 interface ResultsProps {
