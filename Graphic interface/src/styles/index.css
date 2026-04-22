@@ -1,3 +1,114 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+/* Global elegance enhancements */
+@layer base {
+  * {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Selection styling */
+  ::selection {
+    background: rgba(245, 212, 66, 0.3);
+    color: #f5d442;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #f5d442, #88d442);
+    border-radius: 5px;
+    border: 2px solid rgba(15, 15, 30, 1);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #f5a742, #88d442);
+  }
+}
+
+/* Smooth transitions for all interactive elements */
+@layer components {
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Elegant button styles */
+  button {
+    position: relative;
+    overflow: hidden;
+  }
+
+  button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    transition: left 0.5s ease;
+  }
+
+  button:hover::before {
+    left: 100%;
+  }
+
+  /* Fade-in animation */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Float animation */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  /* Glow animation */
+  @keyframes glow {
+    0%, 100% {
+      box-shadow: 0 0 20px rgba(245, 212, 66, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(245, 212, 66, 0.5);
+    }
+  }
+}
+
+/* Smooth page transitions */
+html {
+  scroll-padding-top: 100px;
+}
+
+/* Prevent layout shift during scrollbar appearance */
+body {
+  scrollbar-gutter: stable;
+}
