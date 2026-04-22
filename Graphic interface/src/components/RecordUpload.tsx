@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Play, Pause, RotateCcw, Upload, Mic } from "lucide-react";
 import { FreesoundWaveform } from "./FreesoundWaveform";
 
@@ -7,7 +7,81 @@ interface RecordUploadProps {
 }
 
 export function RecordUpload({ onAnalyze }: RecordUploadProps) {
+  const [isRecording, setIsRecording] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string>("");
+  const [duration, setDuration] = useState<string>("0:00");
+  const [sampleRate, setSampleRate] = useState<string>("44.1 kHz");
+  const [bitDepth, setBitDepth] = useState<string>("24-bit");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        chunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "audio/wav" });
+        const url = URL.createObjectURL(blob);
+        setRecordedAudioUrl(url);
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  const togglePlayback = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const reRecord = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+    setRecordedAudioUrl("");
+    setIsPlaying(false);
+  };
+
+  useEffect(() => {
+    if (recordedAudioUrl) {
+      const audio = new Audio(recordedAudioUrl);
+      audio.onloadedmetadata = () => {
+        const minutes = Math.floor(audio.duration / 60);
+        const seconds = Math.floor(audio.duration % 60);
+        setDuration(`${minutes}:${seconds.toString().padStart(2, "0")}`);
+      };
+    }
+  }, [recordedAudioUrl]);
 
   return (
     <div className="min-h-[calc(100vh-89px)] flex items-center justify-center px-8 py-12 relative overflow-hidden">
@@ -47,42 +121,92 @@ export function RecordUpload({ onAnalyze }: RecordUploadProps) {
             <div>
               <h2 className="text-3xl font-bold text-white">Audio Preview</h2>
               <p className="text-sm mt-1" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                Recorded audio sample
+                {recordedAudioUrl ? "Recorded audio sample" : "Ready to record"}
               </p>
             </div>
           </div>
 
           {/* Waveform Visualization */}
           <div className="mb-8">
+            {recordedAudioUrl && (
+              <audio
+                ref={audioRef}
+                src={recordedAudioUrl}
+                onEnded={() => setIsPlaying(false)}
+              />
+            )}
             <FreesoundWaveform
               isPlaying={isPlaying}
-              duration="3:08"
+              duration={duration}
               progress={isPlaying ? 0.3 : 0}
               height="h-32"
+              audioUrl={recordedAudioUrl || undefined}
+              useGenerated={!recordedAudioUrl}
             />
           </div>
 
           {/* Controls */}
           <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 shadow-lg"
-              style={{
-                background: 'linear-gradient(135deg, #f5d442, #f5a742)',
-                boxShadow: '0 8px 24px rgba(245, 212, 66, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.2)',
-              }}
-            >
-              {isPlaying ? <Pause className="w-7 h-7" style={{ color: '#0a0a0a' }} /> : <Play className="w-7 h-7 ml-1" style={{ color: '#0a0a0a' }} />}
-            </button>
+            {!isRecording ? (
+              <>
+                {recordedAudioUrl ? (
+                  <>
+                    <button
+                      onClick={togglePlayback}
+                      className="w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 shadow-lg"
+                      style={{
+                        background: 'linear-gradient(135deg, #f5d442, #f5a742)',
+                        boxShadow: '0 8px 24px rgba(245, 212, 66, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.2)',
+                      }}
+                    >
+                      {isPlaying ? (
+                        <Pause className="w-7 h-7" style={{ color: '#0a0a0a' }} />
+                      ) : (
+                        <Play className="w-7 h-7 ml-1" style={{ color: '#0a0a0a' }} />
+                      )}
+                    </button>
 
-            <button className="px-8 h-16 rounded-2xl flex items-center gap-3 transition-all duration-300 group hover:scale-105" style={{
-              border: '2px solid rgba(255, 255, 255, 0.15)',
-              color: 'rgba(255, 255, 255, 0.8)',
-              background: 'rgba(255, 255, 255, 0.05)',
-            }}>
-              <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-              Re-record
-            </button>
+                    <button
+                      onClick={reRecord}
+                      className="px-8 h-16 rounded-2xl flex items-center gap-3 transition-all duration-300 group hover:scale-105"
+                      style={{
+                        border: '2px solid rgba(255, 255, 255, 0.15)',
+                        color: 'rgba(255, 255, 255, 0.8)',
+                        background: 'rgba(255, 255, 255, 0.05)',
+                      }}
+                    >
+                      <RotateCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                      Re-record
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={startRecording}
+                    className="w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 shadow-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, #f5d442, #f5a742)',
+                      boxShadow: '0 8px 24px rgba(245, 212, 66, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.2)',
+                    }}
+                  >
+                    <Mic className="w-7 h-7" style={{ color: '#0a0a0a' }} />
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={stopRecording}
+                  className="w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 transform hover:scale-110 hover:-translate-y-1 shadow-lg animate-pulse"
+                  style={{
+                    background: 'linear-gradient(135deg, #ff6b6b, #ff5555)',
+                    boxShadow: '0 8px 24px rgba(255, 107, 107, 0.35), inset 0 2px 4px rgba(255, 255, 255, 0.2)',
+                  }}
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ background: '#fff' }}></div>
+                </button>
+                <span style={{ color: 'rgba(255, 255, 255, 0.8)' }}>Recording...</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -94,7 +218,7 @@ export function RecordUpload({ onAnalyze }: RecordUploadProps) {
             boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
           }}>
             <p className="text-xs font-medium mb-2 tracking-wide" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>DURATION</p>
-            <p className="text-2xl font-bold" style={{ color: '#f5d442' }}>3:08</p>
+            <p className="text-2xl font-bold" style={{ color: '#f5d442' }}>{duration}</p>
           </div>
           <div className="rounded-2xl p-5 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:-translate-y-1" style={{
             background: 'linear-gradient(135deg, rgba(245, 167, 66, 0.12) 0%, rgba(245, 167, 66, 0.02) 100%)',
@@ -102,7 +226,7 @@ export function RecordUpload({ onAnalyze }: RecordUploadProps) {
             boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
           }}>
             <p className="text-xs font-medium mb-2 tracking-wide" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>SAMPLE RATE</p>
-            <p className="text-2xl font-bold" style={{ color: '#f5a742' }}>44.1 kHz</p>
+            <p className="text-2xl font-bold" style={{ color: '#f5a742' }}>{sampleRate}</p>
           </div>
           <div className="rounded-2xl p-5 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:-translate-y-1" style={{
             background: 'linear-gradient(135deg, rgba(136, 212, 66, 0.12) 0%, rgba(136, 212, 66, 0.02) 100%)',
@@ -110,16 +234,19 @@ export function RecordUpload({ onAnalyze }: RecordUploadProps) {
             boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
           }}>
             <p className="text-xs font-medium mb-2 tracking-wide" style={{ color: 'rgba(255, 255, 255, 0.5)' }}>BIT DEPTH</p>
-            <p className="text-2xl font-bold" style={{ color: '#88d442' }}>24-bit</p>
+            <p className="text-2xl font-bold" style={{ color: '#88d442' }}>{bitDepth}</p>
           </div>
         </div>
 
         {/* Analyze Button */}
         <button
           onClick={onAnalyze}
-          className="w-full py-6 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 group shadow-lg"
+          disabled={!recordedAudioUrl}
+          className="w-full py-6 rounded-2xl font-bold text-lg transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 group shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           style={{
-            background: 'linear-gradient(135deg, #f5d442 0%, #88d442 100%)',
+            background: recordedAudioUrl 
+              ? 'linear-gradient(135deg, #f5d442 0%, #88d442 100%)'
+              : 'linear-gradient(135deg, #888 0%, #666 100%)',
             boxShadow: '0 12px 36px rgba(245, 212, 66, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2)',
             color: '#0a0a0a',
           }}
