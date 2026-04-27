@@ -2,3 +2,7 @@ matplotlib
 numpy
 seaborn
 scikit-learn
+torch
+librosa
+transformers
+scipy
