@@ -9,13 +9,9 @@
 1. [Descripción General](#descripción-general)
 2. [Requisitos Técnicos](#requisitos-técnicos)
 3. [Instalación](#instalación)
-4. [Estructura del Proyecto](#estructura-del-proyecto)
-5. [Flujo de Ejecución](#flujo-de-ejecución)
-6. [Funciones del Módulo](#funciones-del-módulo)
-7. [Cómo Usar](#cómo-usar)
-8. [Arquitectura Técnica](#arquitectura-técnica)
-9. [Ejemplo Completo](#ejemplo-completo)
-10. [Solución de Problemas](#solución-de-problemas)
+4. [Flujo de Ejecución](#flujo-de-ejecución)
+5. [Funciones del Módulo](#funciones-del-módulo)
+6. [Arquitectura Técnica](#arquitectura-técnica)
 
 ---
 
