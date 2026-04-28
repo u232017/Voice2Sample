@@ -86,6 +86,20 @@ Coloca tus archivos `.wav` en la carpeta `base_datos_audios/`:
 
 ```
 Machine Learning/
+├── modelo_ml.py
+├── base_datos_audios/
+│   ├── sonido_1.wav
+│   ├── sonido_2.wav
+│   ├── sonido_3.wav
+│   └── ... más audios
+```
+
+---
+
+## 🗂️ Estructura del Proyecto
+
+```
+Machine Learning/
 │
 ├── modelo_ml.py              ← Módulo principal
 ├── README.md                 ← Este archivo
@@ -291,6 +305,75 @@ resultado = encontrar_mejor_sample("mi_imitacion.wav")
 print(resultado)
 # Machine Learning/base_datos_audios/sonido_22.wav
 ```
+
+---
+
+## 📖 Cómo Usar
+
+### Uso Básico (3 líneas)
+
+```python
+import modelo_ml
+
+modelo_ml.inicializar_modelo()        # Paso 1: Cargar modelo
+modelo_ml.inicializar_base_datos()    # Paso 2: Cargar base de datos
+resultado = modelo_ml.encontrar_mejor_sample("mi_audio.wav")  # Paso 3: Buscar
+print(f"Mejor match: {resultado}")
+```
+
+### Uso Completo (con manejo de errores)
+
+```python
+import modelo_ml
+import os
+
+def buscar_sonido_similar(ruta_audio):
+    """Busca un sonido similar en la base de datos."""
+    
+    try:
+        # Verificar que el archivo existe
+        if not os.path.exists(ruta_audio):
+            print(f"ERROR: No existe {ruta_audio}")
+            return None
+        
+        # Inicializar (solo necesario una vez)
+        print("Inicializando...")
+        modelo_ml.inicializar_modelo()
+        modelo_ml.inicializar_base_datos()
+        
+        # Buscar
+        print(f"\nBuscando audio similar a: {ruta_audio}")
+        resultado = modelo_ml.encontrar_mejor_sample(ruta_audio)
+        
+        return resultado
+        
+    except Exception as e:
+        print(f"ERROR: {str(e)}")
+        return None
+
+# Usar
+if __name__ == "__main__":
+    resultado = buscar_sonido_similar("mi_imitacion.wav")
+    if resultado:
+        print(f"\n✓ Encontrado: {resultado}")
+```
+
+### Uso desde otro módulo
+
+```python
+# archivo: interfaz.py
+from Machine_Learning import modelo_ml
+
+# Inicializar una sola vez al iniciar la aplicación
+def iniciar_aplicacion():
+    modelo_ml.inicializar_modelo()
+    modelo_ml.inicializar_base_datos()
+
+# Usar cuando el usuario busca
+def procesar_busqueda(audio_usuario):
+    return modelo_ml.encontrar_mejor_sample(audio_usuario)
+```
+
 ---
 
 ## 🏗️ Arquitectura Técnica
@@ -355,6 +438,143 @@ EXTENSION_AUDIO = "*.wav"
 
 ---
 
+## 💡 Ejemplo Completo
+
+### Escenario: Usuario graba una imitación vocal
+
+```python
+import modelo_ml
+
+# ═══════════════════════════════════════════════════════════
+# INICIO: Usuario abre la aplicación
+# ═══════════════════════════════════════════════════════════
+
+print("Iniciando Voice2Signal...")
+
+# Paso 1: Cargar modelo (una sola vez)
+print("\n[1/4] Cargando modelo IA...")
+modelo_ml.inicializar_modelo()
+# → Descarga ~500 MB del modelo CLAP
+# → Carga en GPU (si disponible)
+
+# Paso 2: Cargar base de datos (una sola vez)
+print("\n[2/4] Cargando base de datos...")
+modelo_ml.inicializar_base_datos()
+# → Busca 150 archivos .wav
+# → Extrae embeddings (150 × 512)
+# → Entrena KNN
+
+# ═══════════════════════════════════════════════════════════
+# DURANTE USO: Usuario graba imitación vocal
+# ═══════════════════════════════════════════════════════════
+
+print("\n[3/4] Usuario graba imitación: 'miau'")
+# → La aplicación graba audio en: temp_grabacion.wav
+
+# Paso 3: Buscar sonido similar
+print("\n[4/4] Buscando sonido similar...")
+resultado = modelo_ml.encontrar_mejor_sample("temp_grabacion.wav")
+
+# ═══════════════════════════════════════════════════════════
+# SALIDA: Resultado
+# ═══════════════════════════════════════════════════════════
+
+print(f"\n✓ RESULTADO: {resultado}")
+# ✓ RESULTADO: base_datos_audios/gato_miando_1.wav
+
+# Internamente, ¿qué pasó?
+# 1. Cargó temp_grabacion.wav
+# 2. Resampleó a 48000 Hz
+# 3. Pasó por modelo CLAP → embedding [512 números]
+# 4. Comparó con todos los 150 audios
+# 5. Encontró que gato_miando_1.wav es el más similar
+# 6. Devolvió su ruta
+```
+
+---
+
+## 🆘 Solución de Problemas
+
+### Problema 1: "El modelo no está inicializado"
+
+**Síntoma:**
+```
+RuntimeError: El modelo no está inicializado.
+```
+
+**Solución:**
+```python
+modelo_ml.inicializar_modelo()  # Agregar esta línea PRIMERO
+modelo_ml.inicializar_base_datos()
+resultado = modelo_ml.encontrar_mejor_sample("audio.wav")
+```
+
+---
+
+### Problema 2: "No se encontraron archivos .wav"
+
+**Síntoma:**
+```
+ADVERTENCIA: No se encontraron archivos .wav
+```
+
+**Solución:**
+1. Verifica que la carpeta `base_datos_audios/` existe
+2. Verifica que contiene archivos `.wav`
+3. Verifica los nombres: `imagen.wav` ✓, `imagen.mp3` ✗
+
+```bash
+# Linux/Mac
+ls -la base_datos_audios/
+
+# Windows PowerShell
+dir base_datos_audios\
+```
+
+---
+
+### Problema 3: "No hay espacio en disco"
+
+**Síntoma:**
+```
+ERROR: No hay espacio suficiente
+```
+
+**Solución:**
+- El modelo CLAP ocupa ~500 MB
+- Descarga datos una sola vez
+- Se almacena en: `~/.cache/huggingface/`
+
+```bash
+# Ver espacio disponible
+df -h
+
+# Liberar espacio (borrar caché)
+rm -rf ~/.cache/huggingface/
+```
+
+---
+
+### Problema 4: "Lento. ¿Cómo acelerar?"
+
+**Soluciones:**
+| Problema | Solución |
+|----------|----------|
+| Usa CPU en lugar de GPU | Instala CUDA: `pip install torch-cu11` |
+| Base de datos muy grande | Reduce cantidad de audios o usa GPU |
+| Primera vez es lenta | Normal, descarga modelo (~5 min) |
+
+---
+
+## 📊 Rendimiento Esperado
+
+| Operación | Tiempo | Notas |
+|-----------|--------|-------|
+| Cargar modelo | 2-5 min | Solo la primera vez |
+| Cargar BD (100 audios) | 5-10 min | Depende de duración audios |
+| Buscar un audio | 2-5 seg | Constante, no depende de BD |
+
+---
 
 ## 🔬 Conceptos Técnicos
 
@@ -423,6 +643,16 @@ Audio BD 2:         [0.5, 0.6, 0.7, ...]     → Distancia: 0.85 ✗ MUY DIFEREN
 │ Resultado: ruta/audio/similar.wav   │
 └─────────────────────────────────────┘
 ```
+
+---
+
+## 📞 Soporte
+
+Para más información sobre:
+- **CLAP Model:** https://huggingface.co/laion/clap-htsat-fused
+- **scikit-learn KNN:** https://scikit-learn.org/stable/modules/neighbors.html
+- **Librosa:** https://librosa.org/
+
 ---
 
 **Documento versión:** 1.0  
