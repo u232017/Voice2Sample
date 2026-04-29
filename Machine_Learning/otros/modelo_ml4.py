@@ -2,10 +2,16 @@
 ================================================================================
 MÓDULO DE BÚSQUEDA DE SONIDOS POR IMITACIÓN VOCAL
 ================================================================================
-Descripción:
+
+Proyecto: Voice2Signal - Búsqueda de sonidos por imitación vocal
+Universidad: Trabajo Fin de Grado
+Descripción: Este módulo implementa un motor de búsqueda de audio basado en
+             embeddings semánticos utilizando el modelo CLAP de Hugging Face.
+
 Autor: Equipo de Machine Learning
 Fecha: Abril 2026
 Versión: 1.0
+
 ================================================================================
 """
 
@@ -20,8 +26,6 @@ import torch
 import librosa
 from transformers import ClapProcessor, ClapModel
 from sklearn.neighbors import NearestNeighbors
-import sys
-from datetime import datetime
 
 # ==============================================================================
 # VARIABLES GLOBALES DEL MÓDULO
@@ -44,52 +48,6 @@ _embeddings_bd = None
 
 # Ruta de la carpeta que contiene la base de datos de audios
 RUTA_BASE_DATOS = os.path.join(os.path.dirname(__file__), "base_datos_audios")
-
-
-# ==============================================================================
-# FUNCIONES DE FORMATEO PARA TERMINAL
-# ==============================================================================
-
-def _imprimir_encabezado(titulo):
-    """Imprime un encabezado con formato."""
-    print("\n" + "█" * 80)
-    print(f"  ▶ {titulo}")
-    print("█" * 80)
-
-def _imprimir_linea_separadora():
-    """Imprime una línea separadora."""
-    print("─" * 80)
-
-def _imprimir_exito(mensaje):
-    """Imprime un mensaje de éxito con símbolo."""
-    print(f"  ✓ {mensaje}")
-
-def _imprimir_info(mensaje):
-    """Imprime un mensaje informativo con símbolo."""
-    print(f"  ⊙ {mensaje}")
-
-def _imprimir_advertencia(mensaje):
-    """Imprime un mensaje de advertencia con símbolo."""
-    print(f"  ⚠ {mensaje}")
-
-def _imprimir_error(mensaje):
-    """Imprime un mensaje de error con símbolo."""
-    print(f"  ✗ {mensaje}")
-
-def _imprimir_progreso(actual, total, nombre_archivo=""):
-    """Imprime una barra de progreso visual."""
-    porcentaje = (actual / total) * 100
-    barra_completa = 40
-    barra_llena = int((actual / total) * barra_completa)
-    barra_vacia = barra_completa - barra_llena
-    
-    barra = "█" * barra_llena + "░" * barra_vacia
-    archivo_info = f" {nombre_archivo[:45]}" if nombre_archivo else ""
-    print(f"  [{barra}] {actual}/{total} ({porcentaje:5.1f}%){archivo_info}")
-
-def _imprimir_separador_final():
-    """Imprime un separador al final."""
-    print("█" * 80 + "\n")
 
 
 # ==============================================================================
@@ -123,12 +81,13 @@ def inicializar_modelo():
     """
     global _modelo_clap, _procesador_clap
     
-    _imprimir_encabezado("INICIALIZANDO MODELO CLAP")
+    print("=" * 70)
+    print("INICIALIZANDO MODELO CLAP")
+    print("=" * 70)
     
     # Verificar si el modelo ya está cargado para evitar recargas innecesarias
     if _modelo_clap is not None and _procesador_clap is not None:
-        _imprimir_exito("Modelo ya cargado en memoria")
-        _imprimir_separador_final()
+        print("El modelo ya está cargado en memoria.")
         return
     
     try:
@@ -136,13 +95,12 @@ def inicializar_modelo():
         # Este modelo fue entrenado en AudioSet y es óptimo para tareas de audio
         nombre_modelo = "laion/clap-htsat-fused"
         
-        _imprimir_info(f"Cargando procesador: {nombre_modelo}")
+        print(f"Cargando procesador: {nombre_modelo}")
         # Cargar el procesador de CLAP
         # El procesador se encarga de tokenizar el audio y preparar las entradas
         _procesador_clap = ClapProcessor.from_pretrained(nombre_modelo)
-        _imprimir_exito("Procesador cargado")
         
-        _imprimir_info(f"Cargando modelo: {nombre_modelo}")
+        print(f"Cargando modelo: {nombre_modelo}")
         # Cargar el modelo CLAP pre-entrenado
         # Usamos torch.float16 para reducir el uso de memoria VRAM
         _modelo_clap = ClapModel.from_pretrained(nombre_modelo)
@@ -156,13 +114,12 @@ def inicializar_modelo():
         dispositivo = "cuda" if torch.cuda.is_available() else "cpu"
         _modelo_clap = _modelo_clap.to(dispositivo)
         
-        _imprimir_exito(f"Modelo cargado exitosamente en: {dispositivo.upper()}")
-        _imprimir_separador_final()
+        print(f"Modelo cargado exitosamente en dispositivo: {dispositivo}")
+        print("=" * 70)
         
     except Exception as e:
         # Manejo de errores durante la carga del modelo
-        _imprimir_error(f"Error al cargar el modelo: {str(e)}")
-        _imprimir_separador_final()
+        print(f"ERROR al cargar el modelo: {str(e)}")
         raise
 
 
@@ -246,7 +203,7 @@ def extraer_embedding(ruta_audio):
         return embedding
         
     except Exception as e:
-        _imprimir_error(f"Error procesando audio: {str(e)}")
+        print(f"ERROR al procesar el audio {ruta_audio}: {str(e)}")
         raise
 
 
@@ -279,12 +236,16 @@ def inicializar_base_datos():
     """
     global _indexador_knn, _rutas_archivos_bd, _embeddings_bd
     
-    _imprimir_encabezado("INICIALIZANDO BASE DE DATOS DE AUDIOS")
-    
     # Verificar que el modelo haya sido inicializado
     if _modelo_clap is None:
-        _imprimir_error("El modelo no ha sido inicializado primero")
-        raise RuntimeError("Debe llamar a inicializar_modelo() primero.")
+        raise RuntimeError(
+            "El modelo no ha sido inicializado. "
+            "Debe llamar a inicializar_modelo() primero."
+        )
+    
+    print("=" * 70)
+    print("INICIALIZANDO BASE DE DATOS DE AUDIOS")
+    print("=" * 70)
     
     # -----------------------------------------------------------------------------
     # Paso 1: Buscar todos los archivos .wav en la carpeta de base de datos
@@ -296,13 +257,11 @@ def inicializar_base_datos():
     
     # Verificar que se encontraron archivos
     if len(archivos_wav) == 0:
-        _imprimir_advertencia("No se encontraron archivos .wav")
-        _imprimir_info(f"Ruta buscada: {RUTA_BASE_DATOS}")
-        _imprimir_separador_final()
+        print(f"ADVERTENCIA: No se encontraron archivos .wav en: {RUTA_BASE_DATOS}")
+        print("Verifique que la carpeta 'base_datos_audios' contenga archivos .wav")
         return
     
-    _imprimir_exito(f"Se encontraron {len(archivos_wav)} archivos de audio")
-    _imprimir_linea_separadora()
+    print(f"Se encontraron {len(archivos_wav)} archivos de audio")
     
     # -----------------------------------------------------------------------------
     # Paso 2: Extraer embeddings para cada archivo de audio
@@ -310,12 +269,9 @@ def inicializar_base_datos():
     lista_embeddings = []
     lista_rutas = []
     
-    _imprimir_info("Extrayendo embeddings de los archivos...")
-    print()
-    
     for indice, ruta_audio in enumerate(archivos_wav):
         try:
-            _imprimir_progreso(indice + 1, len(archivos_wav), os.path.basename(ruta_audio))
+            print(f"Procesando audio {indice + 1}/{len(archivos_wav)}: {os.path.basename(ruta_audio)}")
             
             # Extraer el embedding del audio actual
             embedding = extraer_embedding(ruta_audio)
@@ -326,43 +282,45 @@ def inicializar_base_datos():
             
         except Exception as e:
             # Si hay error en un archivo, lo saltamos pero continuamos con los demás
-            _imprimir_advertencia(f"Error en {os.path.basename(ruta_audio)}: {str(e)[:50]}")
+            print(f"  ADVERTENCIA: Error al procesar {ruta_audio}: {str(e)}")
             continue
-    
-    print()
-    _imprimir_linea_separadora()
     
     # Verificar que se procesaron al menos algunos archivos
     if len(lista_embeddings) == 0:
-        _imprimir_error("No se pudo extraer ningún embedding de la base de datos")
-        _imprimir_separador_final()
-        raise RuntimeError("Los archivos .wav no son válidos")
+        raise RuntimeError(
+            "No se pudo extraer ningún embedding de la base de datos. "
+            "Verifique que los archivos .wav sean válidos."
+        )
     
     # Convertir a arrays de numpy para eficiencia
+    # np.array() crea una matriz de forma (num_archivos, 512)
     embeddings_matriz = np.array(lista_embeddings)
     
     # Almacenar en variables globales
     _embeddings_bd = embeddings_matriz
     _rutas_archivos_bd = lista_rutas
     
-    _imprimir_exito(f"Embeddings extraídos: {embeddings_matriz.shape[0]} archivos × {embeddings_matriz.shape[1]} dimensiones")
-    _imprimir_linea_separadora()
+    print(f"\nEmbeddings extraídos exitosamente: {embeddings_matriz.shape}")
     
     # -----------------------------------------------------------------------------
-    # Entrenar el indexador KNN
-    _imprimir_info("Entrenando buscador KNN...")
+    # Paso 3: Entrenar el indexador KNN
+    # -----------------------------------------------------------------------------
+    print("\nEntrenando el buscador KNN...")
     
+    # Configurar NearestNeighbors con métrica cosine
+    # n_neighbors=1: Buscaremos el vecino más cercano (el mejor match)
+    # metric='cosine': Usamos similitud coseno que es óptima para embeddings
     _indexador_knn = NearestNeighbors(
-        n_neighbors=1,
-        metric='cosine',
-        algorithm='brute'
+        n_neighbors=1,        # Número de vecinos a buscar
+        metric='cosine',     # Métrica de distancia coseno
+        algorithm='brute'    # Algoritmo force (exacto) para máxima precisión
     )
     
     # Entrenar el indexador con los embeddings de la base de datos
     _indexador_knn.fit(embeddings_matriz)
     
-    _imprimir_exito("Buscador KNN entrenado exitosamente")
-    _imprimir_separador_final()
+    print("Buscador KNN entrenado exitosamente")
+    print("=" * 70)
 
 
 def encontrar_mejor_sample(ruta_audio_usuario):
@@ -397,30 +355,32 @@ def encontrar_mejor_sample(ruta_audio_usuario):
     
     # Verificar que la base de datos haya sido inicializada
     if _indexador_knn is None or _rutas_archivos_bd is None:
-        _imprimir_error("La base de datos no ha sido inicializada")
-        raise RuntimeError("Debe llamar a inicializar_base_datos() primero.")
+        raise RuntimeError(
+            "La base de datos no ha sido inicializada. "
+            "Debe llamar a inicializar_base_datos() primero."
+        )
     
     # Verificar que el archivo del usuario existe
     if not os.path.exists(ruta_audio_usuario):
-        _imprimir_error(f"No se encontró el archivo: {ruta_audio_usuario}")
         raise FileNotFoundError(f"No se encontró el archivo del usuario: {ruta_audio_usuario}")
     
-    _imprimir_encabezado("BÚSQUEDA DE SONIDO SIMILAR")
-    _imprimir_info(f"Audio a procesar: {os.path.basename(ruta_audio_usuario)}")
-    _imprimir_linea_separadora()
+    print("=" * 70)
+    print("BÚSQUEDA DE SONIDO SIMILAR")
+    print("=" * 70)
+    print(f"Audio del usuario: {ruta_audio_usuario}")
     
     try:
         # -----------------------------------------------------------------------------
         # Paso 1: Extraer embedding del audio del usuario
         # -----------------------------------------------------------------------------
-        _imprimir_info("Extrayendo embedding del audio...")
+        print("\nExtrayendo embedding del audio del usuario...")
         embedding_usuario = extraer_embedding(ruta_audio_usuario)
-        _imprimir_exito(f"Embedding calculado: {embedding_usuario.shape}")
+        print(f"Embedding calculado: forma {embedding_usuario.shape}")
         
         # -----------------------------------------------------------------------------
         # Paso 2: Buscar el vecino más cercano en la base de datos
         # -----------------------------------------------------------------------------
-        _imprimir_info("Buscando el sonido más similar...")
+        print("\nBuscando el sonido más similar en la base de datos...")
         
         # Reformatear el embedding para que tenga forma (1, 512) para KNN
         embedding_para_buscar = embedding_usuario.reshape(1, -1)
@@ -441,21 +401,18 @@ def encontrar_mejor_sample(ruta_audio_usuario):
         # -----------------------------------------------------------------------------
         # Paso 4: Mostrar resultados
         # -----------------------------------------------------------------------------
-        _imprimir_linea_separadora()
-        print("\n  ╔════════════════════════════════════════════════════════════════════════════════╗")
-        print("  ║                        🎵 RESULTADO ENCONTRADO                              ║")
-        print("  ╚════════════════════════════════════════════════════════════════════════════════╝")
-        print(f"  📁 Archivo: {os.path.basename(ruta_ganadora)}")
-        print(f"  📍 Ruta: {ruta_ganadora}")
-        print(f"  📊 Similitud: {(1 - distancia) * 100:.2f}% (distancia: {distancia:.6f})")
-        print("  ╚════════════════════════════════════════════════════════════════════════════════╝\n")
-        _imprimir_separador_final()
+        print("\n" + "=" * 70)
+        print("RESULTADOS DE LA BÚSQUEDA")
+        print("=" * 70)
+        print(f"Archivo más similar: {os.path.basename(ruta_ganadora)}")
+        print(f"Ruta completa: {ruta_ganadora}")
+        print(f"Distancia coseno: {distancia:.6f}")
+        print("=" * 70)
         
         return ruta_ganadora
         
     except Exception as e:
-        _imprimir_error(f"Error durante la búsqueda: {str(e)}")
-        _imprimir_separador_final()
+        print(f"ERROR durante la búsqueda: {str(e)}")
         raise
 
 
@@ -476,7 +433,9 @@ if __name__ == "__main__":
         $ python modelo_ml.py
     ==============================================================================
     """
-    _imprimir_encabezado("MÓDULO DE BÚSQUEDA DE SONIDOS POR IMITACIÓN VOCAL")
+    print("\n" + "=" * 70)
+    print("MÓDULO DE BÚSQUEDA DE SONIDOS POR IMITACIÓN VOCAL")
+    print("=" * 70 + "\n")
     
     try:
         # Paso 1: Inicializar el modelo CLAP
@@ -487,16 +446,15 @@ if __name__ == "__main__":
         
         # Ejemplo de cómo usar la función de búsqueda
         # (Descomenta las siguientes líneas para probar con un audio real)
+         
         ruta_audio_ejemplo = "mi_imitacion.wav"
         if os.path.exists(ruta_audio_ejemplo):
-            resultado = encontrar_mejor_sample(ruta_audio_ejemplo)
-            _imprimir_exito(f"Resultado final: {resultado}")
+              resultado = encontrar_mejor_sample(ruta_audio_ejemplo)
+              print(f"\nResultado final: {resultado}")
         
-        _imprimir_linea_separadora()
-        _imprimir_exito("Módulo listo para usar")
-        _imprimir_info("Para buscar un sonido, llama a encontrar_mejor_sample(ruta_audio)")
-        _imprimir_separador_final()
+        print("\n✓ Módulo listo para usar")
+        print("  Para buscar un sonido, llama a encontrar_mejor_sample(ruta_audio)")
         
     except Exception as e:
-        _imprimir_error(f"Error durante la inicialización: {str(e)}")
+        print(f"\n✗ Error durante la inicialización: {str(e)}")
         raise
