@@ -2,8 +2,8 @@ import pandas as pd
 import json
 import re
 
-JSON_FILE = "E:/GitHub/technology-music-lab-s101/Dataset/2.Json_to_csv/metadata"  # Cambiar la ruta
-CSV_FILE = "E:/GitHub/technology-music-lab-s101/Dataset/3.Clean_csv/metadata.csv"  # Cambiar la ruta
+JSON_FILE = "./Dataset/2.Json_to_csv/metadata"  # Cambiar la ruta
+CSV_FILE = "./Dataset/3.Clean_csv/metadata.csv"  # Cambiar la ruta
 
 def clean_text(text):
     """

@@ -5,8 +5,8 @@ from collections import defaultdict
 import librosa
 import soundfile as sf
 
-AUDIO_INPUT_FOLDER = 'E:/GitHub/technology-music-lab-s101/Dataset/audio' # Cambia esta ruta
-AUDIO_OUTPUT_FOLDER = 'E:/GitHub/technology-music-lab-s101/Dataset/audio_processed'  # Cambia esta ruta
+AUDIO_INPUT_FOLDER = './Dataset/audio' # Cambia esta ruta
+AUDIO_OUTPUT_FOLDER = './Dataset/audio_processed'  # Cambia esta ruta
 
 # Lista de extensiones soportadas para conversión
 SUPPORTED_FORMATS = {

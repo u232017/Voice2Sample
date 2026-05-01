@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from collections import defaultdict
 
-AUDIO_PATH = 'E:/GitHub/technology-music-lab-s101/Dataset/audio'
+AUDIO_PATH = './Dataset/audio'
 
 def detect_audio_extensions(audio_folder):
     """

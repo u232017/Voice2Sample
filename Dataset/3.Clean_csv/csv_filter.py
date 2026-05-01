@@ -1,9 +1,9 @@
 import pandas as pd
 from pathlib import Path
 
-INPUT_CSV_PATH = "../3.Clean_csv/metadata.csv" # CSV en el mismo directorio
-OUTPUT_CSV_PATH = "../3.Clean_csv"  # CSV de salida en el mismo directorio
-AUDIO_FOLDER = "E:/GitHub/technology-music-lab-s101/Dataset/audio_processed"  # Carpeta de audios
+INPUT_CSV_PATH = "./Dataset/3.Clean_csv/metadata.csv" # CSV en el mismo directorio
+OUTPUT_CSV_PATH = "./Dataset/3.Clean_csv"  # CSV de salida en el mismo directorio
+AUDIO_FOLDER = "./Dataset/audio_processed"  # Carpeta de audios
 
 def filter_csv_by_columns(csv_path, columns_to_keep, output_path, audio_folder):
     """
