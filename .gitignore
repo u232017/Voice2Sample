@@ -1,2 +1,4 @@
 .venv/
 __pycache__/
+Dataset/audio/
+Dataset/audio_processed/
