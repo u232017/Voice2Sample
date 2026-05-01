@@ -1,0 +1,29 @@
+{
+  "dataset_name": "--dataset-name--",
+  "primary_key": "id",
+  "fields": [
+    {
+      "name": "id",
+      "type": "integer",
+      "required": true
+    },
+    {
+      "name": "path",
+      "type": "string",
+      "required": true
+    },
+    {
+      "name": "bpm",
+      "type": "number",
+      "required": true
+<<<<<<< HEAD
+=======
+    },
+    {
+      "name": "genre",
+      "type": "string",
+      "allowed_values": ["hip-hop", "techno", "house", "ambient", "etc"]
+>>>>>>> 7c316ac (audio_uploead)
+    }
+  ]
+}
