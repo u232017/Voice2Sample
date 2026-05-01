@@ -470,7 +470,7 @@ if __name__ == "__main__":
     ==============================================================================
     
     Este bloque se ejecuta solo cuando el script se corre directamente
-    (python modelo_ml.py). No se ejecuta cuando el módulo se importa.
+    (python modelo_ml.py). 
     
     Uso típico:
         $ python modelo_ml.py
