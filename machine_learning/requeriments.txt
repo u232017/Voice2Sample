@@ -1,6 +1,5 @@
 matplotlib
 numpy
-seaborn
 scikit-learn
 torch
 librosa
