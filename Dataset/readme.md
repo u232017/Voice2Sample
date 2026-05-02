@@ -15,7 +15,7 @@ El pipeline realiza:
 
 1. Conversión de audios a formato WAV estándar
 2. Eliminación de silencios iniciales
-3. Normalización de sample rate (16 kHz)
+3. Normalización de sample rate (16 kHz) y canal a mono.
 4. Conversión de metadata JSON → CSV
 5. Filtrado y limpieza del CSV
 6. Validación de consistencia entre CSV y archivos de audio
