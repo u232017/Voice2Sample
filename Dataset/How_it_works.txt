@@ -6,19 +6,7 @@
 2. Metadata transformation
     2.1 Go to Dataset -> 2.Json_to_csv to convert the metadata.json given by the dataset, change the path before executing.
 3. Creation of CSVs
-    3.1 Go to Dataset -> 3.Clean_csv -> csv_filter.py first change the input and output paths, these code is to filter the csv of metadata to be ready to create the Database
-    and csvs to train the models. It also checks if all the audio matches with the adios stored in the system.
-    3.2 Go to Dataset -> 3.Clear_csv -> create_functional_csv.py to create 3 diferent csvs, one for training the deep learning model, one for regular machine learning model 
-    and the last to use as database. Remember to change the paths.
+    3.1 Go to Dataset -> 3.Clean_csv -> csv_filter.py first change the input and output paths, these code is to filter the csv of metadata to be ready to create the dataset
+    (csv) to train the models. It also checks if all the audio matches with the adios stored in the system.
 
-    !!To proceed with theis last step it is required to use essentia, if you are using linux or ios you can use it with -- -- verisons of pyhton not higher.
-    If you are in windows you will need to use a virtual enviorment, follow the next comands:
-    wsl --install
-    Then reboot the pc, and whait till instalation ends. Then go to the project and in the terminal write the next commands:
-    wsl
-    (navigate to the desired folder)
-    python3 -m venv .venv
-    source .venv/bin/activate
-    pip install --upgrade pip
-    pip install essentia
     
