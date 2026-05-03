@@ -9,6 +9,15 @@ Proyecto para extraer descriptores musicales de archivos de audio usando Essenti
 - Archivo de audio de prueba (ej: `pruebawa.wav`)
 
 ## 🚀 Instalación y Configuración
+### 0. Instalar y activar wsl
+
+```bash
+#Instalar wsl
+wsl --install
+
+# Activar wsl
+wsl
+```
 
 ### 1. Crear Entorno Virtual (Recomendado)
 
