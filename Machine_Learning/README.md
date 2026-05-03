@@ -39,60 +39,58 @@ Audio del usuario → Extraer representación matemática → Comparar con base 
 
 ---
 
-## 🔧 Requisitos Técnicos
+## ⚙️ Requisitos Previos
 
-### Python
-- **Versión:** 3.8 o superior
-- **Gestor de paquetes:** pip
-
-### Dependencias (en `requeriments.txt`)
-```
-torch
-librosa
-transformers
-scikit-learn
-numpy
-scipy
-```
-
-### Requisitos del Sistema
-- **RAM:** Mínimo 8 GB (recomendado 16 GB)
-- **GPU:** Opcional (NVIDIA con CUDA para mayor velocidad)
-- **Espacio en disco:** ~3 GB para descargar el modelo
+Para aislar las dependencias y evitar conflictos en tu sistema, este módulo requiere:
+- **Python:** Versión recomendada 3.12.x o superior a 3.8.
+- **Entorno Virtual:** Soporte para `venv` (incluido por defecto en Python).
+- Aproximadamente **3 GB de espacio libre** en disco (para la descarga automática de los pesos del modelo neuronal).
 
 ---
 
+### Dependencias (en `requeriments.txt`)
+```
+matplotlib
+numpy
+scikit-learn
+torch
+librosa
+transformers
+scipy
+```
+
 ## 📦 Instalación
 
-### Paso 1: Instalar dependencias
+### Paso 1: Ponerte en la carpeta de Machine_learning
+Abre la terminal integrada de VS Code (`Terminal > Nuevo Terminal`) y ejecuta:
+```bash
+CD Machine_learning
+```
 
+### Paso 2: Crear y Activar el Entorno Virtual
+Ahora en la misma terminal pero en la carpeta Machine_learning:
+```bash
+1. Crear el entorno virtual
+python -m venv venv
+
+2. Activar entorno
+.\venv\Scripts\Activate.ps1
+
+Si salta error en letras rojas ejecutar primero:
+    Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+
+    Volver a ejecutar .\venv\Scripts\Activate.ps1
+```
+
+### Paso 3: Instalar dependencias
 ```bash
 pip install -r requeriments.txt
 ```
 
-### Paso 2: Crear carpeta de base de datos
-
+### Paso 4: Ejecutar el Modelo
 ```bash
-mkdir "base_datos_audios"
+python modelo_ml.py
 ```
-
-### Paso 3: Agregar archivos de audio
-
-Coloca tus archivos `.wav` en la carpeta `base_datos_audios/`:
-
-```
-Machine Learning/
-│
-├── modelo_ml.py              ← Módulo principal
-├── README.md                 ← Este archivo
-├── base_datos_audios/        ← Carpeta con audios (crear manualmente)
-│   ├── sonido_1.wav
-│   ├── sonido_2.wav
-│   └── ...
-│
-└── requeriments.txt          ← Dependencias del proyecto
-```
-
 ---
 
 ## 🔄 Flujo de Ejecución
