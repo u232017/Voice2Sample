@@ -7,8 +7,8 @@
 ## 📋 Tabla de Contenidos
 
 1. [Descripción General](#descripción-general)
-2. [Requisitos Técnicos](#requisitos-técnicos)
-3. [Instalación](#instalación)
+2. [Requisitos Previos](#requisitos-técnicos)
+3. [Configuración](#instalación)
 4. [Flujo de Ejecución](#flujo-de-ejecución)
 5. [Funciones del Módulo](#funciones-del-módulo)
 6. [Arquitectura Técnica](#arquitectura-técnica)
@@ -42,7 +42,7 @@ Audio del usuario → Extraer representación matemática → Comparar con base 
 ## ⚙️ Requisitos Previos
 
 Para aislar las dependencias y evitar conflictos en tu sistema, este módulo requiere:
-- **Python:** Versión recomendada 3.12.x o superior a 3.8.
+- **Python:** Instalar la versión recomendada 3.12.x o cualquiera superior a 3.8.
 - **Entorno Virtual:** Soporte para `venv` (incluido por defecto en Python).
 - Aproximadamente **3 GB de espacio libre** en disco (para la descarga automática de los pesos del modelo neuronal).
 
@@ -59,12 +59,12 @@ transformers
 scipy
 ```
 
-## 📦 Instalación
+## 📦 Configuración
 
 ### Paso 1: Ponerte en la carpeta de Machine_learning
 Abre la terminal integrada de VS Code (`Terminal > Nuevo Terminal`) y ejecuta:
 ```bash
-CD Machine_learning
+CD Deep_learning
 ```
 
 ### Paso 2: Crear y Activar el Entorno Virtual
