@@ -9,6 +9,24 @@ Convierte, limpia y valida audios junto con su información en CSV para su uso e
 - **WSL (Windows Subsystem for Linux)** si estás en Windows
 - Abrir Dataset/main.py y configurar todas las rutas al metadata y al audio que hay definidas. 
 
+## Instalar WSL
+
+En la terminal de Visual Studio Code
+- wsl --install --no-distribution
+Reiniciar el sistema u comprobar la instalacion con:
+- wsl --version
+Ahora instalaremos una versio de ubuntu con:
+- wsl --install -d Ubuntu
+- crearemos un usuario y contraseña
+Reiniciaremos otra vez el ordenador y para comprobar la instalacion:
+- wsl --list --verbose
+Entramos en la maquina virtual y actualizamos el apt
+- wsl
+- sudo apt update
+Instalamos el python3 enviorment
+- sudo apt install python3.12-venv
+
+
 # 📌 Objetivo
 
 El pipeline realiza:
@@ -105,6 +123,13 @@ pip install --upgrade pip
 pip install pandas
 sudo apt install ffmpeg
 
-## 3. Ejecutar el script
+## 3.1 Ejecutar el script para detectar formatos de auido.
+
+- Ejecutar detect_audio_extensions.py que esta en Convert_audio_to_wav para no generar errores, cambiar primero el path del audio.
+
+## 3.2 Ejecutar el main script.
+
+- Abrir el main.py y cambiar los paths donde esta guardado cada cosa, de base estara el ejemplo.
+-Ejecutar:
 
 python main.py

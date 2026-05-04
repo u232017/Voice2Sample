@@ -1,0 +1,78 @@
+{
+    "114688": {
+        "username": "Ongitak", 
+        "description": "A 1-bar 4/4 bass loop, at 100 bpm.", 
+        "tags": [
+            "bar", 
+            "bass", 
+            "loop", 
+            "synth"
+        ], 
+        "id": 114688, 
+        "original_sound_path": "/audio/original/114688.wav", 
+        "name": "4_4 Bass Loop 1.wav", 
+        "license": "http://creativecommons.org/licenses/by/3.0/", 
+        "preview_url": "https://www.freesound.org/data/previews/114/114688_2005415-hq.mp3", 
+        "type": "wav", 
+        "annotations": {
+            "bpm": 100
+        }, 
+        "wav_sound_path": "/Users/ffont/ResearchRepos/ffont-ismir2016/data/fsdataset/audio/wav/114688.wav", 
+        "pack": "https://www.freesound.org/apiv2/packs/7475/"
+    }, 
+    "40962": {
+        "username": "M-RED", 
+        "description": "A 83 BPM Hip-Hop loop created with FL-Studio 6 XXL.This loop is a basic loop with no scratching.Good for cutting out sound or speeding up.This Loop uses some sounds played in reverse (like the snare or the Bass)", 
+        "tags": [
+            "83bpm", 
+            "base", 
+            "bass", 
+            "beat", 
+            "hip-hop", 
+            "hiphop", 
+            "loop", 
+            "massive", 
+            "rap", 
+            "slow"
+        ], 
+        "id": 40962, 
+        "original_sound_path": "/audio/original/40962.wav", 
+        "name": "Drop_da_Beat_83BPM.wav", 
+        "license": "http://creativecommons.org/licenses/by/3.0/", 
+        "preview_url": "https://www.freesound.org/data/previews/40/40962_399326-hq.mp3", 
+        "type": "wav", 
+        "annotations": {
+            "bpm": 83
+        }, 
+        "wav_sound_path": "/Users/ffont/ResearchRepos/ffont-ismir2016/data/fsdataset/audio/wav/40962.wav", 
+        "pack": "https://www.freesound.org/apiv2/packs/2488/"
+    }, 
+    "253959": {
+        "username": "tyops", 
+        "description": "Crystal sound sample. 140 bpm.\r\nSoftware: Cubase 5(midi file)", 
+        "tags": [
+            "mystery", 
+            "loop", 
+            "tech", 
+            "futuristic", 
+            "suspense", 
+            "crystal", 
+            "sample", 
+            "effect", 
+            "fx", 
+            "dark", 
+            "sound"
+        ], 
+        "id": 253959, 
+        "original_sound_path": "/audio/original/253959.mp3", 
+        "name": "Crystal Sound Sample", 
+        "license": "http://creativecommons.org/licenses/by/3.0/", 
+        "preview_url": "https://www.freesound.org/data/previews/253/253959_3914271-hq.mp3", 
+        "type": "mp3", 
+        "annotations": {
+            "bpm": 140
+        }, 
+        "wav_sound_path": "/Users/ffont/ResearchRepos/ffont-ismir2016/data/fsdataset/audio/wav/253959.wav", 
+        "pack": "https://www.freesound.org/apiv2/packs/14492/"
+    }
+}
