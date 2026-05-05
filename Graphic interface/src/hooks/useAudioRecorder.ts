@@ -17,15 +17,17 @@ export const useAudioRecorder = () => {
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  const startRecording = useCallback(async () => {
+  const startRecording = useCallback(async (): Promise<boolean> => {
     try {
       setError(null);
       await audioService.startRecording();
       setIsRecording(true);
       setDuration(0);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to start recording');
       setIsRecording(false);
+      return false;
     }
   }, []);
 

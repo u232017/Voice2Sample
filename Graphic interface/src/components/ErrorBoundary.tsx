@@ -1,4 +1,4 @@
-import React, { Component, ReactNode } from 'react';
+import { Component, ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
 
 interface Props {
@@ -31,17 +31,17 @@ export class ErrorBoundary extends Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="p-6 bg-red-900/10 border border-red-500/30 rounded-lg">
+        <div className="m-6 rounded-lg border border-red-400/30 bg-red-950/30 p-6">
           <div className="flex items-start gap-3">
-            <AlertCircle className="text-red-500 mt-1" size={20} />
+            <AlertCircle className="mt-1 text-red-300" size={20} />
             <div>
-              <h3 className="font-bold text-red-400">Algo salió mal</h3>
-              <p className="text-sm text-red-300/70 mt-1">{this.state.error?.message}</p>
+              <h3 className="font-bold text-red-100">Something went wrong</h3>
+              <p className="mt-1 text-sm text-red-200/80">{this.state.error?.message}</p>
               <button
                 onClick={this.reset}
-                className="mt-3 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg transition-colors"
+                className="mt-3 rounded-md border border-red-300/30 bg-red-300/10 px-4 py-2 text-red-100 transition-colors hover:bg-red-300/20"
               >
-                Intentar de nuevo
+                Try again
               </button>
             </div>
           </div>

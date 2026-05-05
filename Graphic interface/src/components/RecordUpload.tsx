@@ -1,42 +1,145 @@
-import { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Mic, Square } from 'lucide-react';
-import { FreesoundWaveform } from './FreesoundWaveform';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  FileAudio,
+  Mic,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  Square,
+} from 'lucide-react';
 import { AudioUploadInput } from './AudioUploadInput';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { useFileUpload } from '../hooks/useFileUpload';
-import { useAudio } from '../context/AudioContext';
-import { RecordedAudio } from '../services/types';
+import { defaultSearchFilters, useAudio } from '../context/AudioContext';
+import {
+  FreesoundSearchFilters,
+  RecordedAudio,
+  SearchCategory,
+  SearchDuration,
+  SearchLicense,
+  SearchMood,
+  SearchSort,
+} from '../services/types';
 import { audioService } from '../services/audio';
 
 interface RecordUploadProps {
+  initialMode?: 'record' | 'upload';
   onAnalyze: () => void;
+  onBack: () => void;
 }
 
-export function RecordUpload({ onAnalyze }: RecordUploadProps) {
-  const { setCurrentAudio } = useAudio();
+const categories: SearchCategory[] = [
+  'any',
+  'ambience',
+  'music loop',
+  'foley',
+  'nature',
+  'urban',
+  'percussion',
+  'synth',
+  'voice',
+];
+const moods: SearchMood[] = ['any', 'calm', 'dark', 'bright', 'energetic', 'mysterious'];
+const durations: SearchDuration[] = ['any', 'short', 'medium', 'long'];
+const sorts: SearchSort[] = ['relevance', 'rating', 'downloads', 'recent'];
+const licenses: SearchLicense[] = ['any', 'creative_commons', 'commercial_friendly'];
+
+const labels: Record<string, string> = {
+  any: 'Any',
+  ambience: 'Ambience',
+  'music loop': 'Music loop',
+  foley: 'Foley',
+  nature: 'Nature',
+  urban: 'Urban',
+  percussion: 'Percussion',
+  synth: 'Synth',
+  voice: 'Voice',
+  calm: 'Calm',
+  dark: 'Dark',
+  bright: 'Bright',
+  energetic: 'Energetic',
+  mysterious: 'Mysterious',
+  short: 'Short < 5s',
+  medium: 'Medium 5s - 30s',
+  long: 'Long > 30s',
+  relevance: 'Relevance',
+  rating: 'Rating',
+  downloads: 'Downloads',
+  recent: 'Recent',
+  creative_commons: 'Creative Commons',
+  commercial_friendly: 'Commercial friendly',
+};
+
+export function RecordUpload({ initialMode = 'record', onAnalyze, onBack }: RecordUploadProps) {
+  const { setCurrentAudio, setSearchRequest, setTrimSelection } = useAudio();
   const recorder = useAudioRecorder();
   const fileUpload = useFileUpload();
-
-  const [mode, setMode] = useState<'choose' | 'record' | 'upload'>('choose');
-  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [mode, setMode] = useState<'record' | 'upload'>(initialMode);
   const [currentAudio, setLocalAudio] = useState<RecordedAudio | null>(null);
+  const [trimStart, setTrimStart] = useState(0);
+  const [trimEnd, setTrimEnd] = useState(0);
+  const [filters, setFilters] = useState<FreesoundSearchFilters>(defaultSearchFilters);
+
+  const audioUrl = useMemo(() => {
+    if (!currentAudio) return null;
+    return URL.createObjectURL(currentAudio.blob);
+  }, [currentAudio]);
+
+  const duration = Math.max(0, currentAudio?.metadata.duration || 0);
+  const isValidTrim = currentAudio ? trimStart < trimEnd && trimEnd <= duration : false;
 
   useEffect(() => {
+    setMode(initialMode);
+  }, [initialMode]);
+
+  useEffect(() => {
+    setCurrentAudio(currentAudio);
+
     if (currentAudio) {
-      setCurrentAudio(currentAudio);
+      setTrimStart(0);
+      setTrimEnd(Math.max(0, currentAudio.metadata.duration));
+      setTrimSelection({ start: 0, end: Math.max(0, currentAudio.metadata.duration) });
     }
-  }, [currentAudio, setCurrentAudio]);
+  }, [currentAudio, setCurrentAudio, setTrimSelection]);
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
+  const updateFilter = <Key extends keyof FreesoundSearchFilters>(
+    key: Key,
+    value: FreesoundSearchFilters[Key]
+  ) => {
+    setFilters((current) => ({ ...current, [key]: value }));
+  };
+
+  const applyTrim = (start: number, end: number) => {
+    const safeStart = Math.min(Math.max(0, start), duration);
+    const safeEnd = Math.min(Math.max(0, end), duration);
+    setTrimStart(safeStart);
+    setTrimEnd(safeEnd);
+    setTrimSelection({ start: safeStart, end: safeEnd });
+  };
 
   const handleStartRecording = async () => {
-    setMode('record');
-    await recorder.startRecording();
+    const started = await recorder.startRecording();
+    if (started) {
+      setLocalAudio(null);
+    }
   };
 
   const handleStopRecording = async () => {
     const audio = await recorder.stopRecording();
     if (audio) {
       setLocalAudio(audio);
-      setMode('choose');
     }
   };
 
@@ -44,207 +147,364 @@ export function RecordUpload({ onAnalyze }: RecordUploadProps) {
     const audio = await fileUpload.uploadFile(file);
     if (audio) {
       setLocalAudio(audio);
-      setMode('choose');
+      setMode('upload');
     }
   };
 
-  const handleAnalyze = () => {
-    if (currentAudio) {
-      onAnalyze();
-    }
-  };
-
-  const handleReset = () => {
+  const resetAudio = () => {
     setLocalAudio(null);
-    setMode('choose');
-    setIsPlaying(false);
+    setCurrentAudio(null);
+    setTrimSelection(null);
   };
 
-  if (!currentAudio) {
-    return (
-      <div className="min-h-[calc(100vh-89px)] flex items-center justify-center px-8 py-12 bg-freesound-darker">
-        <div className="max-w-2xl w-full">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-white mb-2">Encuentra Sonidos Similares</h1>
-            <p className="text-freesound-yellow/70">Graba un sonido o carga un archivo de audio</p>
-          </div>
+  const resetTrim = () => {
+    applyTrim(0, duration);
+  };
 
-          {/* Choose mode or show upload/record UI */}
-          {mode === 'choose' ? (
-            <div className="grid grid-cols-2 gap-6">
-              <button
-                onClick={handleStartRecording}
-                className="group p-8 rounded-lg border-2 border-freesound-yellow/30 hover:border-freesound-yellow/60 bg-freesound-dark hover:bg-freesound-dark/80 transition-all"
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <Mic className="w-8 h-8 text-freesound-yellow group-hover:text-freesound-orange transition-colors" />
-                  <p className="font-bold text-white">Grabar</p>
-                  <p className="text-sm text-freesound-yellow/60">Usa tu micrófono</p>
-                </div>
-              </button>
+  const playSelectedSegment = async () => {
+    const player = audioRef.current;
+    if (!player || !isValidTrim) return;
+    player.currentTime = trimStart;
+    await player.play();
+  };
 
-              <button
-                onClick={() => setMode('upload')}
-                className="group p-8 rounded-lg border-2 border-freesound-orange/30 hover:border-freesound-orange/60 bg-freesound-dark hover:bg-freesound-dark/80 transition-all"
-              >
-                <div className="flex flex-col items-center gap-3">
-                  <svg
-                    className="w-8 h-8 text-freesound-orange group-hover:text-freesound-green transition-colors"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  <p className="font-bold text-white">Cargar</p>
-                  <p className="text-sm text-freesound-orange/60">Desde tu computadora</p>
-                </div>
-              </button>
-            </div>
-          ) : mode === 'record' ? (
-            <div className="bg-freesound-dark rounded-lg p-8 border border-freesound-yellow/20">
-              <div className="text-center mb-6">
-                <div className="inline-block w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center mb-4">
-                  <div className="w-8 h-8 bg-red-500 rounded-full animate-pulse"></div>
-                </div>
-                <p className="text-2xl font-bold text-white">
-                  {audioService.formatDuration(recorder.duration)}
-                </p>
-                <p className="text-freesound-yellow/60">Grabando...</p>
-              </div>
+  const handleTimeUpdate = () => {
+    const player = audioRef.current;
+    if (!player) return;
 
-              <button
-                onClick={handleStopRecording}
-                className="w-full py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <Square size={20} /> Detener
-              </button>
-            </div>
-          ) : (
-            <div>
-              <AudioUploadInput onFileSelected={handleFileSelected} isLoading={fileUpload.isLoading} />
-              <button
-                onClick={() => setMode('choose')}
-                className="mt-4 w-full py-2 text-freesound-yellow/60 hover:text-freesound-yellow transition-colors"
-              >
-                ← Volver
-              </button>
-              {fileUpload.error && (
-                <p className="mt-2 text-red-400 text-sm">{fileUpload.error}</p>
-              )}
-            </div>
-          )}
+    if (player.currentTime >= trimEnd) {
+      player.pause();
+      player.currentTime = trimStart;
+    }
+  };
 
-          {recorder.error && (
-            <p className="mt-4 text-red-400 text-sm text-center">{recorder.error}</p>
-          )}
-        </div>
-      </div>
-    );
-  }
+  const submitSearch = () => {
+    setSearchRequest({
+      query: '',
+      filters,
+      limit: 4,
+    });
+    setTrimSelection({ start: trimStart, end: trimEnd });
+    onAnalyze();
+  };
 
   return (
-    <div className="min-h-[calc(100vh-89px)] flex items-center justify-center px-8 py-12 bg-freesound-darker">
-      <div className="max-w-4xl w-full">
-        {/* Audio Preview Panel */}
-        <div
-          className="rounded-2xl p-8 mb-6 border-2"
-          style={{
-            background: '#1a1a1a',
-            borderColor: 'rgba(245, 212, 66, 0.2)',
-          }}
-        >
-          <div className="flex items-center gap-3 mb-6">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{
-                background: 'linear-gradient(135deg, #f5d442, #f5a742)',
-                boxShadow: '0 4px 16px rgba(245, 212, 66, 0.4)',
-              }}
-            >
-              <Mic className="w-6 h-6 text-freesound-darker" />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-white">Preview de Audio</h2>
-              <p className="text-freesound-yellow/60">Muestra del audio cargado</p>
-            </div>
-          </div>
-
-          {/* Waveform Visualization */}
-          <div className="mb-6">
-            <FreesoundWaveform
-              isPlaying={isPlaying}
-              duration={audioService.formatDuration(currentAudio.metadata.duration)}
-              progress={isPlaying ? 0.3 : 0}
-              height="h-32"
-            />
-          </div>
-
-          {/* Controls */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="w-14 h-14 rounded-full flex items-center justify-center transition-all hover:scale-110"
-              style={{
-                background: 'linear-gradient(135deg, #f5d442, #f5a742)',
-                boxShadow: '0 4px 20px rgba(245, 212, 66, 0.4)',
-              }}
-            >
-              {isPlaying ? (
-                <Pause className="w-6 h-6 text-freesound-darker" />
-              ) : (
-                <Play className="w-6 h-6 ml-1 text-freesound-darker" />
-              )}
-            </button>
-
-            <button
-              onClick={handleReset}
-              className="px-6 h-14 rounded-xl flex items-center gap-2 transition-all hover:bg-white/5 border-2 border-freesound-yellow/20 text-freesound-yellow/80 hover:text-freesound-yellow"
-            >
-              <RotateCcw className="w-5 h-5" />
-              Regrabar
-            </button>
-          </div>
-        </div>
-
-        {/* Info Cards */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="rounded-xl p-4 bg-freesound-yellow/10 border border-freesound-yellow/20">
-            <p className="text-sm text-freesound-yellow/60 mb-1">Duración</p>
-            <p className="text-xl font-bold text-freesound-yellow">
-              {audioService.formatDuration(currentAudio.metadata.duration)}
-            </p>
-          </div>
-          <div className="rounded-xl p-4 bg-freesound-orange/10 border border-freesound-orange/20">
-            <p className="text-sm text-freesound-orange/60 mb-1">Sample Rate</p>
-            <p className="text-xl font-bold text-freesound-orange">
-              {(currentAudio.metadata.sampleRate / 1000).toFixed(1)} kHz
-            </p>
-          </div>
-          <div className="rounded-xl p-4 bg-freesound-green/10 border border-freesound-green/20">
-            <p className="text-sm text-freesound-green/60 mb-1">Canales</p>
-            <p className="text-xl font-bold text-freesound-green">{currentAudio.metadata.channels}</p>
-          </div>
-        </div>
-
-        {/* Analyze Button */}
-        <button
-          onClick={handleAnalyze}
-          className="w-full py-5 rounded-xl font-bold text-lg transition-all hover:scale-[1.02]"
-          style={{
-            background: 'linear-gradient(135deg, #f5d442 0%, #88d442 100%)',
-            boxShadow: '0 8px 32px rgba(245, 212, 66, 0.4)',
-            color: '#0a0a0a',
-          }}
-        >
-          🔍 Analizar y Buscar Sonidos Similares
+    <section className="app-page">
+      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
+        <button onClick={onBack} className="ghost-action mb-8">
+          <ArrowLeft className="h-4 w-4" />
+          Back to overview
         </button>
+
+        <div className="flow-steps mb-8">
+          <div className="active">
+            <span>1</span>
+            <p>Choose audio</p>
+          </div>
+          <div className={currentAudio ? 'active' : ''}>
+            <span>2</span>
+            <p>Trim and preview</p>
+          </div>
+          <div className={currentAudio ? 'active' : ''}>
+            <span>3</span>
+            <p>Search Freesound</p>
+          </div>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr]">
+          <aside className="space-y-5">
+            <div>
+              <p className="section-kicker">Audio input</p>
+              <h1 className="mt-3 text-4xl font-bold leading-tight text-white md:text-5xl">
+                Record or upload a sound to start
+              </h1>
+              <p className="mt-4 text-base leading-7 text-slate-300">
+                Preview your audio, trim the part you want to use, choose optional search filters,
+                then find 4 real sounds from Freesound.
+              </p>
+            </div>
+
+            <div className="segmented-control">
+              <button
+                className={mode === 'record' ? 'active' : ''}
+                onClick={() => setMode('record')}
+                disabled={recorder.isRecording}
+              >
+                <Mic className="h-4 w-4" />
+                Record
+              </button>
+              <button
+                className={mode === 'upload' ? 'active' : ''}
+                onClick={() => setMode('upload')}
+                disabled={recorder.isRecording}
+              >
+                <FileAudio className="h-4 w-4" />
+                Upload
+              </button>
+            </div>
+
+            <div className="notice-card">
+              Temporary Freesound search mode enabled. Essentia descriptor matching will be
+              connected later.
+            </div>
+          </aside>
+
+          <div className="workspace-panel">
+            {mode === 'record' ? (
+              <div className="input-card">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Record from microphone</h2>
+                    <p className="mt-1 text-sm text-slate-300">
+                      Status:{' '}
+                      {recorder.isRecording
+                        ? 'recording'
+                        : currentAudio?.source === 'recording'
+                          ? 'recording ready'
+                          : 'ready to record'}
+                    </p>
+                  </div>
+                  <div className={`record-indicator ${recorder.isRecording ? 'recording' : ''}`} />
+                </div>
+
+                <div className="record-meter mt-5">
+                  <div>
+                    <p className="font-mono text-5xl font-bold text-white">
+                      {audioService.formatDuration(recorder.duration)}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-300">
+                      Browser permission is requested when recording starts.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                  {!recorder.isRecording ? (
+                    <button className="primary-action" onClick={handleStartRecording}>
+                      <Mic className="h-5 w-5" />
+                      Start recording
+                    </button>
+                  ) : (
+                    <button className="danger-action" onClick={handleStopRecording}>
+                      <Square className="h-5 w-5" />
+                      Stop recording
+                    </button>
+                  )}
+                  {currentAudio && (
+                    <button className="secondary-action" onClick={resetAudio}>
+                      <RotateCcw className="h-5 w-5" />
+                      Reset sample
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="input-card">
+                <h2 className="text-2xl font-bold text-white">Upload audio file</h2>
+                <p className="mt-1 text-sm text-slate-300">
+                  Select a local audio file and preview it before searching.
+                </p>
+                <div className="mt-5">
+                  <AudioUploadInput onFileSelected={handleFileSelected} isLoading={fileUpload.isLoading} />
+                </div>
+              </div>
+            )}
+
+            {(recorder.error || fileUpload.error) && (
+              <div className="status-message error">
+                <AlertCircle className="h-5 w-5" />
+                <p>{recorder.error || fileUpload.error}</p>
+              </div>
+            )}
+
+            {!currentAudio && (
+              <div className="empty-inline">
+                <FileAudio className="h-6 w-6 text-cyan-200" />
+                <p>No audio loaded yet. Record or upload a sound to unlock preview, trimming and filters.</p>
+              </div>
+            )}
+
+            {currentAudio && audioUrl && (
+              <div className="preview-panel">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2 text-lime-200">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="font-semibold">Audio ready to preview</span>
+                    </div>
+                    <h3 className="mt-2 text-xl font-bold text-white">
+                      {currentAudio.name || 'Recorded sample'}
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-300">
+                      {audioService.formatPreciseDuration(duration)} ·{' '}
+                      {(currentAudio.metadata.sampleRate / 1000).toFixed(1)} kHz ·{' '}
+                      {currentAudio.metadata.channels} channel
+                      {currentAudio.metadata.channels === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <div className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-sm font-semibold text-cyan-100">
+                    {currentAudio.source === 'recording' ? 'Recording' : 'Uploaded file'}
+                  </div>
+                </div>
+
+                <audio
+                  ref={audioRef}
+                  className="mt-5 w-full"
+                  src={audioUrl}
+                  controls
+                  preload="metadata"
+                  onTimeUpdate={handleTimeUpdate}
+                />
+
+                <div className="trim-card">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <h4 className="text-lg font-bold text-white">Trim and preview</h4>
+                      <p className="text-sm text-slate-300">
+                        Selected segment: {audioService.formatPreciseDuration(trimStart)} -{' '}
+                        {audioService.formatPreciseDuration(trimEnd)}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <button className="secondary-action" onClick={playSelectedSegment} disabled={!isValidTrim}>
+                        Play segment
+                      </button>
+                      <button className="ghost-action" onClick={resetTrim}>
+                        Reset trim
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    <label className="range-control">
+                      <span>Start time</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration}
+                        step={0.1}
+                        value={trimStart}
+                        onChange={(event) => applyTrim(Number(event.target.value), trimEnd)}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        max={duration}
+                        step={0.1}
+                        value={trimStart.toFixed(1)}
+                        onChange={(event) => applyTrim(Number(event.target.value), trimEnd)}
+                      />
+                    </label>
+
+                    <label className="range-control">
+                      <span>End time</span>
+                      <input
+                        type="range"
+                        min={0}
+                        max={duration}
+                        step={0.1}
+                        value={trimEnd}
+                        onChange={(event) => applyTrim(trimStart, Number(event.target.value))}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        max={duration}
+                        step={0.1}
+                        value={trimEnd.toFixed(1)}
+                        onChange={(event) => applyTrim(trimStart, Number(event.target.value))}
+                      />
+                    </label>
+                  </div>
+
+                  {!isValidTrim && (
+                    <p className="mt-3 text-sm text-amber-100">Start time must be lower than end time.</p>
+                  )}
+                </div>
+
+                <div className="filters-card">
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-lime-300 text-slate-950">
+                      <SlidersHorizontal className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-bold text-white">Choose optional search filters</h4>
+                      <p className="text-sm text-slate-300">
+                        These controls shape the temporary Freesound query.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <FilterSelect
+                      label="Category"
+                      value={filters.category}
+                      options={categories}
+                      onChange={(value) => updateFilter('category', value as SearchCategory)}
+                    />
+                    <FilterSelect
+                      label="Mood"
+                      value={filters.mood}
+                      options={moods}
+                      onChange={(value) => updateFilter('mood', value as SearchMood)}
+                    />
+                    <FilterSelect
+                      label="Duration"
+                      value={filters.duration}
+                      options={durations}
+                      onChange={(value) => updateFilter('duration', value as SearchDuration)}
+                    />
+                    <FilterSelect
+                      label="Sort"
+                      value={filters.sort}
+                      options={sorts}
+                      onChange={(value) => updateFilter('sort', value as SearchSort)}
+                    />
+                    <FilterSelect
+                      label="License"
+                      value={filters.license}
+                      options={licenses}
+                      onChange={(value) => updateFilter('license', value as SearchLicense)}
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button className="primary-action" onClick={submitSearch} disabled={!isValidTrim}>
+                    <Search className="h-5 w-5" />
+                    Search 4 Freesound examples
+                  </button>
+                  <p className="text-sm text-slate-300">
+                    Using temporary Freesound search until Essentia descriptor matching is connected.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
+  );
+}
+
+interface FilterSelectProps {
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (value: string) => void;
+}
+
+function FilterSelect({ label, value, options, onChange }: FilterSelectProps) {
+  return (
+    <label className="filter-select">
+      <span>{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)}>
+        {options.map((option) => (
+          <option key={option} value={option}>
+            {labels[option] || option}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
