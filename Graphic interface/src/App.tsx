@@ -7,21 +7,34 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AudioProvider } from './context/AudioContext';
 import { FreesoundProvider } from './context/FreesoundContext';
 
-type Page = 'home' | 'record' | 'results';
+type Page = 'home' | 'input' | 'results';
+type InputMode = 'record' | 'upload';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
+  const [initialInputMode, setInitialInputMode] = useState<InputMode>('record');
+
+  const openInput = (mode: InputMode = 'record') => {
+    setInitialInputMode(mode);
+    setCurrentPage('input');
+  };
 
   const renderPage = () => {
     switch (currentPage) {
       case 'home':
-        return <Home onNavigate={() => setCurrentPage('record')} />;
-      case 'record':
-        return <RecordUpload onAnalyze={() => setCurrentPage('results')} />;
+        return <Home onNavigate={openInput} />;
+      case 'input':
+        return (
+          <RecordUpload
+            initialMode={initialInputMode}
+            onAnalyze={() => setCurrentPage('results')}
+            onBack={() => setCurrentPage('home')}
+          />
+        );
       case 'results':
-        return <Results onBack={() => setCurrentPage('record')} />;
+        return <Results onBack={() => setCurrentPage('input')} />;
       default:
-        return <Home onNavigate={() => setCurrentPage('record')} />;
+        return <Home onNavigate={() => setCurrentPage('input')} />;
     }
   };
 

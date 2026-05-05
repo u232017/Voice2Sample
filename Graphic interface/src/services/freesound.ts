@@ -1,11 +1,38 @@
-import { FreesoundSound, FreesoundSearchResponse, FreesoundError } from './types';
+import {
+  FreesoundSearchFilters,
+  FreesoundSearchRequest,
+  FreesoundSearchResponse,
+  FreesoundSound,
+} from './types';
 
-const API_BASE = import.meta.env.VITE_FREESOUND_API_BASE || 'https://freesound.org/api/v2';
+const RAW_API_BASE = import.meta.env.VITE_FREESOUND_API_BASE || 'https://freesound.org/apiv2';
+const API_BASE = RAW_API_BASE.replace('/api/v2', '/apiv2').replace(/\/$/, '');
 const API_KEY = import.meta.env.VITE_FREESOUND_API_KEY;
 
-if (!API_KEY) {
-  throw new Error('VITE_FREESOUND_API_KEY is not defined. Please check your .env.local file');
-}
+const FALLBACK_QUERIES = [
+  'ambient',
+  'rain',
+  'footsteps',
+  'synth',
+  'bass',
+  'city',
+  'nature',
+  'percussion',
+  'piano',
+  'wind',
+  'glitch',
+  'loop',
+  'texture',
+  'impact',
+  'drone',
+];
+
+const sortMap: Record<FreesoundSearchFilters['sort'], string> = {
+  relevance: 'score',
+  rating: 'rating_desc',
+  downloads: 'downloads_desc',
+  recent: 'created_desc',
+};
 
 interface RequestOptions {
   retries?: number;
@@ -16,11 +43,17 @@ class FreesoundAPI {
   private apiKey: string;
   private baseUrl: string;
   private requestCache: Map<string, { data: unknown; timestamp: number }> = new Map();
-  private cacheDuration = 5 * 60 * 1000; // 5 minutes
+  private cacheDuration = 2 * 60 * 1000;
 
   constructor(apiKey: string, baseUrl: string) {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
+  }
+
+  private ensureConfigured(): void {
+    if (!this.apiKey) {
+      throw new Error('FREESOUND_API_KEY_MISSING');
+    }
   }
 
   private getCacheKey(method: string, params: Record<string, unknown>): string {
@@ -31,136 +64,177 @@ class FreesoundAPI {
     return Date.now() - cacheEntry.timestamp < this.cacheDuration;
   }
 
-  private async fetchWithRetry(
-    url: string,
-    options: RequestOptions = {}
-  ): Promise<Response> {
-    const { retries = 3, timeout = 10000 } = options;
+  private async fetchJson<T>(url: string, options: RequestOptions = {}): Promise<T> {
+    const { retries = 1, timeout = 12000 } = options;
     let lastError: Error | null = null;
+    this.ensureConfigured();
 
-    for (let i = 0; i < retries; i++) {
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), timeout);
+
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
-
         const response = await fetch(url, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          },
+          headers: { Accept: 'application/json' },
           signal: controller.signal,
         });
 
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
 
         if (!response.ok) {
-          const error: FreesoundError = {
-            code: response.status,
-            message: `HTTP ${response.status}: ${response.statusText}`,
-          };
-          throw new Error(JSON.stringify(error));
+          const body = await response.text().catch(() => '');
+          console.error('Freesound HTTP error', {
+            status: response.status,
+            statusText: response.statusText,
+            url,
+            body,
+          });
+          throw new Error(`FREESOUND_HTTP_${response.status}`);
         }
 
-        return response;
+        return (await response.json()) as T;
       } catch (error) {
+        window.clearTimeout(timeoutId);
         lastError = error instanceof Error ? error : new Error(String(error));
-        if (i < retries - 1) {
-          // Exponential backoff: 1s, 2s, 4s
-          await new Promise((resolve) => setTimeout(resolve, Math.pow(2, i) * 1000));
+
+        if (attempt < retries) {
+          await new Promise((resolve) => window.setTimeout(resolve, 600 * (attempt + 1)));
         }
       }
     }
 
-    throw lastError || new Error('Failed to fetch after retries');
+    throw lastError || new Error('FREESOUND_REQUEST_FAILED');
   }
 
-  async getSound(soundId: number): Promise<FreesoundSound> {
-    const cacheKey = this.getCacheKey('getSound', { soundId });
-    const cached = this.requestCache.get(cacheKey);
-
-    if (cached && this.isCacheValid(cached)) {
-      return cached.data as FreesoundSound;
-    }
-
-    const url = `${this.baseUrl}/sounds/${soundId}/?token=${this.apiKey}`;
-    const response = await this.fetchWithRetry(url);
-    const data = (await response.json()) as FreesoundSound;
-
-    this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
-    return data;
-  }
-
-  async searchSimilar(
-    audioBlob: Blob,
-    limit: number = 6
-  ): Promise<FreesoundSound[]> {
-    const formData = new FormData();
-    formData.append('file', audioBlob);
-    formData.append('target', 'tag');
-    formData.append('results_filter', 'tag');
-    formData.append('num_results', String(limit));
-
-    const url = `${this.baseUrl}/sounds/similar_sounds/?token=${this.apiKey}`;
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
-      const response = await fetch(url, {
-        method: 'POST',
-        body: formData,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const data = await response.json() as FreesoundSearchResponse;
-      return data.results;
-    } catch (error) {
-      console.error('Error searching similar sounds:', error);
-      throw error;
-    }
-  }
-
-  async search(query: string, limit: number = 6): Promise<FreesoundSound[]> {
-    const cacheKey = this.getCacheKey('search', { query, limit });
+  async search(request: FreesoundSearchRequest): Promise<FreesoundSound[]> {
+    const query = this.resolveQuery(request.query, request.filters);
+    const filter = this.buildFilter(request.filters);
+    const limit = Math.min(Math.max(request.limit, 1), 4);
+    const cacheKey = this.getCacheKey('search', { query, filter, limit, filters: request.filters });
     const cached = this.requestCache.get(cacheKey);
 
     if (cached && this.isCacheValid(cached)) {
       return cached.data as FreesoundSound[];
     }
 
-    const url = new URL(`${this.baseUrl}/sounds/search/`);
-    url.searchParams.append('query', query);
-    url.searchParams.append('token', this.apiKey);
-    url.searchParams.append('limit', String(limit));
-    url.searchParams.append('sort', 'rating_desc');
+    const url = new URL(`${this.baseUrl}/search/`);
+    url.searchParams.set('query', query);
+    url.searchParams.set('token', this.apiKey);
+    url.searchParams.set('page_size', String(limit));
+    url.searchParams.set('page', String(Math.floor(Math.random() * 3) + 1));
+    url.searchParams.set('sort', sortMap[request.filters.sort]);
+    url.searchParams.set(
+      'fields',
+      [
+        'id',
+        'name',
+        'username',
+        'duration',
+        'tags',
+        'previews',
+        'images',
+        'url',
+        'license',
+        'description',
+        'created',
+        'num_downloads',
+        'avg_rating',
+        'num_ratings',
+        'num_comments',
+        'samplerate',
+        'channels',
+        'bitrate',
+      ].join(',')
+    );
 
-    const response = await this.fetchWithRetry(url.toString());
-    const data = (await response.json()) as FreesoundSearchResponse;
+    if (filter) {
+      url.searchParams.set('filter', filter);
+    }
 
-    this.requestCache.set(cacheKey, { data: data.results, timestamp: Date.now() });
-    return data.results;
+    const data = await this.fetchJson<FreesoundSearchResponse>(url.toString());
+    const results = data.results.slice(0, limit);
+    this.requestCache.set(cacheKey, { data: results, timestamp: Date.now() });
+    return results;
   }
 
   getPreviewUrl(sound: FreesoundSound): string | undefined {
-    return sound.previews?.['preview-hq-mp3'] || sound.previews?.['preview-lq-mp3'];
-  }
-
-  getDownloadUrl(soundId: number): string {
-    return `${this.baseUrl}/sounds/${soundId}/download/?token=${this.apiKey}`;
+    return (
+      sound.previews?.['preview-hq-mp3'] ||
+      sound.previews?.['preview-lq-mp3'] ||
+      sound.previews?.['preview-hq-ogg'] ||
+      sound.previews?.['preview-lq-ogg']
+    );
   }
 
   getWaveformUrl(sound: FreesoundSound): string | undefined {
     return sound.images?.waveform_m || sound.images?.waveform_l;
   }
 
+  getHumanError(error: unknown): string {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (message === 'FREESOUND_API_KEY_MISSING') {
+      return 'Freesound API key is missing. Add VITE_FREESOUND_API_KEY to .env.local.';
+    }
+
+    if (message.startsWith('FREESOUND_HTTP_401') || message.startsWith('FREESOUND_HTTP_403')) {
+      return 'Freesound request failed. Check your API key permissions.';
+    }
+
+    if (message.startsWith('FREESOUND_HTTP_404')) {
+      return 'Freesound endpoint was not found. Check the API base URL configuration.';
+    }
+
+    if (message.includes('AbortError')) {
+      return 'Freesound request timed out. Check your network connection and try again.';
+    }
+
+    return 'Freesound request failed. Check your API key or network connection.';
+  }
+
   clearCache(): void {
     this.requestCache.clear();
+  }
+
+  private resolveQuery(query: string, filters: FreesoundSearchFilters): string {
+    const terms = [filters.mood, filters.category].filter((term) => term !== 'any');
+
+    if (filters.license === 'creative_commons') {
+      terms.push('creative commons');
+    }
+
+    if (filters.license === 'commercial_friendly') {
+      terms.push('cc0');
+    }
+
+    if (query.trim()) {
+      return query.trim();
+    }
+
+    if (terms.length) {
+      return terms.join(' ');
+    }
+
+    return FALLBACK_QUERIES[Math.floor(Math.random() * FALLBACK_QUERIES.length)];
+  }
+
+  private buildFilter(filters: FreesoundSearchFilters): string {
+    const parts: string[] = [];
+
+    if (filters.duration === 'short') {
+      parts.push('duration:[0 TO 5]');
+    }
+
+    if (filters.duration === 'medium') {
+      parts.push('duration:[5 TO 30]');
+    }
+
+    if (filters.duration === 'long') {
+      parts.push('duration:[30 TO *]');
+    }
+
+    return parts.join(' ');
   }
 }
 
