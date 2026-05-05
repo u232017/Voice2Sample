@@ -1,5 +1,5 @@
-import { AudioWaveform, Settings, Info } from "lucide-react";
-import { ReactNode } from "react";
+import { AudioWaveform, ExternalLink, Info } from 'lucide-react';
+import { ReactNode } from 'react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -8,33 +8,40 @@ interface LayoutProps {
 
 export function Layout({ children, onHome }: LayoutProps) {
   return (
-    <div className="dark min-h-screen flex flex-col" style={{ background: '#0a0a0a' }}>
-      {/* Top Navigation Bar */}
-      <nav className="border-b px-8 py-4 flex items-center justify-between" style={{ borderColor: 'rgba(245, 212, 66, 0.15)', background: '#1a1a1a' }}>
-        <button onClick={onHome} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f5d442 0%, #f5a742 100%)' }}>
-            <AudioWaveform className="w-6 h-6" style={{ color: '#0a0a0a' }} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight" style={{ color: '#f5d442' }}>SonicMatch</h1>
-            <p className="text-xs" style={{ color: 'rgba(136, 212, 66, 0.7)' }}>AI-Powered Sound Discovery</p>
-          </div>
-        </button>
-
-        <div className="flex items-center gap-4">
-          <button className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:bg-white/5" style={{ border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-            <Info className="w-5 h-5" style={{ color: 'rgba(255, 255, 255, 0.6)' }} />
+    <div className="min-h-screen bg-slate-950 text-white">
+      <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/88 backdrop-blur-xl">
+        <nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 md:px-8">
+          <button onClick={onHome} className="flex items-center gap-3 text-left" aria-label="Go home">
+            <span className="grid h-11 w-11 place-items-center rounded-lg bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-500/20">
+              <AudioWaveform className="h-6 w-6" />
+            </span>
+            <span>
+              <span className="block text-lg font-bold leading-5 text-white">SonicMatch</span>
+              <span className="text-xs font-medium text-slate-300">
+                Descriptor-based sound discovery
+              </span>
+            </span>
           </button>
-          <button className="w-10 h-10 rounded-lg flex items-center justify-center transition-all hover:bg-white/5" style={{ border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-            <Settings className="w-5 h-5" style={{ color: 'rgba(255, 255, 255, 0.6)' }} />
-          </button>
-        </div>
-      </nav>
 
-      {/* Main Content */}
-      <main className="flex-1">
-        {children}
-      </main>
+          <div className="flex items-center gap-2">
+            <a
+              href="https://freesound.org"
+              target="_blank"
+              rel="noreferrer"
+              className="icon-button hidden sm:grid"
+              title="Freesound"
+              aria-label="Open Freesound"
+            >
+              <ExternalLink className="h-5 w-5" />
+            </a>
+            <button className="icon-button" title="About this flow" aria-label="About this flow">
+              <Info className="h-5 w-5" />
+            </button>
+          </div>
+        </nav>
+      </header>
+
+      <main>{children}</main>
     </div>
   );
 }

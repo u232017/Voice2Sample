@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Mic } from 'lucide-react';
+import { FileAudio, Upload } from 'lucide-react';
 
 interface AudioUploadInputProps {
   onFileSelected: (file: File) => void;
@@ -10,61 +10,51 @@ export const AudioUploadInput: React.FC<AudioUploadInputProps> = ({ onFileSelect
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      onFileSelected(files[0]);
+  const submitFile = (file?: File) => {
+    if (file) {
+      onFileSelected(file);
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      onFileSelected(e.target.files[0]);
-    }
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(false);
+    submitFile(event.dataTransfer.files[0]);
   };
 
   return (
     <div
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setIsDragging(true);
+      }}
+      onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
-      className={`relative p-8 rounded-lg border-2 border-dashed transition-all cursor-pointer ${
-        isDragging
-          ? 'border-freesound-yellow bg-freesound-yellow/10'
-          : 'border-freesound-yellow/30 bg-freesound-yellow/5 hover:bg-freesound-yellow/10'
-      }`}
+      className={`upload-zone ${isDragging ? 'upload-zone-active' : ''}`}
       onClick={() => fileInputRef.current?.click()}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          fileInputRef.current?.click();
+        }
+      }}
     >
       <input
         ref={fileInputRef}
         type="file"
         accept="audio/*"
-        onChange={handleFileChange}
+        onChange={(event) => submitFile(event.target.files?.[0])}
         disabled={isLoading}
         className="hidden"
       />
 
-      <div className="flex flex-col items-center gap-2 pointer-events-none">
-        <Upload className="w-8 h-8 text-freesound-yellow/70" />
-        <div className="text-center">
-          <p className="font-semibold text-white">Arrastra tu archivo aquí</p>
-          <p className="text-sm text-freesound-yellow/60">o haz clic para seleccionar</p>
-        </div>
-        <p className="text-xs text-freesound-yellow/40 mt-2">
-          WAV, MP3, OGG, FLAC (máx 50MB)
-        </p>
+      <div className="grid h-14 w-14 place-items-center rounded-lg bg-cyan-300 text-slate-950">
+        {isLoading ? <Upload className="h-7 w-7 animate-pulse" /> : <FileAudio className="h-7 w-7" />}
+      </div>
+      <div>
+        <p className="text-lg font-bold text-white">Drop an audio file here</p>
+        <p className="mt-1 text-sm text-slate-300">or click to choose WAV, MP3, OGG, FLAC or M4A</p>
       </div>
     </div>
   );

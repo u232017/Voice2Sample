@@ -1,101 +1,101 @@
-import { Sparkles, Mic, Upload } from "lucide-react";
+import { ArrowRight, Database, FileAudio, Mic, SlidersHorizontal, Waves } from 'lucide-react';
 
 interface HomeProps {
-  onNavigate: (mode: string) => void;
+  onNavigate: (mode: 'record' | 'upload') => void;
 }
+
+const bars = [34, 62, 44, 78, 52, 88, 38, 70, 48, 82, 58, 92, 42, 74, 54, 84, 46, 66];
 
 export function Home({ onNavigate }: HomeProps) {
   return (
-    <div className="min-h-[calc(100vh-89px)] flex items-center justify-center px-8 py-12 relative overflow-hidden" style={{ background: '#0a0a0a' }}>
-      {/* Background Audio Visualization */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-8">
-        <div className="flex items-end gap-1 h-64">
-          {Array.from({ length: 64 }).map((_, i) => (
-            <div
-              key={i}
-              className="w-2 animate-pulse"
-              style={{
-                background: 'linear-gradient(to top, #f5a742, #f5d442, #88d442)',
-                height: `${Math.random() * 100}%`,
-                borderRadius: '1px',
-              }}
-            />
-          ))}
-        </div>
-      </div>
+    <section className="app-page overflow-hidden">
+      <div className="mx-auto grid min-h-[calc(100vh-76px)] w-full max-w-7xl grid-cols-1 items-center gap-12 px-5 py-10 md:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:py-14">
+        <div className="max-w-3xl">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-sm font-semibold text-cyan-100">
+            <Waves className="h-4 w-4" />
+            Audio Descriptor-Based Sound Discovery
+          </div>
 
-      {/* Main Content */}
-      <div className="relative z-10 max-w-4xl w-full">
-        <div className="text-center mb-12">
-          <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6" style={{ background: 'rgba(245, 212, 66, 0.1)', border: '1px solid rgba(245, 212, 66, 0.3)' }}>
-              <Sparkles className="w-4 h-4" style={{ color: '#f5d442' }} />
-              <span className="text-sm" style={{ color: '#f5d442' }}>Powered by Freesound API</span>
+          <h1 className="max-w-4xl text-5xl font-bold leading-[1.02] text-white md:text-7xl">
+            SonicMatch
+          </h1>
+
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-200 md:text-xl">
+            Record or upload a sound, preview and trim it, choose simple filters, then load 4 real
+            sound examples from Freesound while Essentia descriptor matching is prepared.
+          </p>
+
+          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+            <button className="primary-action" onClick={() => onNavigate('record')}>
+              <Mic className="h-5 w-5" />
+              Record sound
+              <ArrowRight className="h-5 w-5" />
+            </button>
+            <button className="secondary-action" onClick={() => onNavigate('upload')}>
+              <FileAudio className="h-5 w-5" />
+              Upload audio
+            </button>
+          </div>
+
+          <div className="mt-10 grid gap-3 sm:grid-cols-3">
+            <div className="feature-tile">
+              <SlidersHorizontal className="h-5 w-5 text-cyan-200" />
+              <span>Essentia-ready flow</span>
             </div>
-            <h1 className="text-6xl font-bold mb-4 tracking-tight text-white">
-              Find Your Perfect Sound
-            </h1>
-            <p className="text-xl mb-2" style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              Discover similar sounds from Freesound using advanced audio matching
-            </p>
+            <div className="feature-tile">
+              <Database className="h-5 w-5 text-lime-200" />
+              <span>Real Freesound results</span>
+            </div>
+            <div className="feature-tile">
+              <Waves className="h-5 w-5 text-amber-200" />
+              <span>Preview before analysis</span>
+            </div>
           </div>
         </div>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-2 gap-6 max-w-3xl mx-auto">
-          <button
-            onClick={() => onNavigate("record")}
-            className="group"
-          >
-            <div className="relative p-8 rounded-2xl transition-all duration-300 hover:scale-105" style={{
-              background: 'linear-gradient(135deg, rgba(245, 212, 66, 0.08) 0%, rgba(245, 212, 66, 0.03) 100%)',
-              border: '2px solid rgba(245, 212, 66, 0.3)',
-            }}>
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all group-hover:scale-110" style={{
-                  background: 'linear-gradient(135deg, #f5d442 0%, #f5a742 100%)',
-                  boxShadow: '0 8px 24px rgba(245, 212, 66, 0.4)',
-                }}>
-                  <Mic className="w-8 h-8" style={{ color: '#0a0a0a' }} />
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-white">Record Sound</h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                  Capture audio directly from your microphone
+        <div className="relative">
+          <div className="sound-panel">
+            <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-5">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">
+                  Guided Flow
                 </p>
+                <h2 className="mt-2 text-2xl font-bold text-white">From sample to results</h2>
+              </div>
+              <div className="rounded-full border border-lime-300/30 bg-lime-300/10 px-3 py-1 text-sm font-semibold text-lime-100">
+                Live API
               </div>
             </div>
-          </button>
 
-          <button
-            onClick={() => onNavigate("upload")}
-            className="group"
-          >
-            <div className="relative p-8 rounded-2xl transition-all duration-300 hover:scale-105" style={{
-              background: 'linear-gradient(135deg, rgba(136, 212, 66, 0.08) 0%, rgba(136, 212, 66, 0.03) 100%)',
-              border: '2px solid rgba(136, 212, 66, 0.3)',
-            }}>
-              <div className="relative">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all group-hover:scale-110" style={{
-                  background: 'linear-gradient(135deg, #88d442 0%, #6fb032 100%)',
-                  boxShadow: '0 8px 24px rgba(136, 212, 66, 0.4)',
-                }}>
-                  <Upload className="w-8 h-8" style={{ color: '#0a0a0a' }} />
-                </div>
-                <h3 className="text-2xl font-bold mb-2 text-white">Upload Audio</h3>
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)' }}>
-                  Import an existing audio file from your device
-                </p>
-              </div>
+            <div className="my-8 flex h-44 items-end gap-2 rounded-lg border border-white/10 bg-slate-950/70 px-4 py-5">
+              {bars.map((height, index) => (
+                <div
+                  key={index}
+                  className="wave-bar"
+                  style={{
+                    height: `${height}%`,
+                    animationDelay: `${index * 70}ms`,
+                  }}
+                />
+              ))}
             </div>
-          </button>
-        </div>
 
-        <div className="mt-12 text-center">
-          <p className="text-sm" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>
-            Supports WAV, MP3, OGG, and FLAC formats
-          </p>
+            <div className="space-y-3">
+              {[
+                'Choose audio',
+                'Trim and preview',
+                'Pick filters',
+                'Search Freesound',
+              ].map((item, index) => (
+                <div key={item} className="flow-row">
+                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <p>{item}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

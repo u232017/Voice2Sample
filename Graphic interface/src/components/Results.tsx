@@ -1,6 +1,5 @@
-import { ArrowLeft } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import { FreesoundWaveform } from './FreesoundWaveform';
+import { useEffect } from 'react';
+import { AlertCircle, ArrowLeft, Database, RefreshCw, Search } from 'lucide-react';
 import { SoundCard } from './SoundCard';
 import { LoadingSpinner } from './LoadingSpinner';
 import { useFreesound } from '../hooks/useFreesound';
@@ -12,15 +11,14 @@ interface ResultsProps {
 }
 
 export function Results({ onBack }: ResultsProps) {
-  const { currentAudio } = useAudio();
-  const { results, isLoading, error, searchSimilar, clearResults } = useFreesound();
-  const [playingId, setPlayingId] = useState<number | null>(null);
+  const { currentAudio, searchRequest, trimSelection } = useAudio();
+  const { results, isLoading, error, lastRequest, searchExamples, clearResults } = useFreesound();
 
   useEffect(() => {
     if (currentAudio) {
-      searchSimilar(currentAudio, 6);
+      searchExamples(searchRequest);
     }
-  }, [currentAudio]);
+  }, [currentAudio, searchExamples, searchRequest]);
 
   const handleBack = () => {
     clearResults();
@@ -29,123 +27,143 @@ export function Results({ onBack }: ResultsProps) {
 
   if (!currentAudio) {
     return (
-      <div className="min-h-[calc(100vh-89px)] flex items-center justify-center bg-freesound-darker">
-        <button
-          onClick={onBack}
-          className="px-6 py-3 text-freesound-yellow hover:text-freesound-orange transition-colors"
-        >
-          ← Volver
-        </button>
-      </div>
+      <section className="app-page grid min-h-[calc(100vh-76px)] place-items-center px-5">
+        <div className="empty-state">
+          <AlertCircle className="mx-auto h-8 w-8 text-amber-200" />
+          <h1 className="mt-4 text-2xl font-bold text-white">No audio sample selected</h1>
+          <button onClick={handleBack} className="primary-action mt-6">
+            <ArrowLeft className="h-5 w-5" />
+            Choose audio
+          </button>
+        </div>
+      </section>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-89px)] px-8 py-12 bg-freesound-darker">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+    <section className="app-page">
+      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
+        <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="text-4xl font-bold mb-2 text-white">Sonidos Similares Encontrados</h2>
-            <p className="text-freesound-yellow/70">
-              {results.length} resultados de la base de datos de Freesound
+            <p className="section-kicker">Real Freesound API results</p>
+            <h1 className="mt-3 text-4xl font-bold leading-tight text-white md:text-5xl">
+              4 sounds from Freesound
+            </h1>
+            <p className="mt-3 max-w-3xl text-slate-300">
+              Temporary Freesound search mode is enabled. These are real Freesound results, not
+              descriptor-matched recommendations yet.
             </p>
           </div>
-          <button
-            onClick={handleBack}
-            className="px-6 py-3 rounded-xl flex items-center gap-2 border-2 border-freesound-yellow/30 hover:border-freesound-yellow/60 text-freesound-yellow hover:text-freesound-orange transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Volver
+          <button onClick={handleBack} className="secondary-action">
+            <ArrowLeft className="h-5 w-5" />
+            Back to audio
           </button>
         </div>
 
-        {/* Original Sound Panel */}
-        <div
-          className="rounded-2xl p-6 mb-8 border-2"
-          style={{
-            background: '#1a1a1a',
-            borderColor: 'rgba(245, 212, 66, 0.3)',
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6 flex-1">
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center"
-                style={{
-                  background: 'linear-gradient(135deg, #f5d442, #f5a742)',
-                  boxShadow: '0 4px 20px rgba(245, 212, 66, 0.4)',
-                }}
-              >
-                <span className="text-lg text-freesound-darker">▶</span>
+        <div className="mb-8 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="summary-card">
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-lg bg-cyan-300 text-slate-950">
+                <Search className="h-5 w-5" />
               </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Your audio sample</h2>
+                <p className="text-sm text-slate-300">{currentAudio.name || 'Recorded sample'}</p>
+              </div>
+            </div>
+            <div className="mt-5 grid grid-cols-3 gap-2">
+              <div className="metric-box">
+                <span>Total</span>
+                <strong>{audioService.formatPreciseDuration(currentAudio.metadata.duration)}</strong>
+              </div>
+              <div className="metric-box">
+                <span>Selected</span>
+                <strong>
+                  {trimSelection
+                    ? `${audioService.formatDuration(trimSelection.start)}-${audioService.formatDuration(trimSelection.end)}`
+                    : 'Full'}
+                </strong>
+              </div>
+              <div className="metric-box">
+                <span>Channels</span>
+                <strong>{currentAudio.metadata.channels}</strong>
+              </div>
+            </div>
+          </div>
 
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-3">
-                  <h3 className="text-xl font-bold text-white">Tu Sonido Original</h3>
-                  <span className="px-3 py-1 rounded-full text-xs bg-freesound-yellow/20 text-freesound-yellow">
-                    Fuente
+          <div className="summary-card">
+            <div className="flex items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-lg bg-lime-300 text-slate-950">
+                <Database className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Search sent to Freesound</h2>
+                <p className="text-sm text-slate-300">
+                  Query:{' '}
+                  <span className="font-semibold text-white">
+                    {lastRequest?.query || 'generated from selected filters'}
                   </span>
-                </div>
-                <FreesoundWaveform
-                  isPlaying={playingId === 0}
-                  duration={audioService.formatDuration(currentAudio.metadata.duration)}
-                  progress={playingId === 0 ? 0.4 : 0}
-                  height="h-16"
-                />
+                </p>
+              </div>
+            </div>
+            <div className="mt-5 grid gap-2 sm:grid-cols-4">
+              <div className="metric-box">
+                <span>Category</span>
+                <strong>{searchRequest.filters.category}</strong>
+              </div>
+              <div className="metric-box">
+                <span>Mood</span>
+                <strong>{searchRequest.filters.mood}</strong>
+              </div>
+              <div className="metric-box">
+                <span>Duration</span>
+                <strong>{searchRequest.filters.duration}</strong>
+              </div>
+              <div className="metric-box">
+                <span>Sort</span>
+                <strong>{searchRequest.filters.sort}</strong>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Loading State */}
         {isLoading && (
-          <div className="flex justify-center py-12">
+          <div className="loading-panel">
             <LoadingSpinner />
           </div>
         )}
 
-        {/* Error State */}
         {error && !isLoading && (
-          <div className="bg-red-900/10 border-2 border-red-500/30 rounded-lg p-6 text-center">
-            <p className="text-red-400 mb-3">{error}</p>
-            <button
-              onClick={() => searchSimilar(currentAudio, 6)}
-              className="px-6 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg transition-colors"
-            >
-              Intentar de nuevo
+          <div className="status-message error">
+            <AlertCircle className="h-5 w-5" />
+            <p>{error}</p>
+            <button onClick={() => searchExamples(searchRequest)} className="ghost-action ml-auto">
+              <RefreshCw className="h-4 w-4" />
+              Retry
             </button>
           </div>
         )}
 
-        {/* Empty State */}
         {!isLoading && !error && results.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-freesound-yellow/60 mb-3">No se encontraron sonidos similares</p>
-            <button
-              onClick={() => searchSimilar(currentAudio, 6)}
-              className="px-6 py-2 bg-freesound-yellow/20 hover:bg-freesound-yellow/30 text-freesound-yellow rounded-lg transition-colors"
-            >
-              Buscar de nuevo
+          <div className="empty-state">
+            <Database className="mx-auto h-8 w-8 text-cyan-200" />
+            <h2 className="mt-4 text-2xl font-bold text-white">No Freesound results found</h2>
+            <p className="mt-2 text-slate-300">Try broader filters or search again.</p>
+            <button onClick={() => searchExamples(searchRequest)} className="primary-action mt-6">
+              <RefreshCw className="h-5 w-5" />
+              Search again
             </button>
           </div>
         )}
 
-        {/* Results Grid */}
         {!isLoading && results.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {results.map((sound) => (
-              <SoundCard
-                key={sound.id}
-                sound={sound}
-                isPlaying={playingId === sound.id}
-                onPlay={() => setPlayingId(sound.id)}
-                onPause={() => setPlayingId(null)}
-              />
+          <div className="space-y-4">
+            {results.slice(0, 4).map((sound) => (
+              <SoundCard key={sound.id} sound={sound} />
             ))}
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

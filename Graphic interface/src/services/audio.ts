@@ -12,6 +12,10 @@ class AudioService {
 
   async startRecording(): Promise<void> {
     try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Tu navegador no permite grabar audio desde esta pagina.');
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this.audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
 
@@ -33,7 +37,13 @@ class AudioService {
       this.mediaRecorder.start();
     } catch (error) {
       console.error('Error accessing microphone:', error);
-      throw new Error('Unable to access microphone. Please check permissions.');
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        throw new Error('Permiso de microfono denegado. Activa el acceso al microfono para grabar.');
+      }
+      if (error instanceof Error && error.name === 'NotFoundError') {
+        throw new Error('No se encontro ningun microfono disponible.');
+      }
+      throw new Error(error instanceof Error ? error.message : 'No se pudo acceder al microfono.');
     }
   }
 
@@ -54,6 +64,9 @@ class AudioService {
             blob: audioBlob,
             metadata,
             arrayBuffer,
+            name: `Recording ${new Date().toLocaleTimeString()}`,
+            source: 'recording',
+            mimeType: audioBlob.type,
           });
 
           // Cleanup
@@ -90,15 +103,15 @@ class AudioService {
   async validateFile(file: File): Promise<void> {
     const extension = file.name.split('.').pop()?.toLowerCase();
 
-    if (!extension || !SUPPORTED_FORMATS.includes(extension)) {
+    if (!file.type.startsWith('audio/') && (!extension || !SUPPORTED_FORMATS.includes(extension))) {
       throw new Error(
-        `Unsupported format: ${extension}. Supported formats: ${SUPPORTED_FORMATS.join(', ')}`
+        `Archivo no valido. Usa un archivo de audio (${SUPPORTED_FORMATS.join(', ')}).`
       );
     }
 
     if (file.size > MAX_FILE_SIZE) {
       throw new Error(
-        `File too large: ${(file.size / 1024 / 1024).toFixed(2)}MB. Maximum size: ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(2)}MB`
+        `El archivo pesa ${(file.size / 1024 / 1024).toFixed(2)}MB. El maximo es ${(MAX_FILE_SIZE / 1024 / 1024).toFixed(2)}MB.`
       );
     }
   }
@@ -113,6 +126,9 @@ class AudioService {
       blob: file,
       metadata,
       arrayBuffer,
+      name: file.name,
+      source: 'upload',
+      mimeType: file.type,
     };
   }
 
@@ -139,7 +155,7 @@ class AudioService {
     }
   }
 
-  private calculateWaveformData(audioBuffer: AudioBuffer, samples: number = 512): number[] {
+  calculateWaveformData(audioBuffer: AudioBuffer, samples: number = 512): number[] {
     const rawData = audioBuffer.getChannelData(0);
     const blockSize = Math.floor(rawData.length / samples);
     const waveformData: number[] = [];
@@ -155,6 +171,12 @@ class AudioService {
     return waveformData;
   }
 
+  async decodeAudio(audioBlob: Blob): Promise<AudioBuffer> {
+    const audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    return audioContext.decodeAudioData(arrayBuffer);
+  }
+
   getRecordingDuration(): number {
     if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
       return 0;
@@ -163,13 +185,21 @@ class AudioService {
   }
 
   isRecording(): boolean {
-    return this.mediaRecorder?.state === 'recording' ?? false;
+    return this.mediaRecorder?.state === 'recording' || false;
   }
 
   formatDuration(seconds: number): string {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  }
+
+  formatPreciseDuration(seconds: number): string {
+    const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+    const mins = Math.floor(safeSeconds / 60);
+    const secs = Math.floor(safeSeconds % 60);
+    const millis = Math.floor((safeSeconds - Math.floor(safeSeconds)) * 1000);
+    return `${mins}:${secs.toString().padStart(2, '0')}.${millis.toString().padStart(3, '0')}`;
   }
 }
 

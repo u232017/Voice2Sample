@@ -1,111 +1,138 @@
-import React, { useState } from 'react';
-import { Download, Play, Pause } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { ExternalLink, MessageSquare, Play, Star, Tag } from 'lucide-react';
 import { FreesoundSound } from '../services/types';
 import { freesoundAPI } from '../services/freesound';
+import { audioService } from '../services/audio';
 
 interface SoundCardProps {
   sound: FreesoundSound;
-  isPlaying?: boolean;
-  onPlay?: () => void;
-  onPause?: () => void;
 }
 
-export const SoundCard: React.FC<SoundCardProps> = ({ sound, isPlaying, onPlay, onPause }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const previewUrl = freesoundAPI.getPreviewUrl(sound);
-  const downloadUrl = freesoundAPI.getDownloadUrl(sound.id);
+const formatDate = (date?: string) => {
+  if (!date) return 'Unknown date';
+  return new Intl.DateTimeFormat('en', { year: 'numeric', month: 'short', day: 'numeric' }).format(
+    new Date(date)
+  );
+};
 
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+const cleanDescription = (description?: string) => {
+  if (!description?.trim()) return 'Real Freesound result. Open the original page for full details.';
+  return description.replace(/<[^>]+>/g, '').trim();
+};
+
+export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const previewUrl = freesoundAPI.getPreviewUrl(sound);
+  const waveformUrl = freesoundAPI.getWaveformUrl(sound);
+  const owner = sound.owner?.username || sound.username || 'Freesound user';
+  const tags = sound.tags || [];
+
+  const togglePreview = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (audio.paused) {
+      await audio.play();
+      setIsPlaying(true);
+    } else {
+      audio.pause();
+      setIsPlaying(false);
+    }
   };
 
   return (
-    <div
-      className="bg-gradient-to-br from-freesound-darker via-freesound-dark to-freesound-darker border border-freesound-yellow/10 rounded-lg overflow-hidden hover:border-freesound-yellow/30 transition-all duration-300 hover:shadow-lg hover:shadow-freesound-yellow/20"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Header */}
-      <div className="p-4 bg-gradient-to-r from-freesound-yellow/10 to-freesound-orange/10 border-b border-freesound-yellow/10">
-        <h3 className="font-bold text-white truncate hover:text-freesound-yellow transition-colors">
-          {sound.name}
-        </h3>
-        <p className="text-sm text-freesound-yellow/70 truncate">by {sound.owner.username}</p>
-      </div>
-
-      {/* Content */}
-      <div className="p-4 space-y-3">
-        {/* Metadata Grid */}
-        <div className="grid grid-cols-2 gap-2 text-xs">
-          <div className="bg-freesound-yellow/5 p-2 rounded">
-            <span className="text-freesound-yellow/60">Duration</span>
-            <p className="font-semibold text-white">{formatDuration(sound.duration)}</p>
+    <article className="freesound-row">
+      <div className="result-waveform">
+        {waveformUrl ? (
+          <img src={waveformUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="mini-wave h-full" aria-hidden="true">
+            {Array.from({ length: 26 }).map((_, index) => (
+              <span key={index} style={{ height: `${24 + ((index * 17) % 68)}%` }} />
+            ))}
           </div>
-          <div className="bg-freesound-orange/5 p-2 rounded">
-            <span className="text-freesound-orange/60">Sample Rate</span>
-            <p className="font-semibold text-white">{(sound.samplerate / 1000).toFixed(1)}kHz</p>
-          </div>
-          <div className="bg-freesound-green/5 p-2 rounded">
-            <span className="text-freesound-green/60">Bitrate</span>
-            <p className="font-semibold text-white">{sound.bitrate / 1000}kbps</p>
-          </div>
-          <div className="bg-freesound-yellow/5 p-2 rounded">
-            <span className="text-freesound-yellow/60">Channels</span>
-            <p className="font-semibold text-white">{sound.channels}</p>
-          </div>
-        </div>
-
-        {/* Tags */}
-        <div className="flex flex-wrap gap-1">
-          {sound.tags.slice(0, 3).map((tag) => (
-            <span
-              key={tag}
-              className="text-xs px-2 py-1 bg-freesound-orange/10 text-freesound-orange rounded-full border border-freesound-orange/20"
-            >
-              {tag}
-            </span>
-          ))}
-          {sound.tags.length > 3 && (
-            <span className="text-xs px-2 py-1 text-freesound-yellow/60">+{sound.tags.length - 3}</span>
-          )}
-        </div>
-
-        {/* Description */}
-        {sound.description && (
-          <p className="text-xs text-freesound-yellow/50 line-clamp-2">{sound.description}</p>
         )}
-      </div>
-
-      {/* Footer */}
-      <div className="p-3 bg-freesound-darker/50 border-t border-freesound-yellow/10 flex gap-2">
-        {previewUrl && (
-          <button
-            onClick={isPlaying ? onPause : onPlay}
-            className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-freesound-yellow to-freesound-orange hover:from-freesound-orange hover:to-freesound-green text-freesound-darker font-semibold py-2 rounded-lg transition-all transform hover:scale-105"
-          >
-            {isPlaying ? (
-              <>
-                <Pause size={16} /> Pausar
-              </>
-            ) : (
-              <>
-                <Play size={16} /> Escuchar
-              </>
-            )}
-          </button>
-        )}
-        <a
-          href={downloadUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-2 bg-freesound-green/10 hover:bg-freesound-green/20 text-freesound-green border border-freesound-green/30 font-semibold py-2 px-3 rounded-lg transition-all"
+        <button
+          className="wave-play"
+          onClick={togglePreview}
+          disabled={!previewUrl}
+          aria-label={`Play ${sound.name}`}
         >
-          <Download size={16} />
-          {isHovered && <span className="text-xs">Descargar</span>}
-        </a>
+          <Play className={`h-5 w-5 ${isPlaying ? 'fill-current' : ''}`} />
+        </button>
+        <span className="wave-duration">{audioService.formatPreciseDuration(sound.duration || 0)}</span>
+        {previewUrl && (
+          <audio
+            ref={audioRef}
+            src={previewUrl}
+            preload="none"
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => setIsPlaying(false)}
+          />
+        )}
       </div>
-    </div>
+
+      <div className="result-main">
+        <div>
+          <h3 className="text-xl font-bold leading-snug text-white">{sound.name}</h3>
+          <p className="mt-1 text-sm text-slate-300">
+            by <span className="font-semibold text-cyan-100">{owner}</span> · {formatDate(sound.created)}
+          </p>
+        </div>
+
+        <p className="line-clamp-2 text-sm leading-6 text-slate-300">{cleanDescription(sound.description)}</p>
+
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {tags.slice(0, 7).map((tag) => (
+              <span key={tag} className="tag-pill">
+                <Tag className="h-3 w-3" />
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <aside className="result-meta">
+        <div className="meta-grid">
+          <div>
+            <span>Rating</span>
+            <strong>
+              <Star className="h-4 w-4" />
+              {typeof sound.avg_rating === 'number' ? sound.avg_rating.toFixed(1) : 'n/a'}
+            </strong>
+          </div>
+          <div>
+            <span>Ratings</span>
+            <strong>{sound.num_ratings ?? 'n/a'}</strong>
+          </div>
+          <div>
+            <span>Downloads</span>
+            <strong>{sound.num_downloads ?? 'n/a'}</strong>
+          </div>
+          <div>
+            <span>Comments</span>
+            <strong>
+              <MessageSquare className="h-4 w-4" />
+              {sound.num_comments ?? 'n/a'}
+            </strong>
+          </div>
+        </div>
+
+        <p className="line-clamp-2 text-xs leading-5 text-slate-400">{sound.license || 'License not provided'}</p>
+
+        <a
+          href={sound.url || `https://freesound.org/s/${sound.id}/`}
+          target="_blank"
+          rel="noreferrer"
+          className="card-link"
+        >
+          View on Freesound
+          <ExternalLink className="h-4 w-4" />
+        </a>
+      </aside>
+    </article>
   );
 };
