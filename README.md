@@ -1,6 +1,6 @@
-# Technology Music Lab (S101)
+# Voice2Sample
 
-Repositorio de laboratorio para explorar el cruce entre tecnologia y musica. Incluye herramientas de preparacion de datasets, analisis de audio con descriptores, modelos de machine learning y una interfaz grafica para pruebas.
+Voice2Sample es una aplicacion para productores que quieran buscar loops y sonidos para sus creaciones. Incluye herramientas de preparacion de datasets, analisis de audio con descriptores, modelos de machine learning y una interfaz grafica para pruebas.
 
 ## Que hace el proyecto
 - Preparacion de datasets (conversion a WAV, limpieza de CSV, JSON a CSV).
@@ -19,7 +19,7 @@ Repositorio de laboratorio para explorar el cruce entre tecnologia y musica. Inc
 - Machine learning: `torch`, `transformers`, `librosa`, `scikit-learn`, `scipy`, `numpy`.
 - Visualizacion: `matplotlib`, `seaborn`.
 
-Nota: `essentia` puede requerir instalacion con conda o binarios precompilados segun el sistema.
+Nota: `essentia` no tiene binarios oficiales para Windows. Para usarlo en Windows necesitas WSL y configurar el entorno Linux con las dependencias de `essentia`.
 
 ## Instalacion (Python)
 ```bash
