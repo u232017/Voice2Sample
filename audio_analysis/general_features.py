@@ -10,6 +10,7 @@ def save_json(data, filename):
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
+#music extractor de freesound utiles para musica
 
 def to_serializable(val):
     """Convierte valores numpy/escalares a tipos serializables."""
