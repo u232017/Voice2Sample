@@ -23,8 +23,8 @@ Nota: `essentia` puede requerir instalacion con conda o binarios precompilados s
 
 ## Instalacion (Python)
 ```bash
-python -m venv venv
-venv\Scripts\activate
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requeriments.txt
 ```
 
@@ -59,7 +59,7 @@ technology-music-lab-s101/
 │  ├─ README.md
 │  ├─ rhythmic_features.py
 │  └─ timbre_features.py
-├─ base_datos_audios/
+├
 ├─ Dataset/
 │  ├─ .venv/
 │  ├─ audio_processed/
@@ -134,8 +134,6 @@ technology-music-lab-s101/
 │  └─ node_modules/
 ├─ graphic_interface_v2/
 │  └─ holi.txt
-├─ Include/
-├─ Lib/
 ├─ Machine_learning/
 │  ├─ base_datos_audios/
 │  │  ├─ 246288__afleetingspeck__open-e-guitar-chord-hit-percussion.wav
@@ -153,12 +151,8 @@ technology-music-lab-s101/
 │  ├─ modelo_ml.py
 │  ├─ README.md
 │  └─ requeriments.txt
-├─ Scripts/
-├─ share/
-├─ venv/
+|
 ├─ .gitignore
-├─ freesound_classification.ipynb
-├─ pyvenv.cfg
 ├─ README.md
 └─ requeriments.txt
 ```
