@@ -190,13 +190,13 @@ export function RecordUpload({ initialMode = 'record', onAnalyze, onBack }: Reco
 
   return (
     <section className="app-page">
-      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
+      <div className="mx-auto max-w-7xl px-5 py-7 md:px-8 md:py-10">
         <button onClick={onBack} className="ghost-action mb-8">
           <ArrowLeft className="h-4 w-4" />
           Back to overview
         </button>
 
-        <div className="flow-steps mb-8">
+        <div className="flow-steps mb-7">
           <div className="active">
             <span>1</span>
             <p>Choose audio</p>
@@ -211,11 +211,11 @@ export function RecordUpload({ initialMode = 'record', onAnalyze, onBack }: Reco
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr]">
+        <div className="grid gap-7 lg:grid-cols-[0.68fr_1.32fr]">
           <aside className="space-y-5">
             <div>
               <p className="section-kicker">Audio input</p>
-              <h1 className="mt-3 text-4xl font-bold leading-tight text-white md:text-5xl">
+              <h1 className="mt-3 text-4xl font-black leading-tight text-white md:text-5xl">
                 Record or upload a sound to start
               </h1>
               <p className="mt-4 text-base leading-7 text-slate-300">
@@ -336,8 +336,8 @@ export function RecordUpload({ initialMode = 'record', onAnalyze, onBack }: Reco
                       {currentAudio.name || 'Recorded sample'}
                     </h3>
                     <p className="mt-1 text-sm text-slate-300">
-                      {audioService.formatPreciseDuration(duration)} ·{' '}
-                      {(currentAudio.metadata.sampleRate / 1000).toFixed(1)} kHz ·{' '}
+                      {audioService.formatPreciseDuration(duration)} -{' '}
+                      {(currentAudio.metadata.sampleRate / 1000).toFixed(1)} kHz -{' '}
                       {currentAudio.metadata.channels} channel
                       {currentAudio.metadata.channels === 1 ? '' : 's'}
                     </p>
