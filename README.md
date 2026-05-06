@@ -39,7 +39,7 @@ npm run dev
 Nota: se incluyen carpetas de entorno y dependencias para reflejar toda la estructura, aunque no se listan sus archivos internos.
 
 ```text
-technology-music-lab-s101/
+Voice2Sample/
 ├─ .git/
 ├─ .venv/
 ├─ .vscode/
