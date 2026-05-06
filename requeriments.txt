@@ -1,4 +1,17 @@
-matplotlib
+# Core cientifico
 numpy
+scipy
+pandas
+
+# Visualizacion
+matplotlib
 seaborn
+
+# Machine learning / audio
 scikit-learn
+librosa
+torch
+transformers
+
+# Analisis de audio (Essentia)
+essentia
