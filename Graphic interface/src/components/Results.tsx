@@ -54,7 +54,7 @@ export function Results({ onBack }: ResultsProps) {
           </div>
           <button onClick={handleBack} className="secondary-action">
             <ArrowLeft className="h-5 w-5" />
-            Back to audio
+            Adjust sound
           </button>
         </div>
 

@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ExternalLink, Play, Star } from 'lucide-react';
+import { MessageCircle, Play, Star } from 'lucide-react';
 import { FreesoundSound } from '../services/types';
 import { freesoundAPI } from '../services/freesound';
 import { audioService } from '../services/audio';
@@ -14,9 +14,11 @@ export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
   const previewUrl = freesoundAPI.getPreviewUrl(sound);
   const waveformUrl = freesoundAPI.getWaveformUrl(sound);
   const owner = sound.owner?.username || sound.username || 'Freesound user';
-  const tag = sound.tags?.[0];
+  const tags = sound.tags?.slice(0, 3) || [];
+  const url = sound.url || `https://freesound.org/s/${sound.id}/`;
 
-  const togglePreview = async () => {
+  const togglePreview = async (event: React.MouseEvent) => {
+    event.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -30,51 +32,54 @@ export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
   };
 
   return (
-    <article className="sound-result-card">
-      <header className="sound-result-head">
-        <div>
-          <h3>{sound.name}</h3>
-          <p>by {owner}</p>
-        </div>
-        {tag && <span className="sound-result-tag">{tag}</span>}
-      </header>
-
-      <div className="sound-result-wave">
+    <article
+      className="compact-result-card"
+      onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+      title="Open this sound on Freesound"
+    >
+      <div className="compact-result-wave">
         {waveformUrl ? (
           <img src={waveformUrl} alt="" />
         ) : (
           <div className="sound-result-placeholder" aria-hidden="true">
-            {Array.from({ length: 22 }).map((_, index) => (
+            {Array.from({ length: 18 }).map((_, index) => (
               <span key={index} style={{ height: `${22 + ((index * 19) % 64)}%` }} />
             ))}
           </div>
         )}
+        <button onClick={togglePreview} disabled={!previewUrl} className="compact-play-button" aria-label={`Play ${sound.name}`}>
+          <Play className={`h-4 w-4 ${isPlaying ? 'fill-current' : ''}`} />
+        </button>
         <span>{audioService.formatPreciseDuration(sound.duration || 0)}</span>
       </div>
 
-      <div className="sound-result-stats">
-        <span>
-          <Star className="h-4 w-4" />
-          {typeof sound.avg_rating === 'number' ? sound.avg_rating.toFixed(1) : 'n/a'}
-        </span>
-        <span>{sound.num_downloads ?? 'n/a'} downloads</span>
-        <span>{sound.license || 'License n/a'}</span>
-      </div>
+      <div className="compact-result-body">
+        <div className="compact-result-title">
+          <h3>{sound.name}</h3>
+          <p>{owner}</p>
+        </div>
 
-      <footer className="sound-result-actions">
-        <button onClick={togglePreview} disabled={!previewUrl} className="sound-play-button">
-          <Play className={`h-5 w-5 ${isPlaying ? 'fill-current' : ''}`} />
-        </button>
-        <a
-          href={sound.url || `https://freesound.org/s/${sound.id}/`}
-          target="_blank"
-          rel="noreferrer"
-          className="sound-open-button"
-        >
-          View on Freesound
-          <ExternalLink className="h-4 w-4" />
-        </a>
-      </footer>
+        {tags.length > 0 && (
+          <div className="compact-tags">
+            {tags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+        )}
+
+        <div className="compact-result-meta">
+          <span>
+            <Star className="h-3.5 w-3.5" />
+            {typeof sound.avg_rating === 'number' ? sound.avg_rating.toFixed(1) : 'n/a'}
+          </span>
+          <span>{sound.num_downloads ?? 0} downloads</span>
+          <span>
+            <MessageCircle className="h-3.5 w-3.5" />
+            {sound.num_comments ?? 0}
+          </span>
+        </div>
+        <p className="compact-license">{sound.license || 'License not provided'}</p>
+      </div>
 
       {previewUrl && (
         <audio
