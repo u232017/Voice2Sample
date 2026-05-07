@@ -39,7 +39,7 @@ npm run dev
 Note: environment and dependency folders are included to reflect the full structure, even if their internal files are not listed.
 
 ```text
-technology-music-lab-s101/
+Voice2Sample/
 ├─ .git/
 ├─ .venv/
 ├─ .vscode/
