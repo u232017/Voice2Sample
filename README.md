@@ -1,42 +1,42 @@
 # Voice2Sample
 
-Voice2Sample es una aplicacion para productores que quieran buscar loops y sonidos para sus creaciones. Incluye herramientas de preparacion de datasets, analisis de audio con descriptores, modelos de machine learning y una interfaz grafica para pruebas.
+Voice2Sample is an application for producers who want to search for loops and sounds for their creations. It includes tools for dataset preparation, audio analysis with descriptors, machine learning models, and a web interface for testing.
 
-## Que hace el proyecto
-- Preparacion de datasets (conversion a WAV, limpieza de CSV, JSON a CSV).
-- Analisis de audio con descriptores (timbre, ritmo, melodia).
-- Busqueda de sonidos por similitud usando embeddings y KNN.
-- Interfaz grafica web para cargar o grabar audio y visualizar resultados.
+## What the project does
+- Dataset preparation (WAV conversion, CSV cleanup, JSON to CSV).
+- Audio analysis with descriptors (timbre, rhythm, melody).
+- Similarity search using embeddings and KNN.
+- Web UI to upload or record audio and view results.
 
-## Requisitos generales
+## General requirements
 - Python 3.10+.
-- Node.js 18+ (para la interfaz grafica).
-- Dependencias Python en [requeriments.txt](requeriments.txt).
+- Node.js 18+ (for the web interface).
+- Python dependencies in [requeriments.txt](requeriments.txt).
 
-## Requisitos por area (Python)
-- Dataset: `pandas`.
-- Analisis de audio: `essentia`, `numpy`.
+## Requirements by area (Python)
+- Dataset: `pandas`,`ffmpeg`.
+- Audio analysis: `essentia`, `numpy`, `matplotlib`, `seaborn`, `scikit-learn`.
 - Machine learning: `torch`, `transformers`, `librosa`, `scikit-learn`, `scipy`, `numpy`.
-- Visualizacion: `matplotlib`, `seaborn`.
+- Visualization: `npm`, `matplotlib`, `seaborn`.
 
-Nota: `essentia` no tiene binarios oficiales para Windows. Para usarlo en Windows necesitas WSL y configurar el entorno Linux con las dependencias de `essentia`.
+Note: `essentia` does not provide official Windows binaries. On Windows, use WSL and set up a Linux environment with the `essentia` dependencies.
 
-## Instalacion (Python)
+## Installation (Python)
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requeriments.txt
 ```
 
-## Instalacion (Interfaz grafica)
+## Installation (Web interface)
 ```bash
 cd "Graphic interface"
 npm install
 npm run dev
 ```
 
-## Estructura del repositorio
-Nota: se incluyen carpetas de entorno y dependencias para reflejar toda la estructura, aunque no se listan sus archivos internos.
+## Repository structure
+Note: environment and dependency folders are included to reflect the full structure, even if their internal files are not listed.
 
 ```text
 technology-music-lab-s101/
@@ -157,5 +157,5 @@ technology-music-lab-s101/
 └─ requeriments.txt
 ```
 
-## Licencia
-Agrega una licencia cuando el proyecto lo requiera.
+## License
+Add a license when the project requires it.
