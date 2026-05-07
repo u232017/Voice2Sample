@@ -6,7 +6,7 @@ SonicMatch is the frontend for a descriptor-based sound discovery project. The p
 user audio -> Essentia descriptors -> acoustic comparison -> Freesound recommendations
 ```
 
-Essentia descriptor matching is not connected yet. The current app runs in **Temporary Freesound search mode**: after the user records or uploads audio, the frontend lets them preview, trim, choose filters, and request 4 real sounds from the Freesound API.
+Essentia descriptor matching is not connected yet. The current app opens with a welcome screen, then runs in **Temporary Freesound search mode** inside one compact dashboard: the user records or uploads audio, previews and trims it on a waveform, searches Freesound, then refines the results with compact filters.
 
 ## Setup
 
@@ -41,16 +41,22 @@ npm run preview
 
 Vite usually serves the app at `http://localhost:5173/`.
 
-## Current Flow
+## Current Dashboard Flow
 
-1. Choose audio  
-   Record from the microphone or upload an audio file.
+0. Welcome screen  
+   Introduces SonicMatch, explains the Freesound requirement, and opens the dashboard.
+
+1. Your sound  
+   Record from the microphone or upload an audio file in the left panel.
 
 2. Trim and preview  
-   Listen to the audio, choose start and end times, play only the selected segment, and reset the trim if needed.
+   Keep the audio visible, generate a real waveform from the uploaded/recorded audio, select a region directly on the waveform, and play either the full audio or only the selected segment.
 
-3. Search Freesound  
-   Choose optional filters and request 4 real Freesound results.
+3. Freesound recommendations  
+   Request 4 real Freesound results in the right panel without changing views.
+
+4. Refine search  
+   After results appear, open compact filters and update the results.
 
 ## Freesound Integration
 
@@ -66,7 +72,7 @@ No result names, authors, ratings, durations or tags are invented. If Freesound 
 
 ## Filters
 
-Filters live in the audio preview screen before the search button.
+Filters live below the results in a compact refine section.
 
 - Category changes the query text, for example `nature` or `percussion`.
 - Mood changes the query text, for example `calm nature`.
@@ -78,7 +84,7 @@ If no filters are selected, the app picks one temporary query from examples such
 
 ## Audio Trimming
 
-Trimming is implemented in the UI with start and end controls. The selected segment can be played back in the browser and is stored in shared state.
+Trimming is implemented visually in `src/components/AudioWaveform.tsx`. The component decodes the user audio with Web Audio, draws a real waveform on canvas, and lets the user drag a selectable region. The selected segment can be played back in the browser and is stored in shared state.
 
 Current limitation: the frontend does not yet generate a physically trimmed audio Blob. That is prepared for a future iteration, when the selected segment can be exported and passed into the Essentia descriptor pipeline.
 
@@ -103,10 +109,13 @@ Graphic interface/
     components/
       Home.tsx
       Layout.tsx
+      WelcomeScreen.tsx
       RecordUpload.tsx
+      AudioWaveform.tsx
       Results.tsx
       SoundCard.tsx
       AudioUploadInput.tsx
+      LoadingRecommendations.tsx
       LoadingSpinner.tsx
       ErrorBoundary.tsx
     context/

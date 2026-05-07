@@ -1,24 +1,25 @@
-import { AudioWaveform, ExternalLink, Info } from 'lucide-react';
+import { ExternalLink, Info } from 'lucide-react';
 import { ReactNode } from 'react';
+import { FallingNotesBackground } from './FallingNotesBackground';
+import { BrandLogo } from './BrandLogo';
 
 interface LayoutProps {
   children: ReactNode;
-  onHome: () => void;
+  onHome?: () => void;
 }
 
 export function Layout({ children, onHome }: LayoutProps) {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <header className="sticky top-0 z-40 border-b border-white/10 bg-slate-950/88 backdrop-blur-xl">
-        <nav className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 md:px-8">
-          <button onClick={onHome} className="flex items-center gap-3 text-left" aria-label="Go home">
-            <span className="grid h-11 w-11 place-items-center rounded-lg bg-cyan-300 text-slate-950 shadow-lg shadow-cyan-500/20">
-              <AudioWaveform className="h-6 w-6" />
-            </span>
-            <span>
-              <span className="block text-lg font-bold leading-5 text-white">SonicMatch</span>
-              <span className="text-xs font-medium text-slate-300">
-                Descriptor-based sound discovery
+    <div className="app-frame min-h-screen bg-slate-950 text-white">
+      <FallingNotesBackground />
+      <header className="app-header">
+        <nav className="mx-auto flex h-[58px] max-w-7xl items-center justify-between px-4 md:px-6">
+          <button onClick={onHome} className="app-brand-button" aria-label="Go home">
+            <BrandLogo />
+            <span className="app-brand-copy">
+              <span className="block text-lg font-black leading-5 text-amber-300">Voice to Sample</span>
+              <span className="text-xs font-medium text-lime-400/85">
+                SonicMatch sound discovery
               </span>
             </span>
           </button>
@@ -41,7 +42,7 @@ export function Layout({ children, onHome }: LayoutProps) {
         </nav>
       </header>
 
-      <main>{children}</main>
+      <main className="app-main">{children}</main>
     </div>
   );
 }

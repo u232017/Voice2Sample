@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { AlertCircle, ArrowLeft, Database, RefreshCw, Search } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Database, RefreshCw } from 'lucide-react';
 import { SoundCard } from './SoundCard';
 import { LoadingSpinner } from './LoadingSpinner';
 import { useFreesound } from '../hooks/useFreesound';
 import { useAudio } from '../context/AudioContext';
-import { audioService } from '../services/audio';
 
 interface ResultsProps {
   onBack: () => void;
@@ -42,89 +41,29 @@ export function Results({ onBack }: ResultsProps) {
 
   return (
     <section className="app-page">
-      <div className="mx-auto max-w-7xl px-5 py-8 md:px-8 md:py-12">
-        <div className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+      <div className="mx-auto max-w-7xl px-5 py-7 md:px-8 md:py-10">
+        <div className="results-hero mb-6 flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="section-kicker">Real Freesound API results</p>
-            <h1 className="mt-3 text-4xl font-bold leading-tight text-white md:text-5xl">
-              4 sounds from Freesound
+            <p className="section-kicker">Freesound results</p>
+            <h1 className="mt-2 text-4xl font-black leading-tight text-white md:text-5xl">
+              Real sound matches
             </h1>
-            <p className="mt-3 max-w-3xl text-slate-300">
-              Temporary Freesound search mode is enabled. These are real Freesound results, not
-              descriptor-matched recommendations yet.
+            <p className="mt-2 max-w-2xl text-slate-400">
+              4 real sounds from Freesound. Query: {lastRequest?.query || 'selected filters'}.
             </p>
           </div>
           <button onClick={handleBack} className="secondary-action">
             <ArrowLeft className="h-5 w-5" />
-            Back to audio
+            Adjust sound
           </button>
         </div>
 
-        <div className="mb-8 grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="summary-card">
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-lg bg-cyan-300 text-slate-950">
-                <Search className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Your audio sample</h2>
-                <p className="text-sm text-slate-300">{currentAudio.name || 'Recorded sample'}</p>
-              </div>
-            </div>
-            <div className="mt-5 grid grid-cols-3 gap-2">
-              <div className="metric-box">
-                <span>Total</span>
-                <strong>{audioService.formatPreciseDuration(currentAudio.metadata.duration)}</strong>
-              </div>
-              <div className="metric-box">
-                <span>Selected</span>
-                <strong>
-                  {trimSelection
-                    ? `${audioService.formatDuration(trimSelection.start)}-${audioService.formatDuration(trimSelection.end)}`
-                    : 'Full'}
-                </strong>
-              </div>
-              <div className="metric-box">
-                <span>Channels</span>
-                <strong>{currentAudio.metadata.channels}</strong>
-              </div>
-            </div>
-          </div>
-
-          <div className="summary-card">
-            <div className="flex items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-lg bg-lime-300 text-slate-950">
-                <Database className="h-5 w-5" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-white">Search sent to Freesound</h2>
-                <p className="text-sm text-slate-300">
-                  Query:{' '}
-                  <span className="font-semibold text-white">
-                    {lastRequest?.query || 'generated from selected filters'}
-                  </span>
-                </p>
-              </div>
-            </div>
-            <div className="mt-5 grid gap-2 sm:grid-cols-4">
-              <div className="metric-box">
-                <span>Category</span>
-                <strong>{searchRequest.filters.category}</strong>
-              </div>
-              <div className="metric-box">
-                <span>Mood</span>
-                <strong>{searchRequest.filters.mood}</strong>
-              </div>
-              <div className="metric-box">
-                <span>Duration</span>
-                <strong>{searchRequest.filters.duration}</strong>
-              </div>
-              <div className="metric-box">
-                <span>Sort</span>
-                <strong>{searchRequest.filters.sort}</strong>
-              </div>
-            </div>
-          </div>
+        <div className="result-filter-strip mb-6">
+          <span>{currentAudio.name || 'Audio sample'}</span>
+          <span>{searchRequest.filters.category}</span>
+          <span>{searchRequest.filters.mood}</span>
+          <span>{searchRequest.filters.sort}</span>
+          {trimSelection && <span>trim selected</span>}
         </div>
 
         {isLoading && (
@@ -157,7 +96,7 @@ export function Results({ onBack }: ResultsProps) {
         )}
 
         {!isLoading && results.length > 0 && (
-          <div className="space-y-4">
+          <div className="results-grid">
             {results.slice(0, 4).map((sound) => (
               <SoundCard key={sound.id} sound={sound} />
             ))}

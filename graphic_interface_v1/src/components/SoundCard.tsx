@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ExternalLink, MessageSquare, Play, Star, Tag } from 'lucide-react';
+import { MessageCircle, Play, Star } from 'lucide-react';
 import { FreesoundSound } from '../services/types';
 import { freesoundAPI } from '../services/freesound';
 import { audioService } from '../services/audio';
@@ -8,27 +8,17 @@ interface SoundCardProps {
   sound: FreesoundSound;
 }
 
-const formatDate = (date?: string) => {
-  if (!date) return 'Unknown date';
-  return new Intl.DateTimeFormat('en', { year: 'numeric', month: 'short', day: 'numeric' }).format(
-    new Date(date)
-  );
-};
-
-const cleanDescription = (description?: string) => {
-  if (!description?.trim()) return 'Real Freesound result. Open the original page for full details.';
-  return description.replace(/<[^>]+>/g, '').trim();
-};
-
 export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const previewUrl = freesoundAPI.getPreviewUrl(sound);
   const waveformUrl = freesoundAPI.getWaveformUrl(sound);
   const owner = sound.owner?.username || sound.username || 'Freesound user';
-  const tags = sound.tags || [];
+  const tags = sound.tags?.slice(0, 3) || [];
+  const url = sound.url || `https://freesound.org/s/${sound.id}/`;
 
-  const togglePreview = async () => {
+  const togglePreview = async (event: React.MouseEvent) => {
+    event.stopPropagation();
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -42,97 +32,64 @@ export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
   };
 
   return (
-    <article className="freesound-row">
-      <div className="result-waveform">
+    <article
+      className="compact-result-card"
+      onClick={() => window.open(url, '_blank', 'noopener,noreferrer')}
+      title="Open this sound on Freesound"
+    >
+      <div className="compact-result-wave">
         {waveformUrl ? (
-          <img src={waveformUrl} alt="" className="h-full w-full object-cover" />
+          <img src={waveformUrl} alt="" />
         ) : (
-          <div className="mini-wave h-full" aria-hidden="true">
-            {Array.from({ length: 26 }).map((_, index) => (
-              <span key={index} style={{ height: `${24 + ((index * 17) % 68)}%` }} />
+          <div className="sound-result-placeholder" aria-hidden="true">
+            {Array.from({ length: 18 }).map((_, index) => (
+              <span key={index} style={{ height: `${22 + ((index * 19) % 64)}%` }} />
             ))}
           </div>
         )}
-        <button
-          className="wave-play"
-          onClick={togglePreview}
-          disabled={!previewUrl}
-          aria-label={`Play ${sound.name}`}
-        >
-          <Play className={`h-5 w-5 ${isPlaying ? 'fill-current' : ''}`} />
+        <button onClick={togglePreview} disabled={!previewUrl} className="compact-play-button" aria-label={`Play ${sound.name}`}>
+          <Play className={`h-4 w-4 ${isPlaying ? 'fill-current' : ''}`} />
         </button>
-        <span className="wave-duration">{audioService.formatPreciseDuration(sound.duration || 0)}</span>
-        {previewUrl && (
-          <audio
-            ref={audioRef}
-            src={previewUrl}
-            preload="none"
-            onPause={() => setIsPlaying(false)}
-            onEnded={() => setIsPlaying(false)}
-          />
-        )}
+        <span>{audioService.formatPreciseDuration(sound.duration || 0)}</span>
       </div>
 
-      <div className="result-main">
-        <div>
-          <h3 className="text-xl font-bold leading-snug text-white">{sound.name}</h3>
-          <p className="mt-1 text-sm text-slate-300">
-            by <span className="font-semibold text-cyan-100">{owner}</span> · {formatDate(sound.created)}
-          </p>
+      <div className="compact-result-body">
+        <div className="compact-result-title">
+          <h3>{sound.name}</h3>
+          <p>{owner}</p>
         </div>
-
-        <p className="line-clamp-2 text-sm leading-6 text-slate-300">{cleanDescription(sound.description)}</p>
 
         {tags.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {tags.slice(0, 7).map((tag) => (
-              <span key={tag} className="tag-pill">
-                <Tag className="h-3 w-3" />
-                {tag}
-              </span>
+          <div className="compact-tags">
+            {tags.map((tag) => (
+              <span key={tag}>{tag}</span>
             ))}
           </div>
         )}
+
+        <div className="compact-result-meta">
+          <span>
+            <Star className="h-3.5 w-3.5" />
+            {typeof sound.avg_rating === 'number' ? sound.avg_rating.toFixed(1) : 'n/a'}
+          </span>
+          <span>{sound.num_downloads ?? 0} downloads</span>
+          <span>
+            <MessageCircle className="h-3.5 w-3.5" />
+            {sound.num_comments ?? 0}
+          </span>
+        </div>
+        <p className="compact-license">{sound.license || 'License not provided'}</p>
       </div>
 
-      <aside className="result-meta">
-        <div className="meta-grid">
-          <div>
-            <span>Rating</span>
-            <strong>
-              <Star className="h-4 w-4" />
-              {typeof sound.avg_rating === 'number' ? sound.avg_rating.toFixed(1) : 'n/a'}
-            </strong>
-          </div>
-          <div>
-            <span>Ratings</span>
-            <strong>{sound.num_ratings ?? 'n/a'}</strong>
-          </div>
-          <div>
-            <span>Downloads</span>
-            <strong>{sound.num_downloads ?? 'n/a'}</strong>
-          </div>
-          <div>
-            <span>Comments</span>
-            <strong>
-              <MessageSquare className="h-4 w-4" />
-              {sound.num_comments ?? 'n/a'}
-            </strong>
-          </div>
-        </div>
-
-        <p className="line-clamp-2 text-xs leading-5 text-slate-400">{sound.license || 'License not provided'}</p>
-
-        <a
-          href={sound.url || `https://freesound.org/s/${sound.id}/`}
-          target="_blank"
-          rel="noreferrer"
-          className="card-link"
-        >
-          View on Freesound
-          <ExternalLink className="h-4 w-4" />
-        </a>
-      </aside>
+      {previewUrl && (
+        <audio
+          ref={audioRef}
+          src={previewUrl}
+          preload="none"
+          onPause={() => setIsPlaying(false)}
+          onEnded={() => setIsPlaying(false)}
+        />
+      )}
     </article>
   );
 };
