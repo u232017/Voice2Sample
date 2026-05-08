@@ -1,0 +1,45 @@
+{
+  "timestamp": "2026-05-08T10:50:30",
+  "audio_dir": "C:\\Users\\34615\\Desktop\\Voice2Sample\\Machine_Learning\\base_datos_audios",
+  "metadata_json": "C:\\Users\\34615\\Desktop\\Voice2Sample\\Dataset\\metadata_prueba",
+  "metadata_audio_dir": "C:\\Users\\34615\\Desktop\\Voice2Sample\\Dataset\\audio_prueba",
+  "dataset_stats": {
+    "total_files": 5,
+    "processed_files": 5,
+    "failed_files": 0,
+    "total_duration_sec": 14.076570578231292,
+    "mean_duration_sec": 2.8153141156462587,
+    "median_duration_sec": 2.0,
+    "min_duration_sec": 1.4396371882086167,
+    "max_duration_sec": 5.6250113378684805,
+    "mean_size_bytes": 583658.4,
+    "duplicate_hashes": 0,
+    "format_counts": {
+      ".wav": 5
+    }
+  },
+  "embedding_stats": {
+    "total_files": 5,
+    "processed_files": 5,
+    "failed_files": 0,
+    "mean_time_sec": 7.602345991134643,
+    "median_time_sec": 0.49231815338134766,
+    "min_time_sec": 0.40686464309692383,
+    "max_time_sec": 35.94422483444214
+  },
+  "neighbor_stats": {
+    "total_queries": 5,
+    "mean_cosine_similarity": 0.448065447807312,
+    "median_cosine_similarity": 0.5015262365341187,
+    "min_cosine_similarity": 0.2889682650566101,
+    "max_cosine_similarity": 0.5344322919845581
+  },
+  "metadata_file_count": 3,
+  "metadata_audio_processed": 3,
+  "bpm_stats": {
+    "total_queries": 3,
+    "bpm_agreement_rate": 0.0,
+    "mean_abs_bpm_diff": 32.333333333333336,
+    "median_abs_bpm_diff": 40.0
+  }
+}
