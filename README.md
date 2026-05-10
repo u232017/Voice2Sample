@@ -5,7 +5,7 @@ Voice2Sample is an application for producers who want to search for loops and so
 ## What the project does
 - Dataset preparation (WAV conversion, CSV cleanup, JSON to CSV).
 - Audio analysis with descriptors (timbre, rhythm, melody).
-- Similarity search using embeddings and KNN.
+- Similarity search using acoustic descriptors over the local `Dataset` audio files.
 - Web UI to upload or record audio and view results.
 
 ## General requirements
@@ -28,12 +28,24 @@ python -m venv .venv
 pip install -r requeriments.txt
 ```
 
-## Installation (Web interface)
+## Installation (Backend API)
+Run the local API from the repository root:
+
 ```bash
-cd "Graphic interface"
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+```
+
+The API will be available at `http://127.0.0.1:8000`.
+Recommendations are produced from `Dataset/audio_prueba` and `Dataset/metadata_prueba`; the API does not perform global Freesound searches for final results.
+
+## Installation (Web interface v1)
+```bash
+cd graphic_interface_v1
 npm install
 npm run dev
 ```
+
+The web app runs at `http://localhost:4173`.
 
 ## Repository structure
 Note: environment and dependency folders are included to reflect the full structure, even if their internal files are not listed.
@@ -83,7 +95,7 @@ Voice2Sample/
 │  └─ readme.md
 ├─ evaluation/
 │  └─ añgo.txt
-├─ Graphic interface/
+├─ graphic_interface_v1/
 │  ├─ image/
 │  │  └─ readme-assets/
 │  │     └─ 1777977902041.png

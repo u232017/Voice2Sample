@@ -165,7 +165,7 @@ export function RecordUpload() {
     setTrimSelection({ start: trimStart, end: trimEnd });
 
     try {
-      await Promise.all([searchExamples(request), minimumLoadingTime]);
+      await Promise.all([searchExamples(request, currentAudio, { start: trimStart, end: trimEnd }), minimumLoadingTime]);
     } finally {
       searchDelayRef.current = null;
       searchDelayResolveRef.current = null;
