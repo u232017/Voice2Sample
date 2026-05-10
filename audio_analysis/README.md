@@ -9,6 +9,7 @@ Proyecto para extraer descriptores musicales de archivos de audio usando Essenti
 - Archivo de audio de prueba (ej: `pruebawa.wav`)
 
 ## 🚀 Instalación y Configuración
+
 ### 0. Instalar y activar wsl
 
 ```bash
@@ -105,6 +106,72 @@ audio_analysis/
    - Harmonic Pitch Class Profile (HPCP)
    - Tonalidad y modo detectados
    - Fuerza de la detección de key
+
+## ❓ Por qué estos descriptores (y por qué en loops)
+
+He escogido estos descriptores porque representan bien cada aspecto del audio y, además, se benefician del análisis por frames (loops), ya que permiten capturar cambios en el tiempo.
+
+---
+
+### 🎼 Melódicos
+- **pitch**: indica la nota (frecuencia fundamental) → base de la melodía  
+  👉 En loops permite seguir cómo cambia la melodía instante a instante  
+
+- **pitch_confidence**: indica la fiabilidad del pitch detectado  
+  👉 En loops permite descartar frames donde la estimación es incorrecta (ruido, percusión, etc.)  
+
+- **hpcp**: representa la energía por clases de nota (Do, Re, Mi…)  
+  👉 En loops captura cómo evoluciona la armonía a lo largo del tiempo  
+
+- **key, scale, key_strength**: resumen la tonalidad global  
+  👉 Se calculan a partir de todos los frames, aprovechando la información acumulada del loop  
+
+---
+
+### 🥁 Rítmicos
+- **bpm**: velocidad global de la canción  
+  👉 Se estima a partir de muchos frames, detectando patrones repetidos en el tiempo  
+
+- **beats**: posiciones de los pulsos rítmicos  
+  👉 En loops permite detectar eventos distribuidos temporalmente  
+
+- **beat_confidence**: mide si los beats siguen un patrón regular  
+  👉 En loops evalúa la consistencia del ritmo entre frames  
+
+- **beat_intervals**: tiempo entre beats  
+  👉 En loops permite analizar si el ritmo es estable o varía  
+
+---
+
+### 🎧 Tímbricos
+- **mfcc**: resumen la forma del espectro → diferencian sonidos  
+  👉 En loops capturan cambios de timbre a lo largo del tiempo  
+
+- **gfcc**: similares a MFCC pero más robustos al ruido  
+  👉 En loops mantienen estabilidad incluso si la señal cambia  
+
+- **spectral_centroid**: indica el “brillo” del sonido  
+  👉 En loops permite ver variaciones de brillo entre frames  
+
+- **spectral_spread**: dispersión de frecuencias  
+  👉 En loops detecta cambios en la distribución espectral  
+
+- **spectral_rolloff**: distribución de energía en frecuencias  
+  👉 En loops sigue cómo cambia la energía en el espectro  
+
+- **spectral_flux**: cambio entre frames  
+  👉 En loops mide directamente la dinámica temporal  
+
+- **zero_crossing_rate**: nivel de ruido/percusividad  
+  👉 En loops detecta variaciones rápidas en la señal  
+
+---
+
+### 🎯 Resumen
+He escogido estos descriptores porque:
+- describen bien **melodía, ritmo y timbre**  
+- permiten analizar la **evolución temporal** mediante loops  
+- capturan tanto información **instantánea (por frame)** como **global (agregada)**  
 
 ## ⚠️ Notas Importantes
 

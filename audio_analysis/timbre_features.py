@@ -5,129 +5,240 @@ import json
 
 
 def save_json(data, filename):
-    """Guarda un diccionario en un archivo JSON con indentación."""
+    """Guarda un diccionario en JSON."""
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def _compute_spectral_features(spec, freq_bins):
+def compute_stats(array):
     """
-    Calcula características espectrales a partir de un espectro.
+    Calcula estadísticas básicas de un array.
     
-    Args:
-        spec: Espectro de magnitud
-        freq_bins: Array de frecuencias correspondientes
-        
     Returns:
-        tuple: (centroid, spread, rolloff)
+        dict con mean, std, min y max
     """
-    # Normalizar espectro para obtener distribución de probabilidad
+    return {
+        "mean": float(np.mean(array)),
+        "std": float(np.std(array)),
+        "min": float(np.min(array)),
+        "max": float(np.max(array))
+    }
+
+
+def compute_vector_stats(matrix):
+    """
+    Calcula estadísticas para vectores (MFCC/GFCC).
+    
+    Returns:
+        dict con mean y std por coeficiente
+    """
+    return {
+        "mean": np.mean(matrix, axis=0).tolist(),
+        "std": np.std(matrix, axis=0).tolist()
+    }
+
+
+def compute_spectral_features(spec, freq_bins):
+    """
+    Calcula centroid, spread y rolloff.
+    """
+
     normalized_spec = spec / (np.sum(spec) + 1e-8)
-    
-    # Centroide espectral: frecuencia promedio ponderada
+
+    # centroid
     centroid = np.sum(freq_bins * normalized_spec)
-    
-    # Spread espectral: desviación respecto al centroide
-    spread = np.sqrt(np.sum(normalized_spec * (freq_bins - centroid) ** 2))
-    
-    # Rolloff: frecuencia bajo la cual está el 85% de energía
-    cumsum = np.cumsum(normalized_spec)
-    rolloff_idx = np.argmax(cumsum >= 0.85)
+
+    # spread
+    spread = np.sqrt(
+        np.sum(normalized_spec * (freq_bins - centroid) ** 2)
+    )
+
+    # rolloff
+    cumulative = np.cumsum(normalized_spec)
+    rolloff_idx = np.argmax(cumulative >= 0.85)
     rolloff = freq_bins[min(rolloff_idx, len(freq_bins) - 1)]
-    
-    return float(centroid), float(spread), float(rolloff)
+
+    return centroid, spread, rolloff
 
 
 def extract_timbre_descriptors(audio_file):
     """
-    Extrae descriptores de timbre de un archivo de audio.
-    
-    Descriptores extraídos:
-    - MFCC (13 coeficientes)
-    - GFCC (13 coeficientes)
-    - Centroide espectral
-    - Spread espectral
-    - Rolloff espectral
-    - Flux espectral
-    - Zero crossing rate
-    
-    Args:
-        audio_file (str): Ruta al archivo de audio
-        
-    Returns:
-        dict: Diccionario con todos los descriptores
+    Extrae descriptores de timbre usando análisis frame-by-frame.
+
+    Features:
+    - MFCC
+    - GFCC
+    - Spectral Centroid
+    - Spectral Spread
+    - Spectral Rolloff
+    - Spectral Flux
+    - Zero Crossing Rate
     """
-    # Validar que el archivo existe
+
+    # comprobar archivo
     if not os.path.exists(audio_file):
         raise FileNotFoundError(f"Archivo no encontrado: {audio_file}")
-    
-    # Cargar audio en mono
+
+    # cargar audio
     audio = es.MonoLoader(filename=audio_file)()
-    
-    # Parámetros de procesamiento
+
+    # parámetros
     frame_size = 2048
     hop_size = 1024
     sample_rate = 44100
-    
-    # Inicializar procesadores
+
+    # algoritmos
     window = es.Windowing(type="hann")
     spectrum = es.Spectrum(size=frame_size)
+
     mfcc = es.MFCC(numberCoefficients=13)
     gfcc = es.GFCC(numberCoefficients=13)
+
     zcr = es.ZeroCrossingRate()
-    
-    # Almacenamiento de características
-    descriptors = {
-        "mfcc": [],
-        "gfcc": [],
-        "spectral_centroid": [],
-        "spectral_spread": [],
-        "spectral_rolloff": [],
-        "spectral_flux": [],
-        "zero_crossing_rate": []
-    }
-    
-    prev_spectrum = None
+
+    # almacenamiento temporal
+    mfcc_frames = []
+    gfcc_frames = []
+
+    centroid_frames = []
+    spread_frames = []
+    rolloff_frames = []
+
+    flux_frames = []
+    zcr_frames = []
+
+    prev_spec = None
     freq_bins = None
-    
-    # Procesar audio frame por frame
-    for frame in es.FrameGenerator(audio, frameSize=frame_size, hopSize=hop_size):
-        # Aplicar ventana y calcular espectro
-        windowed_frame = window(frame)
-        spec = spectrum(windowed_frame)
-        
-        # Inicializar bins de frecuencia en la primera iteración
+
+    # recorrer frames
+    for frame in es.FrameGenerator(
+        audio,
+        frameSize=frame_size,
+        hopSize=hop_size
+    ):
+
+        # ventana
+        windowed = window(frame)
+
+        # espectro
+        spec = spectrum(windowed)
+
+        # bins frecuencia
         if freq_bins is None:
-            freq_bins = np.linspace(0, sample_rate / 2, len(spec))
-        
-        # MFCC y GFCC
+            freq_bins = np.linspace(
+                0,
+                sample_rate / 2,
+                len(spec)
+            )
+
+        # MFCC
         _, mfcc_coeffs = mfcc(spec)
-        descriptors["mfcc"].append(mfcc_coeffs.tolist())
-        
+        mfcc_frames.append(mfcc_coeffs)
+
+        # GFCC
         _, gfcc_coeffs = gfcc(spec)
-        descriptors["gfcc"].append(gfcc_coeffs.tolist())
-        
-        # Zero crossing rate
-        descriptors["zero_crossing_rate"].append(float(zcr(frame)))
-        
-        # Características espectrales
-        centroid, spread, rolloff = _compute_spectral_features(spec, freq_bins)
-        descriptors["spectral_centroid"].append(centroid)
-        descriptors["spectral_spread"].append(spread)
-        descriptors["spectral_rolloff"].append(rolloff)
-        
-        # Flux espectral: cambio de energía entre frames consecutivos
-        if prev_spectrum is not None:
-            flux = float(np.sqrt(np.sum((spec - prev_spectrum) ** 2)))
-            descriptors["spectral_flux"].append(flux)
-        
-        prev_spectrum = spec
-    
-    # Guardar en JSON
+        gfcc_frames.append(gfcc_coeffs)
+
+        # ZCR
+        zcr_frames.append(zcr(frame))
+
+        # spectral features
+        centroid, spread, rolloff = compute_spectral_features(
+            spec,
+            freq_bins
+        )
+
+        centroid_frames.append(centroid)
+        spread_frames.append(spread)
+        rolloff_frames.append(rolloff)
+
+        # spectral flux
+        if prev_spec is not None:
+            flux = np.sqrt(np.sum((spec - prev_spec) ** 2))
+            flux_frames.append(flux)
+
+        prev_spec = spec
+
+    # convertir a arrays
+    mfcc_array = np.array(mfcc_frames)
+    gfcc_array = np.array(gfcc_frames)
+
+    centroid_array = np.array(centroid_frames)
+    spread_array = np.array(spread_frames)
+    rolloff_array = np.array(rolloff_frames)
+
+    flux_array = np.array(flux_frames)
+    zcr_array = np.array(zcr_frames)
+
+    # =========================
+    # RESULTADO FINAL AGREGADO
+    # =========================
+
+    result = {
+
+        # MFCC
+        "mfcc": compute_vector_stats(mfcc_array),
+
+        # GFCC
+        "gfcc": compute_vector_stats(gfcc_array),
+
+        # spectral centroid
+        "spectral_centroid":
+            compute_stats(centroid_array),
+
+        # spectral spread
+        "spectral_spread":
+            compute_stats(spread_array),
+
+        # spectral rolloff
+        "spectral_rolloff":
+            compute_stats(rolloff_array),
+
+        # spectral flux
+        "spectral_flux":
+            compute_stats(flux_array),
+
+        # zero crossing rate
+        "zero_crossing_rate":
+            compute_stats(zcr_array),
+
+        # metadata
+        "num_frames": len(mfcc_frames),
+        "frame_size": frame_size,
+        "hop_size": hop_size
+    }
+
+    # =========================
+    # GUARDAR JSON
+    # =========================
+
     output_dir = "descriptors"
     os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "timbre_descriptors.json")
-    save_json(descriptors, output_file)
-    print(f"✓ Descriptores de timbre guardados en: {output_file}")
+
+    filename = os.path.splitext(
+        os.path.basename(audio_file)
+    )[0]
+
+    output_file = os.path.join(
+        output_dir,
+        "timbre_descriptors.json"
+    )
+
+    # cargar existentes
+    if os.path.exists(output_file):
+
+        with open(output_file, "r", encoding="utf-8") as f:
+            all_descriptors = json.load(f)
+
+    else:
+        all_descriptors = {}
+
+    # guardar audio actual
+    all_descriptors[filename] = result
+
+    # escribir JSON
+    save_json(all_descriptors, output_file)
     
-    return descriptors
+    print("Extracción de descriptores de timbre completada y guardada en 'descriptors/timbre_descriptors.json'.")
+
+    return result
