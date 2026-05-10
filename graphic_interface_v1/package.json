@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "backend": "cd .. && python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000",
     "build": "vite build",
     "preview": "vite preview"
   },

@@ -2,3 +2,5 @@
 __pycache__/
 Dataset/audio/
 Dataset/audio_processed/
+backend/tmp/
+backend/cache/

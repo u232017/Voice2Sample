@@ -15,3 +15,7 @@ transformers
 
 # Analisis de audio (Essentia)
 essentia
+fastapi
+uvicorn[standard]
+python-multipart
+soundfile
