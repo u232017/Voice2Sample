@@ -53,8 +53,10 @@ export function BrandLogo({ variant = 'compact' }: BrandLogoProps) {
         <circle cx="160" cy="160" r="112" fill="none" stroke="url(#brandGold)" strokeDasharray="1 8" strokeLinecap="round" strokeOpacity="0.48" strokeWidth="2.6" />
         <circle cx="160" cy="160" r="96" fill="none" stroke="url(#brandEdge)" strokeOpacity="0.28" strokeWidth="1.4" />
 
-        <path d="M160 29 L170 50 L193 59 L170 68 L160 91 L150 68 L127 59 L150 50 Z" fill="url(#brandGold)" />
-        <path d="M160 45 L166 59 L160 73 L154 59 Z" fill="#0f8f2f" filter="url(#brandGlow)" />
+        <g opacity="0.9">
+          <path d="M132 58 H188" stroke="url(#brandGold)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M145 66 H175" stroke="#0f8f2f" strokeWidth="2" strokeLinecap="round" filter="url(#brandGlow)" />
+        </g>
 
         <text
           x="154"
@@ -71,8 +73,10 @@ export function BrandLogo({ variant = 'compact' }: BrandLogoProps) {
           V2S
         </text>
 
-        <path d="M160 231 L170 253 L193 263 L170 273 L160 295 L150 273 L127 263 L150 253 Z" fill="url(#brandGold)" opacity="0.94" />
-        <path d="M160 249 L166 263 L160 277 L154 263 Z" fill="#0f8f2f" filter="url(#brandGlow)" />
+        <g opacity="0.82">
+          <path d="M132 262 H188" stroke="url(#brandGold)" strokeWidth="3" strokeLinecap="round" />
+          <path d="M145 254 H175" stroke="#0f8f2f" strokeWidth="2" strokeLinecap="round" filter="url(#brandGlow)" />
+        </g>
       </svg>
     </div>
   );
