@@ -1,4 +1,5 @@
 import { AudioTrimSelection, FreesoundSearchRequest, FreesoundSound, RecordedAudio } from './types';
+import { freesoundAPI } from './freesound';
 
 const RAW_BACKEND_API_BASE = import.meta.env.VITE_BACKEND_API_BASE || 'http://127.0.0.1:8000/api';
 const BACKEND_API_BASE = RAW_BACKEND_API_BASE.replace(/\/$/, '');
@@ -25,7 +26,39 @@ function normalizeBackendSound(sound: FreesoundSound): FreesoundSound {
       'preview-hq-ogg': absolutizeBackendUrl(sound.previews?.['preview-hq-ogg']),
       'preview-lq-ogg': absolutizeBackendUrl(sound.previews?.['preview-lq-ogg']),
     },
+    images: {
+      waveform_m: absolutizeBackendUrl(sound.images?.waveform_m),
+      waveform_l: absolutizeBackendUrl(sound.images?.waveform_l),
+      spectral_m: absolutizeBackendUrl(sound.images?.spectral_m),
+      spectral_l: absolutizeBackendUrl(sound.images?.spectral_l),
+    },
     download: absolutizeBackendUrl(sound.download),
+  };
+}
+
+function mergeSoundWithFreesoundDetail(
+  sound: FreesoundSound,
+  detail: Partial<FreesoundSound>
+): FreesoundSound {
+  return {
+    ...detail,
+    ...sound,
+    previews: {
+      'preview-hq-mp3':
+        sound.previews?.['preview-hq-mp3'] ?? detail.previews?.['preview-hq-mp3'],
+      'preview-lq-mp3':
+        sound.previews?.['preview-lq-mp3'] ?? detail.previews?.['preview-lq-mp3'],
+      'preview-hq-ogg':
+        sound.previews?.['preview-hq-ogg'] ?? detail.previews?.['preview-hq-ogg'],
+      'preview-lq-ogg':
+        sound.previews?.['preview-lq-ogg'] ?? detail.previews?.['preview-lq-ogg'],
+    },
+    images: {
+      spectral_m: sound.images?.spectral_m ?? detail.images?.spectral_m,
+      waveform_m: sound.images?.waveform_m ?? detail.images?.waveform_m,
+      waveform_l: sound.images?.waveform_l ?? detail.images?.waveform_l,
+      spectral_l: sound.images?.spectral_l ?? detail.images?.spectral_l,
+    },
   };
 }
 
@@ -90,6 +123,31 @@ async function prepareBackendAudio(audio: RecordedAudio, trim?: AudioTrimSelecti
 }
 
 class RecommendationAPI {
+  private async hydrateMissingVisualizations(sounds: FreesoundSound[]): Promise<FreesoundSound[]> {
+    const soundsMissingVisualization = sounds.filter((sound) => !freesoundAPI.getVisualizationUrl(sound));
+    if (!soundsMissingVisualization.length) {
+      return sounds;
+    }
+
+    const detailsById = new Map<number, Partial<FreesoundSound>>();
+    await Promise.all(
+      soundsMissingVisualization.map(async (sound) => {
+        const detail = await freesoundAPI.getSoundDetail(sound.id);
+        if (detail) {
+          detailsById.set(sound.id, detail);
+        }
+      })
+    );
+
+    return sounds.map((sound) => {
+      const detail = detailsById.get(sound.id);
+      if (!detail) {
+        return sound;
+      }
+      return mergeSoundWithFreesoundDetail(sound, detail);
+    });
+  }
+
   async recommend(
     request: FreesoundSearchRequest,
     audio?: RecordedAudio,
@@ -119,7 +177,8 @@ class RecommendationAPI {
       console.warn('Backend recommendation warning:', data.error);
     }
 
-    return data.results.map(normalizeBackendSound);
+    const normalizedResults = data.results.map(normalizeBackendSound);
+    return this.hydrateMissingVisualizations(normalizedResults);
   }
 }
 

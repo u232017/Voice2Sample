@@ -39,6 +39,8 @@ interface RequestOptions {
   timeout?: number;
 }
 
+interface FreesoundSoundDetailResponse extends Partial<FreesoundSound> {}
+
 class FreesoundAPI {
   private apiKey: string;
   private baseUrl: string;
@@ -169,6 +171,58 @@ class FreesoundAPI {
 
   getWaveformUrl(sound: FreesoundSound): string | undefined {
     return sound.images?.waveform_m || sound.images?.waveform_l;
+  }
+
+  getVisualizationUrl(sound: FreesoundSound): string | undefined {
+    return (
+      sound.images?.spectral_m ||
+      sound.images?.waveform_m ||
+      sound.images?.waveform_l ||
+      sound.images?.spectral_l
+    );
+  }
+
+  async getSoundDetail(soundId: number): Promise<Partial<FreesoundSound> | null> {
+    if (!Number.isFinite(soundId) || soundId <= 0) {
+      return null;
+    }
+
+    const cacheKey = this.getCacheKey('sound-detail', { soundId });
+    const cached = this.requestCache.get(cacheKey);
+    if (cached && this.isCacheValid(cached)) {
+      return cached.data as Partial<FreesoundSound>;
+    }
+
+    const url = new URL(`${this.baseUrl}/sounds/${soundId}/`);
+    url.searchParams.set('token', this.apiKey);
+    url.searchParams.set(
+      'fields',
+      [
+        'id',
+        'name',
+        'username',
+        'duration',
+        'tags',
+        'previews',
+        'images',
+        'url',
+        'license',
+        'created',
+        'num_downloads',
+        'avg_rating',
+        'num_ratings',
+        'num_comments',
+      ].join(',')
+    );
+
+    try {
+      const data = await this.fetchJson<FreesoundSoundDetailResponse>(url.toString(), { retries: 0 });
+      this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
+      return data;
+    } catch (error) {
+      console.warn('Could not load Freesound detail for visualization fallback:', error);
+      return null;
+    }
   }
 
   getHumanError(error: unknown): string {

@@ -5,7 +5,6 @@ import {
   Mic,
   RotateCcw,
   Search,
-  SlidersHorizontal,
   Square,
   Upload,
 } from 'lucide-react';
@@ -16,41 +15,31 @@ import { useAudioRecorder } from '../hooks/useAudioRecorder';
 import { useFileUpload } from '../hooks/useFileUpload';
 import { defaultSearchFilters, useAudio } from '../context/AudioContext';
 import { useFreesound } from '../hooks/useFreesound';
-import {
-  FreesoundSearchFilters,
-  RecordedAudio,
-  SearchCategory,
-  SearchDuration,
-  SearchMood,
-  SearchSort,
-} from '../services/types';
-import { audioService } from '../services/audio';
+import { RecordedAudio } from '../services/types';
+import { audioService, MAX_RECORDING_DURATION_SECONDS } from '../services/audio';
 
-const categories: SearchCategory[] = ['any', 'nature', 'urban', 'music loop', 'foley', 'synth', 'percussion'];
-const moods: SearchMood[] = ['any', 'calm', 'dark', 'bright', 'energetic'];
-const durations: SearchDuration[] = ['any', 'short', 'medium', 'long'];
-const sorts: SearchSort[] = ['relevance', 'rating', 'downloads', 'recent'];
+type SimilarityFocus = 'melodic' | 'bpm' | 'timbre' | 'energy';
+type RecommendationModel = 'essentia' | 'clap';
 
-const labels: Record<string, string> = {
-  any: 'Any',
-  nature: 'Nature',
-  urban: 'Urban',
-  'music loop': 'Music loop',
-  foley: 'Foley',
-  synth: 'Synth',
-  percussion: 'Percussion',
-  calm: 'Calm',
-  dark: 'Dark',
-  bright: 'Bright',
-  energetic: 'Energetic',
-  short: 'Short',
-  medium: 'Medium',
-  long: 'Long',
-  relevance: 'Relevance',
-  rating: 'Rating',
-  downloads: 'Downloads',
-  recent: 'Recent',
-};
+interface SoundCharacteristicsPreview {
+  estimatedBpm: string;
+  mainCharacter: string;
+  energy: string;
+  pitchRange: string;
+}
+
+const similarityOptions: Array<{ label: string; value: SimilarityFocus }> = [
+  { label: 'Melodic', value: 'melodic' },
+  { label: 'BPM', value: 'bpm' },
+  { label: 'Timbre', value: 'timbre' },
+  { label: 'Energy', value: 'energy' },
+];
+const recommendationModelOptions: Array<{ label: string; value: RecommendationModel }> = [
+  { label: 'Essentia', value: 'essentia' },
+  { label: 'CLAP', value: 'clap' },
+];
+
+const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
 export function RecordUpload() {
   const { setCurrentAudio, setSearchRequest, setTrimSelection } = useAudio();
@@ -60,13 +49,17 @@ export function RecordUpload() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const searchDelayRef = useRef<number | null>(null);
   const searchDelayResolveRef = useRef<(() => void) | null>(null);
+  const autoStopPendingRef = useRef(false);
   const isMountedRef = useRef(true);
   const [currentAudio, setLocalAudio] = useState<RecordedAudio | null>(null);
   const [trimStart, setTrimStart] = useState(0);
   const [trimEnd, setTrimEnd] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
   const [isSearchTransition, setIsSearchTransition] = useState(false);
-  const [filters, setFilters] = useState<FreesoundSearchFilters>(defaultSearchFilters);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [similarityFocus, setSimilarityFocus] = useState<SimilarityFocus>('melodic');
+  const [recommendationModel, setRecommendationModel] = useState<RecommendationModel>('essentia');
+  const [autoStopNotice, setAutoStopNotice] = useState(false);
+  const [characteristics, setCharacteristics] = useState<SoundCharacteristicsPreview | null>(null);
 
   const audioUrl = useMemo(() => {
     if (!currentAudio) return null;
@@ -90,6 +83,7 @@ export function RecordUpload() {
 
   useEffect(() => {
     setCurrentAudio(currentAudio);
+    setHasSearched(false);
 
     if (currentAudio) {
       const end = Math.max(0, currentAudio.metadata.duration);
@@ -106,12 +100,96 @@ export function RecordUpload() {
     };
   }, [audioUrl]);
 
-  const updateFilter = <Key extends keyof FreesoundSearchFilters>(
-    key: Key,
-    value: FreesoundSearchFilters[Key]
-  ) => {
-    setFilters((current) => ({ ...current, [key]: value }));
-  };
+  useEffect(() => {
+    if (!recorder.isRecording || autoStopPendingRef.current) {
+      return;
+    }
+
+    if (recorder.duration < MAX_RECORDING_DURATION_SECONDS) {
+      return;
+    }
+
+    autoStopPendingRef.current = true;
+    setAutoStopNotice(true);
+
+    recorder
+      .stopRecording()
+      .then((audio) => {
+        if (audio) {
+          setLocalAudio(audio);
+        }
+      })
+      .finally(() => {
+        autoStopPendingRef.current = false;
+      });
+  }, [recorder.duration, recorder.isRecording, recorder.stopRecording]);
+
+  useEffect(() => {
+    if (!currentAudio) {
+      setCharacteristics(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const generateCharacteristics = async () => {
+      try {
+        const audioBuffer = await audioService.decodeAudio(currentAudio.blob);
+        if (cancelled) return;
+
+        const channel = audioBuffer.getChannelData(0);
+        const length = channel.length;
+        if (!length) {
+          setCharacteristics(null);
+          return;
+        }
+
+        let sumSquares = 0;
+        let zeroCrossings = 0;
+        for (let index = 0; index < length; index += 1) {
+          const sample = channel[index];
+          sumSquares += sample * sample;
+          if (index > 0) {
+            const prev = channel[index - 1];
+            if ((prev <= 0 && sample > 0) || (prev >= 0 && sample < 0)) {
+              zeroCrossings += 1;
+            }
+          }
+        }
+
+        const rms = Math.sqrt(sumSquares / length);
+        const zcr = zeroCrossings / Math.max(1, length - 1);
+
+        const energy = rms > 0.18 ? 'High' : rms > 0.09 ? 'Medium' : 'Low';
+        const mainCharacter = zcr > 0.13 ? 'Bright / Percussive' : zcr < 0.07 ? 'Warm' : 'Balanced';
+        const pitchRange = zcr > 0.14 ? 'Mid-High' : zcr > 0.09 ? 'Mid' : 'Low-Mid';
+        const bpmValue = Math.round(clamp(92 + zcr * 360 + rms * 110, 78, 164));
+
+        setCharacteristics({
+          estimatedBpm: `${bpmValue} BPM`,
+          mainCharacter,
+          energy,
+          pitchRange,
+        });
+      } catch (analysisError) {
+        console.warn('Could not derive local sound characteristics.', analysisError);
+        if (!cancelled) {
+          setCharacteristics({
+            estimatedBpm: '--',
+            mainCharacter: '--',
+            energy: '--',
+            pitchRange: '--',
+          });
+        }
+      }
+    };
+
+    generateCharacteristics();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentAudio]);
 
   const applyTrim = (start: number, end: number) => {
     const safeStart = Math.min(Math.max(0, start), duration);
@@ -123,11 +201,13 @@ export function RecordUpload() {
 
   const handleRecord = async () => {
     if (recorder.isRecording) {
+      if (autoStopPendingRef.current) return;
       const audio = await recorder.stopRecording();
       if (audio) setLocalAudio(audio);
       return;
     }
 
+    setAutoStopNotice(false);
     const started = await recorder.startRecording();
     if (started) {
       setLocalAudio(null);
@@ -136,6 +216,7 @@ export function RecordUpload() {
 
   const handleFileSelected = async (file?: File) => {
     if (!file) return;
+    setAutoStopNotice(false);
     const audio = await fileUpload.uploadFile(file);
     if (audio) setLocalAudio(audio);
   };
@@ -145,12 +226,15 @@ export function RecordUpload() {
     setCurrentAudio(null);
     setTrimSelection(null);
     clearResults();
+    setHasSearched(false);
+    setAutoStopNotice(false);
+    setCharacteristics(null);
   };
 
   const runSearch = async () => {
     if (!currentAudio || !isValidTrim || isRecommendationLoading) return;
 
-    const request = { query: '', filters, limit: 4 };
+    const request = { query: '', filters: defaultSearchFilters, limit: 4 };
     const minimumLoadingTime = new Promise<void>((resolve) => {
       searchDelayResolveRef.current = resolve;
       searchDelayRef.current = window.setTimeout(() => {
@@ -161,11 +245,15 @@ export function RecordUpload() {
     });
 
     setIsSearchTransition(true);
+    setHasSearched(true);
     setSearchRequest(request);
     setTrimSelection({ start: trimStart, end: trimEnd });
 
     try {
-      await Promise.all([searchExamples(request, currentAudio, { start: trimStart, end: trimEnd }), minimumLoadingTime]);
+      await Promise.all([
+        searchExamples(request, currentAudio, { start: trimStart, end: trimEnd }),
+        minimumLoadingTime,
+      ]);
     } finally {
       searchDelayRef.current = null;
       searchDelayResolveRef.current = null;
@@ -233,7 +321,9 @@ export function RecordUpload() {
               <div className="record-meter compact-meter">
                 <div>
                   <p className="font-mono text-3xl font-bold text-white">
-                    {recorder.isRecording ? audioService.formatDuration(recorder.duration) : '00:00'}
+                    {recorder.isRecording
+                      ? audioService.formatDuration(Math.min(recorder.duration, MAX_RECORDING_DURATION_SECONDS))
+                      : '00:00'}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">
                     {recorder.isRecording ? 'Recording from microphone' : 'Waiting for audio'}
@@ -246,21 +336,96 @@ export function RecordUpload() {
               </div>
             )}
           </div>
+
+          {autoStopNotice && (
+            <p className="recording-limit-note">Max 10s reached. Recording stopped automatically.</p>
+          )}
+
+          <div className="sound-characteristics-card">
+            <div className="subsection-head">
+              <p>Sound characteristics</p>
+            </div>
+            <div className="sound-characteristics-grid">
+              <div className="characteristic-tile">
+                <span>Duration</span>
+                <strong>{currentAudio ? audioService.formatDuration(duration) : '--'}</strong>
+              </div>
+              <div className="characteristic-tile">
+                <span>Estimated BPM</span>
+                <strong>{currentAudio ? characteristics?.estimatedBpm ?? '128 BPM' : '--'}</strong>
+              </div>
+              <div className="characteristic-tile">
+                <span>Main character</span>
+                <strong>{currentAudio ? characteristics?.mainCharacter ?? 'Bright / Percussive' : '--'}</strong>
+              </div>
+              <div className="characteristic-tile">
+                <span>Energy</span>
+                <strong>{currentAudio ? characteristics?.energy ?? 'Medium' : '--'}</strong>
+              </div>
+              <div className="characteristic-tile">
+                <span>Pitch range</span>
+                <strong>{currentAudio ? characteristics?.pitchRange ?? 'Mid-High' : '--'}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div className="recommendation-model-card">
+            <div className="subsection-head">
+              <p>Recommendation model</p>
+              <small>Choose how the input sound will be compared.</small>
+            </div>
+            <div className="recommendation-model-grid">
+              {recommendationModelOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={recommendationModel === option.value ? 'similarity-toggle active' : 'similarity-toggle'}
+                  aria-pressed={recommendationModel === option.value}
+                  onClick={() => setRecommendationModel(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="similarity-focus-card">
+            <div className="subsection-head">
+              <p>Similarity focus</p>
+            </div>
+            <div className="similarity-focus-grid">
+              {similarityOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={similarityFocus === option.value ? 'similarity-toggle active' : 'similarity-toggle'}
+                  aria-pressed={similarityFocus === option.value}
+                  onClick={() => setSimilarityFocus(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <button
+            className="primary-action search-main-button"
+            onClick={runSearch}
+            disabled={!currentAudio || !isValidTrim || isRecommendationLoading}
+          >
+            <Search className="h-5 w-5" />
+            {isRecommendationLoading ? 'Searching similar loops...' : 'Search for similar loops'}
+          </button>
         </section>
 
         <section className="dashboard-panel freesound-panel">
           <div className="panel-heading">
             <div>
-              <p>Freesound recommendations</p>
-              <h2>{results.length ? '4 real sounds' : 'Ready when you are'}</h2>
+              <p>Similar sound results</p>
+              <h2>{results.length ? `${results.length} results ready` : 'Ready when you are'}</h2>
             </div>
-            <span className="tiny-note">Temporary search · Essentia pending</span>
+            <span className="tiny-note">Frontend preview - backend pending</span>
           </div>
-
-          <button className="primary-action search-main-button" onClick={runSearch} disabled={!currentAudio || !isValidTrim || isRecommendationLoading}>
-            <Search className="h-5 w-5" />
-            {isRecommendationLoading ? 'Searching...' : 'Search 4 Freesound sounds'}
-          </button>
 
           {isRecommendationLoading && <LoadingRecommendations />}
 
@@ -271,76 +436,29 @@ export function RecordUpload() {
             </div>
           )}
 
-          {!currentAudio && !isRecommendationLoading && (
+          {!hasSearched && !isRecommendationLoading && !error && (
             <div className="recommendation-empty">
               <FileAudio className="h-7 w-7" />
-              <p>Record or upload a sound to get recommendations.</p>
+              <p>Record or upload a sound, choose a similarity focus, and search to discover related samples.</p>
             </div>
           )}
 
-          {currentAudio && !isRecommendationLoading && !error && results.length === 0 && (
+          {hasSearched && !isRecommendationLoading && !error && results.length === 0 && (
             <div className="recommendation-empty">
               <Search className="h-7 w-7" />
-              <p>Search Freesound when your sample is ready.</p>
+              <p>No matching sounds yet. Try another sample or adjust your similarity focus.</p>
             </div>
           )}
 
           {!isRecommendationLoading && results.length > 0 && (
-            <>
-              <div className="recommendation-list">
-                {results.slice(0, 4).map((sound) => (
-                  <SoundCard key={sound.id} sound={sound} />
-                ))}
-              </div>
-
-              <div className="refine-box">
-                <button className="refine-toggle" onClick={() => setShowFilters((value) => !value)}>
-                  <SlidersHorizontal className="h-4 w-4" />
-                  Refine search
-                </button>
-
-                {showFilters && (
-                  <div className="chip-filter-group">
-                    <ChipGroup label="Category" options={categories} value={filters.category} onChange={(value) => updateFilter('category', value as SearchCategory)} />
-                    <ChipGroup label="Mood" options={moods} value={filters.mood} onChange={(value) => updateFilter('mood', value as SearchMood)} />
-                    <ChipGroup label="Duration" options={durations} value={filters.duration} onChange={(value) => updateFilter('duration', value as SearchDuration)} />
-                    <ChipGroup label="Sort" options={sorts} value={filters.sort} onChange={(value) => updateFilter('sort', value as SearchSort)} />
-                    <button className="secondary-action small-action" onClick={runSearch} disabled={isRecommendationLoading}>
-                      Update results
-                    </button>
-                  </div>
-                )}
-              </div>
-            </>
+            <div className="recommendation-list">
+              {results.slice(0, 4).map((sound) => (
+                <SoundCard key={sound.id} sound={sound} />
+              ))}
+            </div>
           )}
         </section>
       </div>
     </section>
-  );
-}
-
-interface ChipGroupProps {
-  label: string;
-  options: string[];
-  value: string;
-  onChange: (value: string) => void;
-}
-
-function ChipGroup({ label, options, value, onChange }: ChipGroupProps) {
-  return (
-    <div className="chip-row">
-      <span>{label}</span>
-      <div>
-        {options.map((option) => (
-          <button
-            key={option}
-            className={value === option ? 'active' : ''}
-            onClick={() => onChange(option)}
-          >
-            {labels[option] || option}
-          </button>
-        ))}
-      </div>
-    </div>
   );
 }
