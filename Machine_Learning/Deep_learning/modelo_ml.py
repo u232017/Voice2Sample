@@ -45,6 +45,9 @@ _embeddings_bd = None
 # Ruta de la carpeta que contiene la base de datos de audios
 RUTA_BASE_DATOS = os.path.join(os.path.dirname(__file__), "base_datos_audios")
 
+# Archivo de cache para embeddings de la base de datos
+ARCHIVO_CACHE_EMBEDDINGS = os.path.join(RUTA_BASE_DATOS, "_cache_embeddings.npz")
+
 
 # ==============================================================================
 # FUNCIONES DE FORMATEO PARA TERMINAL
@@ -90,6 +93,44 @@ def _imprimir_progreso(actual, total, nombre_archivo=""):
 def _imprimir_separador_final():
     """Imprime un separador al final."""
     print("█" * 80 + "\n")
+
+
+def _cargar_cache_embeddings(archivos_wav):
+    """Carga embeddings cacheados si coinciden rutas y marcas de tiempo."""
+    if not os.path.exists(ARCHIVO_CACHE_EMBEDDINGS):
+        return None, None
+
+    try:
+        datos = np.load(ARCHIVO_CACHE_EMBEDDINGS, allow_pickle=True)
+        rutas_cache = datos["rutas"].tolist()
+        mtimes_cache = datos["mtimes"]
+
+        if rutas_cache != archivos_wav:
+            return None, None
+
+        mtimes_actuales = np.array([os.path.getmtime(ruta) for ruta in archivos_wav])
+        if not np.allclose(mtimes_cache, mtimes_actuales):
+            return None, None
+
+        embeddings = datos["embeddings"]
+        return embeddings, rutas_cache
+    except Exception as e:
+        _imprimir_advertencia(f"Cache inválida, se recalculará: {str(e)[:60]}")
+        return None, None
+
+
+def _guardar_cache_embeddings(archivos_wav, embeddings_matriz):
+    """Guarda embeddings en cache junto con rutas y marcas de tiempo."""
+    try:
+        mtimes_actuales = np.array([os.path.getmtime(ruta) for ruta in archivos_wav])
+        np.savez(
+            ARCHIVO_CACHE_EMBEDDINGS,
+            embeddings=embeddings_matriz,
+            rutas=np.array(archivos_wav, dtype=object),
+            mtimes=mtimes_actuales,
+        )
+    except Exception as e:
+        _imprimir_advertencia(f"No se pudo guardar cache: {str(e)[:60]}")
 
 
 # ==============================================================================
@@ -236,7 +277,7 @@ def extraer_embedding(ruta_audio):
         # torch.no_grad() desactiva el cálculo de gradientes
         # Esto ahorra memoria VRAM y acelera la inferencia
 # 4. Ejecutar el modelo en modo inferencia
-        with torch.no_grad():
+        with torch.inference_mode():
             resultados = _modelo_clap.get_audio_features(**entradas)
         
         # 5. Convertir a numpy y aplanar (AQUÍ ABRIMOS LA CAJA CON pooler_output)
@@ -285,6 +326,12 @@ def inicializar_base_datos():
     if _modelo_clap is None:
         _imprimir_error("El modelo no ha sido inicializado primero")
         raise RuntimeError("Debe llamar a inicializar_modelo() primero.")
+
+    # Evitar recalcular si ya está inicializado en memoria
+    if _indexador_knn is not None and _rutas_archivos_bd is not None and _embeddings_bd is not None:
+        _imprimir_exito("Base de datos ya inicializada en memoria")
+        _imprimir_separador_final()
+        return
     
     # -----------------------------------------------------------------------------
     # Paso 1: Buscar todos los archivos .wav en la carpeta de base de datos
@@ -292,7 +339,7 @@ def inicializar_base_datos():
     # Usamos glob para encontrar todos los archivos .wav recursivamente
     # pattern: "**/*.wav" busca en todos los subdirectorios
     patron_busqueda = os.path.join(RUTA_BASE_DATOS, "**", "*.wav")
-    archivos_wav = glob.glob(patron_busqueda, recursive=True)
+    archivos_wav = sorted(glob.glob(patron_busqueda, recursive=True))
     
     # Verificar que se encontraron archivos
     if len(archivos_wav) == 0:
@@ -303,6 +350,22 @@ def inicializar_base_datos():
     
     _imprimir_exito(f"Se encontraron {len(archivos_wav)} archivos de audio")
     _imprimir_linea_separadora()
+
+    # -----------------------------------------------------------------------------
+    # Intentar cargar embeddings desde cache
+    # -----------------------------------------------------------------------------
+    embeddings_cache, rutas_cache = _cargar_cache_embeddings(archivos_wav)
+    if embeddings_cache is not None:
+        _imprimir_exito("Embeddings cargados desde cache")
+        _embeddings_bd = embeddings_cache
+        _rutas_archivos_bd = rutas_cache
+
+        _imprimir_info("Entrenando buscador KNN...")
+        _indexador_knn = NearestNeighbors(metric='cosine', algorithm='brute')
+        _indexador_knn.fit(_embeddings_bd)
+        _imprimir_exito("Buscador KNN entrenado exitosamente")
+        _imprimir_separador_final()
+        return
     
     # -----------------------------------------------------------------------------
     # Paso 2: Extraer embeddings para cada archivo de audio
@@ -344,6 +407,11 @@ def inicializar_base_datos():
     # Almacenar en variables globales
     _embeddings_bd = embeddings_matriz
     _rutas_archivos_bd = lista_rutas
+
+    if len(lista_rutas) == len(archivos_wav):
+        _guardar_cache_embeddings(archivos_wav, embeddings_matriz)
+    else:
+        _imprimir_advertencia("Cache omitida por archivos fallidos")
     
     _imprimir_exito(f"Embeddings extraídos: {embeddings_matriz.shape[0]} archivos × {embeddings_matriz.shape[1]} dimensiones")
     _imprimir_linea_separadora()
@@ -353,7 +421,6 @@ def inicializar_base_datos():
     _imprimir_info("Entrenando buscador KNN...")
     
     _indexador_knn = NearestNeighbors(
-        n_neighbors=1,
         metric='cosine',
         algorithm='brute'
     )
@@ -365,23 +432,23 @@ def inicializar_base_datos():
     _imprimir_separador_final()
 
 
-def encontrar_mejor_sample(ruta_audio_usuario):
+def encontrar_top_k_samples(ruta_audio_usuario, k=5):
     """
     ==============================================================================
-    FUNCIÓN: encontrar_mejor_sample(ruta_audio_usuario)
+    FUNCIÓN: encontrar_top_k_samples(ruta_audio_usuario, k=5)
     ==============================================================================
     
     Descripción:
-        Función principal del módulo. Recibe la ruta del audio grabado por el
-        usuario (imitación vocal), calcula su embedding, busca el vecino más
-        cercano en el indexador KNN, y devuelve la ruta del archivo .wav
-        ganador de la base de datos.
+        Recibe la ruta del audio grabado por el usuario (imitación vocal),
+        calcula su embedding, busca los k vecinos más cercanos en el indexador
+        KNN y devuelve una lista ordenada con las rutas más similares.
     
     Parámetros:
         ruta_audio_usuario (str): Ruta absoluta o relativa al audio del usuario
+        k (int): Número de resultados a devolver
     
     Retorna:
-        str: Ruta del archivo .wav de la base de datos que mejor coincide
+        list[dict]: Lista ordenada de resultados con ruta, similitud y distancia
     
     Efectos secundarios:
         - Imprime información de la búsqueda y resultados
@@ -389,8 +456,8 @@ def encontrar_mejor_sample(ruta_audio_usuario):
     Ejemplo de uso:
         >>> inicializar_modelo()
         >>> inicializar_base_datos()
-        >>> resultado = encontrar_mejor_sample("mi_imitacion.wav")
-        >>> print(f"El mejor match es: {resultado}")
+        >>> resultados = encontrar_top_k_samples("mi_imitacion.wav", k=5)
+        >>> print(resultados[0]["ruta"])
     ==============================================================================
     """
     global _indexador_knn, _rutas_archivos_bd
@@ -405,6 +472,9 @@ def encontrar_mejor_sample(ruta_audio_usuario):
         _imprimir_error(f"No se encontró el archivo: {ruta_audio_usuario}")
         raise FileNotFoundError(f"No se encontró el archivo del usuario: {ruta_audio_usuario}")
     
+    if k <= 0:
+        raise ValueError("k debe ser un entero mayor que 0")
+
     _imprimir_encabezado("BÚSQUEDA DE SONIDO SIMILAR")
     _imprimir_info(f"Audio a procesar: {os.path.basename(ruta_audio_usuario)}")
     _imprimir_linea_separadora()
@@ -418,45 +488,79 @@ def encontrar_mejor_sample(ruta_audio_usuario):
         _imprimir_exito(f"Embedding calculado: {embedding_usuario.shape}")
         
         # -----------------------------------------------------------------------------
-        # Paso 2: Buscar el vecino más cercano en la base de datos
+        # Paso 2: Buscar los vecinos más cercanos en la base de datos
         # -----------------------------------------------------------------------------
         _imprimir_info("Buscando el sonido más similar...")
         
         # Reformatear el embedding para que tenga forma (1, 512) para KNN
         embedding_para_buscar = embedding_usuario.reshape(1, -1)
         
+        k_ajustado = min(int(k), len(_rutas_archivos_bd))
+
         # Ejecutar la búsqueda KNN
-        # distances: distancia al vecino más cercano
-        # indices: índice del vecino más cercano en nuestro array
-        distancias, indices = _indexador_knn.kneighbors(embedding_para_buscar)
+        # distances: distancias a los vecinos
+        # indices: índices de los vecinos en nuestro array
+        distancias, indices = _indexador_knn.kneighbors(
+            embedding_para_buscar,
+            n_neighbors=k_ajustado
+        )
         
         # -----------------------------------------------------------------------------
-        # Paso 3: Obtener la ruta del archivo ganador
+        # Paso 3: Obtener rutas y métricas
         # -----------------------------------------------------------------------------
-        indice_ganador = indices[0][0]  # Primer (y único) vecino
-        distancia = distancias[0][0]   # Distancia al vecino
-        
-        ruta_ganadora = _rutas_archivos_bd[indice_ganador]
+        resultados = []
+        for pos, indice in enumerate(indices[0]):
+            distancia = distancias[0][pos]
+            ruta = _rutas_archivos_bd[indice]
+            resultados.append({
+                "ruta": ruta,
+                "archivo": os.path.basename(ruta),
+                "similitud": float((1 - distancia) * 100),
+                "distancia": float(distancia),
+            })
         
         # -----------------------------------------------------------------------------
         # Paso 4: Mostrar resultados
         # -----------------------------------------------------------------------------
         _imprimir_linea_separadora()
         print("\n  ╔════════════════════════════════════════════════════════════════════════════════╗")
-        print("  ║                        🎵 RESULTADO ENCONTRADO                              ║")
+        print("  ║                        🎵 RESULTADOS ENCONTRADOS                           ║")
         print("  ╚════════════════════════════════════════════════════════════════════════════════╝")
-        print(f"  📁 Archivo: {os.path.basename(ruta_ganadora)}")
-        print(f"  📍 Ruta: {ruta_ganadora}")
-        print(f"  📊 Similitud: {(1 - distancia) * 100:.2f}% (distancia: {distancia:.6f})")
+        for i, item in enumerate(resultados, start=1):
+            print(f"  #{i}  📁 {item['archivo']}")
+            print(f"      📍 Ruta: {item['ruta']}")
+            print(f"      📊 Similitud: {item['similitud']:.2f}% (distancia: {item['distancia']:.6f})")
+            if i < len(resultados):
+                print("      ──────────────────────────────────────────────────────────────────")
         print("  ╚════════════════════════════════════════════════════════════════════════════════╝\n")
         _imprimir_separador_final()
-        
-        return ruta_ganadora
+
+        return resultados
         
     except Exception as e:
         _imprimir_error(f"Error durante la búsqueda: {str(e)}")
         _imprimir_separador_final()
         raise
+
+
+def encontrar_mejor_sample(ruta_audio_usuario):
+    """
+    ============================================================================== 
+    FUNCIÓN: encontrar_mejor_sample(ruta_audio_usuario)
+    ============================================================================== 
+    
+    Descripción:
+        Devuelve el mejor resultado (top 1) usando encontrar_top_k_samples.
+    
+    Parámetros:
+        ruta_audio_usuario (str): Ruta absoluta o relativa al audio del usuario
+    
+    Retorna:
+        str: Ruta del archivo .wav de la base de datos que mejor coincide
+    ============================================================================== 
+    """
+    resultados = encontrar_top_k_samples(ruta_audio_usuario, k=1)
+    return resultados[0]["ruta"]
 
 
 # ==============================================================================
