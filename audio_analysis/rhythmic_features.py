@@ -21,7 +21,7 @@ def extract_rhythmic_descriptors(audio_file):
     filename = os.path.splitext(os.path.basename(audio_file))[0]
 
     try:
-        temporal_file = "descriptors/temporal.json"
+        temporal_file = f"descriptors/music/{filename}.json"
 
         if not os.path.exists(temporal_file):
             raise FileNotFoundError(f"No existe: {temporal_file}")

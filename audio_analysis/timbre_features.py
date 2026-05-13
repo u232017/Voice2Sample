@@ -25,7 +25,7 @@ def extract_timbre_descriptors(audio_file):
         # ============================
         # 1. Cargar temporal.json
         # ============================
-        temporal_file = "descriptors/temporal.json"
+        temporal_file = f"descriptors/music/{filename}.json"
 
         if not os.path.exists(temporal_file):
             raise FileNotFoundError(f"No existe: {temporal_file}")
@@ -102,11 +102,6 @@ def extract_timbre_descriptors(audio_file):
 
         all_data[filename] = timbre
         save_json(all_data, output_file)
-
-        # ============================
-        # 5. Eliminar temporal.json
-        # ============================
-        os.remove(temporal_file)
 
         elapsed = time.time() - start_time
         save_log(f"OK - {filename} tímbrico guardado | time={elapsed:.2f}s")

@@ -22,7 +22,7 @@ def extract_melodic_features(audio_file):
         # ============================
         # 1. Cargar temporal.json
         # ============================
-        temporal_file = "descriptors/temporal.json"
+        temporal_file = f"descriptors/music/{filename}.json"
         if not os.path.exists(temporal_file):
             raise FileNotFoundError(f"No existe: {temporal_file}")
 
