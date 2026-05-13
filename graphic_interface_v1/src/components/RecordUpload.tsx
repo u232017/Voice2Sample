@@ -38,6 +38,12 @@ const recommendationModelOptions: Array<{ label: string; value: RecommendationMo
   { label: 'Essentia', value: 'essentia' },
   { label: 'CLAP', value: 'clap' },
 ];
+const recommendationModelDescriptions: Record<RecommendationModel, string> = {
+  essentia:
+    'Essentia focuses on traditional audio features such as rhythm, timbre, pitch, and spectral information. Useful for recommendations based on measurable sound characteristics.',
+  clap:
+    'CLAP compares audio with a machine-learning model in a more semantic way. Useful for results that feel similar in meaning, mood, or general audio context.',
+};
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -58,6 +64,7 @@ export function RecordUpload() {
   const [hasSearched, setHasSearched] = useState(false);
   const [similarityFocus, setSimilarityFocus] = useState<SimilarityFocus>('melodic');
   const [recommendationModel, setRecommendationModel] = useState<RecommendationModel>('essentia');
+  const [activeModelTooltip, setActiveModelTooltip] = useState<RecommendationModel | null>(null);
   const [autoStopNotice, setAutoStopNotice] = useState(false);
   const [characteristics, setCharacteristics] = useState<SoundCharacteristicsPreview | null>(null);
 
@@ -376,15 +383,40 @@ export function RecordUpload() {
             </div>
             <div className="recommendation-model-grid">
               {recommendationModelOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={recommendationModel === option.value ? 'similarity-toggle active' : 'similarity-toggle'}
-                  aria-pressed={recommendationModel === option.value}
-                  onClick={() => setRecommendationModel(option.value)}
-                >
-                  {option.label}
-                </button>
+                <div key={option.value} className="model-option-shell">
+                  <div
+                    className="model-info-anchor"
+                    onMouseEnter={() => setActiveModelTooltip(option.value)}
+                    onMouseLeave={() => setActiveModelTooltip((current) => (current === option.value ? null : current))}
+                  >
+                    <button
+                      type="button"
+                      className="model-info-button"
+                      aria-label={`What is ${option.label}?`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setActiveModelTooltip((current) => (current === option.value ? null : option.value));
+                      }}
+                    >
+                      <span className="model-info-glyph">i</span>
+                    </button>
+                    <div
+                      className={activeModelTooltip === option.value ? 'model-tooltip visible' : 'model-tooltip'}
+                      role="tooltip"
+                    >
+                      {recommendationModelDescriptions[option.value]}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={recommendationModel === option.value ? 'similarity-toggle active' : 'similarity-toggle'}
+                    aria-pressed={recommendationModel === option.value}
+                    onClick={() => setRecommendationModel(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                </div>
               ))}
             </div>
           </div>
