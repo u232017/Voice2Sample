@@ -1,3 +1,4 @@
+// src/components/RecordUpload.tsx  — conectado a tu api.py
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
@@ -9,88 +10,61 @@ import {
   Square,
   Upload,
 } from 'lucide-react';
-import { SoundCard } from './SoundCard';
-import { AudioWaveform } from './AudioWaveform';
+import { SoundCard }              from './SoundCard';
+import { AudioWaveform }          from './AudioWaveform';
 import { LoadingRecommendations } from './LoadingRecommendations';
-import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import { useFileUpload } from '../hooks/useFileUpload';
-import { defaultSearchFilters, useAudio } from '../context/AudioContext';
-import { useFreesound } from '../hooks/useFreesound';
-import {
-  FreesoundSearchFilters,
-  RecordedAudio,
-  SearchCategory,
-  SearchDuration,
-  SearchMood,
-  SearchSort,
-} from '../services/types';
-import { audioService } from '../services/audio';
-
-const categories: SearchCategory[] = ['any', 'nature', 'urban', 'music loop', 'foley', 'synth', 'percussion'];
-const moods: SearchMood[] = ['any', 'calm', 'dark', 'bright', 'energetic'];
-const durations: SearchDuration[] = ['any', 'short', 'medium', 'long'];
-const sorts: SearchSort[] = ['relevance', 'rating', 'downloads', 'recent'];
-
-const labels: Record<string, string> = {
-  any: 'Any',
-  nature: 'Nature',
-  urban: 'Urban',
-  'music loop': 'Music loop',
-  foley: 'Foley',
-  synth: 'Synth',
-  percussion: 'Percussion',
-  calm: 'Calm',
-  dark: 'Dark',
-  bright: 'Bright',
-  energetic: 'Energetic',
-  short: 'Short',
-  medium: 'Medium',
-  long: 'Long',
-  relevance: 'Relevance',
-  rating: 'Rating',
-  downloads: 'Downloads',
-  recent: 'Recent',
-};
+import { useAudioRecorder }       from '../hooks/useAudioRecorder';
+import { useFileUpload }          from '../hooks/useFileUpload';
+import { useAudio }               from '../context/AudioContext';
+import { useVoice2Sample }        from '../hooks/useVoice2Sample';
+import { RecordedAudio }          from '../services/types';
+import { audioService }           from '../services/audio';
+import { V2SFiltros }             from '../services/voice2sample';
 
 export function RecordUpload() {
-  const { setCurrentAudio, setSearchRequest, setTrimSelection } = useAudio();
-  const { results, isLoading, error, searchExamples, clearResults } = useFreesound();
-  const recorder = useAudioRecorder();
+  const { setCurrentAudio, setTrimSelection } = useAudio();
+  const { results, isLoading, error, rangos, buscar, clearResults } = useVoice2Sample();
+
+  const recorder   = useAudioRecorder();
   const fileUpload = useFileUpload();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const searchDelayRef = useRef<number | null>(null);
-  const searchDelayResolveRef = useRef<(() => void) | null>(null);
-  const isMountedRef = useRef(true);
-  const [currentAudio, setLocalAudio] = useState<RecordedAudio | null>(null);
-  const [trimStart, setTrimStart] = useState(0);
-  const [trimEnd, setTrimEnd] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
-  const [isSearchTransition, setIsSearchTransition] = useState(false);
-  const [filters, setFilters] = useState<FreesoundSearchFilters>(defaultSearchFilters);
+  const fileInputRef   = useRef<HTMLInputElement | null>(null);
+  const isMountedRef   = useRef(true);
+
+  const [currentAudio, setLocalAudio]   = useState<RecordedAudio | null>(null);
+  const [trimStart, setTrimStart]       = useState(0);
+  const [trimEnd,   setTrimEnd]         = useState(0);
+  const [showFilters, setShowFilters]   = useState(false);
+  const [isTransition, setIsTransition] = useState(false);
+
+  // ── Filtros KNN ──────────────────────────────────────────────────────────
+  const [filtros, setFiltros] = useState<V2SFiltros>({});
+
+  // Cuando llegan los rangos reales de la API, inicializamos los sliders
+  useEffect(() => {
+    if (rangos.bpm.min || rangos.pitch_mean.min) {
+      setFiltros({
+        min_bpm:   rangos.bpm.min,
+        max_bpm:   rangos.bpm.max,
+        min_pitch: rangos.pitch_mean.min,
+        max_pitch: rangos.pitch_mean.max,
+      });
+    }
+  }, [rangos]);
 
   const audioUrl = useMemo(() => {
     if (!currentAudio) return null;
     return URL.createObjectURL(currentAudio.blob);
   }, [currentAudio]);
 
-  const duration = Math.max(0, currentAudio?.metadata.duration || 0);
+  const duration    = Math.max(0, currentAudio?.metadata.duration || 0);
   const isValidTrim = currentAudio ? trimStart < trimEnd && trimEnd <= duration : false;
-  const isRecommendationLoading = isSearchTransition || isLoading;
-  const status = recorder.isRecording ? 'recording' : currentAudio ? 'audio ready' : 'no audio';
+  const isSearching = isTransition || isLoading;
+  const status      = recorder.isRecording ? 'recording' : currentAudio ? 'audio ready' : 'no audio';
 
-  useEffect(() => {
-    return () => {
-      isMountedRef.current = false;
-      if (searchDelayRef.current) {
-        window.clearTimeout(searchDelayRef.current);
-        searchDelayResolveRef.current?.();
-      }
-    };
-  }, []);
+  useEffect(() => { return () => { isMountedRef.current = false; }; }, []);
 
   useEffect(() => {
     setCurrentAudio(currentAudio);
-
     if (currentAudio) {
       const end = Math.max(0, currentAudio.metadata.duration);
       setTrimStart(0);
@@ -101,25 +75,10 @@ export function RecordUpload() {
   }, [currentAudio, setCurrentAudio, setTrimSelection, clearResults]);
 
   useEffect(() => {
-    return () => {
-      if (audioUrl) URL.revokeObjectURL(audioUrl);
-    };
+    return () => { if (audioUrl) URL.revokeObjectURL(audioUrl); };
   }, [audioUrl]);
 
-  const updateFilter = <Key extends keyof FreesoundSearchFilters>(
-    key: Key,
-    value: FreesoundSearchFilters[Key]
-  ) => {
-    setFilters((current) => ({ ...current, [key]: value }));
-  };
-
-  const applyTrim = (start: number, end: number) => {
-    const safeStart = Math.min(Math.max(0, start), duration);
-    const safeEnd = Math.min(Math.max(0, end), duration);
-    setTrimStart(safeStart);
-    setTrimEnd(safeEnd);
-    setTrimSelection({ start: safeStart, end: safeEnd });
-  };
+  // ── Acciones ─────────────────────────────────────────────────────────────
 
   const handleRecord = async () => {
     if (recorder.isRecording) {
@@ -127,11 +86,8 @@ export function RecordUpload() {
       if (audio) setLocalAudio(audio);
       return;
     }
-
     const started = await recorder.startRecording();
-    if (started) {
-      setLocalAudio(null);
-    }
+    if (started) setLocalAudio(null);
   };
 
   const handleFileSelected = async (file?: File) => {
@@ -148,36 +104,32 @@ export function RecordUpload() {
   };
 
   const runSearch = async () => {
-    if (!currentAudio || !isValidTrim || isRecommendationLoading) return;
-
-    const request = { query: '', filters, limit: 4 };
-    const minimumLoadingTime = new Promise<void>((resolve) => {
-      searchDelayResolveRef.current = resolve;
-      searchDelayRef.current = window.setTimeout(() => {
-        searchDelayRef.current = null;
-        searchDelayResolveRef.current = null;
-        resolve();
-      }, 3000);
-    });
-
-    setIsSearchTransition(true);
-    setSearchRequest(request);
+    if (!currentAudio || !isValidTrim || isSearching) return;
+    setIsTransition(true);
     setTrimSelection({ start: trimStart, end: trimEnd });
-
     try {
-      await Promise.all([searchExamples(request), minimumLoadingTime]);
+      await buscar(currentAudio.blob, filtros);
     } finally {
-      searchDelayRef.current = null;
-      searchDelayResolveRef.current = null;
-      if (isMountedRef.current) {
-        setIsSearchTransition(false);
-      }
+      if (isMountedRef.current) setIsTransition(false);
     }
   };
+
+  // Re-lanza la búsqueda automáticamente cuando cambia un slider (si ya hay resultados)
+  const handleSliderChange = (key: keyof V2SFiltros, value: number) => {
+    const nuevos = { ...filtros, [key]: value };
+    setFiltros(nuevos);
+    if (currentAudio && results.length > 0) {
+      buscar(currentAudio.blob, nuevos);
+    }
+  };
+
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <section className="app-page dashboard-page">
       <div className="dashboard-shell">
+
+        {/* ── Panel izquierdo: tu audio ── */}
         <section className="dashboard-panel user-sound-panel">
           <div className="panel-heading">
             <div>
@@ -190,7 +142,10 @@ export function RecordUpload() {
           </div>
 
           <div className="quick-actions">
-            <button className={recorder.isRecording ? 'danger-action' : 'primary-action'} onClick={handleRecord}>
+            <button
+              className={recorder.isRecording ? 'danger-action' : 'primary-action'}
+              onClick={handleRecord}
+            >
               {recorder.isRecording ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
               {recorder.isRecording ? 'Stop' : 'Record'}
             </button>
@@ -209,7 +164,7 @@ export function RecordUpload() {
               type="file"
               accept="audio/*"
               className="hidden"
-              onChange={(event) => handleFileSelected(event.target.files?.[0])}
+              onChange={(e) => handleFileSelected(e.target.files?.[0])}
             />
           </div>
 
@@ -227,7 +182,10 @@ export function RecordUpload() {
                 duration={duration}
                 selectedStart={trimStart}
                 selectedEnd={trimEnd}
-                onRegionChange={applyTrim}
+                onRegionChange={(s, e) => {
+                  setTrimStart(s); setTrimEnd(e);
+                  setTrimSelection({ start: s, end: e });
+                }}
               />
             ) : (
               <div className="record-meter compact-meter">
@@ -248,65 +206,105 @@ export function RecordUpload() {
           </div>
         </section>
 
+        {/* ── Panel derecho: resultados KNN ── */}
         <section className="dashboard-panel freesound-panel">
           <div className="panel-heading">
             <div>
-              <p>Freesound recommendations</p>
-              <h2>{results.length ? '4 real sounds' : 'Ready when you are'}</h2>
+              <p>KNN recommendations</p>
+              <h2>{results.length ? `${results.length} similar samples` : 'Ready when you are'}</h2>
             </div>
-            <span className="tiny-note">Temporary search · Essentia pending</span>
+            <span className="tiny-note">Motor local · Essentia + KNN</span>
           </div>
 
-          <button className="primary-action search-main-button" onClick={runSearch} disabled={!currentAudio || !isValidTrim || isRecommendationLoading}>
+          {/* Botón buscar */}
+          <button
+            className="primary-action search-main-button"
+            onClick={runSearch}
+            disabled={!currentAudio || !isValidTrim || isSearching}
+          >
             <Search className="h-5 w-5" />
-            {isRecommendationLoading ? 'Searching...' : 'Search 4 Freesound sounds'}
+            {isSearching ? 'Searching...' : 'Search similar samples'}
           </button>
 
-          {isRecommendationLoading && <LoadingRecommendations />}
+          {isSearching && <LoadingRecommendations />}
 
-          {error && !isRecommendationLoading && (
+          {error && !isSearching && (
             <div className="status-message error compact-error">
               <AlertCircle className="h-5 w-5" />
               <p>{error}</p>
             </div>
           )}
 
-          {!currentAudio && !isRecommendationLoading && (
+          {!currentAudio && !isSearching && (
             <div className="recommendation-empty">
               <FileAudio className="h-7 w-7" />
               <p>Record or upload a sound to get recommendations.</p>
             </div>
           )}
 
-          {currentAudio && !isRecommendationLoading && !error && results.length === 0 && (
+          {currentAudio && !isSearching && !error && results.length === 0 && (
             <div className="recommendation-empty">
               <Search className="h-7 w-7" />
-              <p>Search Freesound when your sample is ready.</p>
+              <p>Press Search to find similar samples with the KNN engine.</p>
             </div>
           )}
 
-          {!isRecommendationLoading && results.length > 0 && (
+          {!isSearching && results.length > 0 && (
             <>
               <div className="recommendation-list">
-                {results.slice(0, 4).map((sound) => (
+                {results.map((sound) => (
                   <SoundCard key={sound.id} sound={sound} />
                 ))}
               </div>
 
+              {/* ── Refine search con sliders reales ── */}
               <div className="refine-box">
-                <button className="refine-toggle" onClick={() => setShowFilters((value) => !value)}>
+                <button
+                  className="refine-toggle"
+                  onClick={() => setShowFilters((v) => !v)}
+                >
                   <SlidersHorizontal className="h-4 w-4" />
                   Refine search
                 </button>
 
                 {showFilters && (
-                  <div className="chip-filter-group">
-                    <ChipGroup label="Category" options={categories} value={filters.category} onChange={(value) => updateFilter('category', value as SearchCategory)} />
-                    <ChipGroup label="Mood" options={moods} value={filters.mood} onChange={(value) => updateFilter('mood', value as SearchMood)} />
-                    <ChipGroup label="Duration" options={durations} value={filters.duration} onChange={(value) => updateFilter('duration', value as SearchDuration)} />
-                    <ChipGroup label="Sort" options={sorts} value={filters.sort} onChange={(value) => updateFilter('sort', value as SearchSort)} />
-                    <button className="secondary-action small-action" onClick={runSearch} disabled={isRecommendationLoading}>
-                      Update results
+                  <div className="chip-filter-group" style={{ gap: '1rem' }}>
+
+                    <SliderFiltro
+                      label="BPM mínimo"
+                      min={rangos.bpm.min}
+                      max={rangos.bpm.max}
+                      value={filtros.min_bpm ?? rangos.bpm.min}
+                      onChange={(v) => handleSliderChange('min_bpm', v)}
+                    />
+                    <SliderFiltro
+                      label="BPM máximo"
+                      min={rangos.bpm.min}
+                      max={rangos.bpm.max}
+                      value={filtros.max_bpm ?? rangos.bpm.max}
+                      onChange={(v) => handleSliderChange('max_bpm', v)}
+                    />
+                    <SliderFiltro
+                      label="Pitch mínimo (Hz)"
+                      min={rangos.pitch_mean.min}
+                      max={rangos.pitch_mean.max}
+                      value={filtros.min_pitch ?? rangos.pitch_mean.min}
+                      onChange={(v) => handleSliderChange('min_pitch', v)}
+                    />
+                    <SliderFiltro
+                      label="Pitch máximo (Hz)"
+                      min={rangos.pitch_mean.min}
+                      max={rangos.pitch_mean.max}
+                      value={filtros.max_pitch ?? rangos.pitch_mean.max}
+                      onChange={(v) => handleSliderChange('max_pitch', v)}
+                    />
+
+                    <button
+                      className="secondary-action small-action"
+                      onClick={runSearch}
+                      disabled={isSearching}
+                    >
+                      Apply filters
                     </button>
                   </div>
                 )}
@@ -319,28 +317,32 @@ export function RecordUpload() {
   );
 }
 
-interface ChipGroupProps {
+// ── Componente slider reutilizable ────────────────────────────────────────────
+
+interface SliderFiltroProps {
   label: string;
-  options: string[];
-  value: string;
-  onChange: (value: string) => void;
+  min: number;
+  max: number;
+  value: number;
+  onChange: (v: number) => void;
 }
 
-function ChipGroup({ label, options, value, onChange }: ChipGroupProps) {
+function SliderFiltro({ label, min, max, value, onChange }: SliderFiltroProps) {
   return (
-    <div className="chip-row">
-      <span>{label}</span>
-      <div>
-        {options.map((option) => (
-          <button
-            key={option}
-            className={value === option ? 'active' : ''}
-            onClick={() => onChange(option)}
-          >
-            {labels[option] || option}
-          </button>
-        ))}
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
+        <span>{label}</span>
+        <strong>{Math.round(value)}</strong>
       </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={(max - min) / 100}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        style={{ width: '100%' }}
+      />
     </div>
   );
 }

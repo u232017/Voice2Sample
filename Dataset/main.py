@@ -3,9 +3,9 @@ from Json_to_csv import json_to_csv as json_to_csv
 from Clean_csv.csv_filter import filter_csv_by_columns as filter_csv_by_columns
 from Clean_csv.csv_filter import check_audio_files as check_audio_files
 
-AUDIO_INPUT_FOLDER = "./audio_prueba" # Cambiar la ruta de donde queremos leer los audios originales.
-AUDIO_OUTPUT_FOLDER = "./audio_processed_prueba" #Donde queremos guardar los auidos procesados, no hace falta que exista.
-JSON_FILE = "./metadata_prueba"  # Donde esta el archivo de metadata.
+AUDIO_INPUT_FOLDER = "./original" # Cambiar la ruta de donde queremos leer los audios originales.
+AUDIO_OUTPUT_FOLDER = "./audio_processed" #Donde queremos guardar los auidos procesados, no hace falta que exista.
+JSON_FILE = "./metadata"  # Donde esta el archivo de metadata.
 COLUMNS = ['id', 'name', 'description', 'username', 'license', 'bpm']  # Columnas a mantener (puedes modificar esta lista)
 CSV_FILE = "./Clean_csv/metadata.csv"  # Donde queremos guardar el CSV intermedio después de convertir el JSON a CSV.
 OUTPUT_CSV_PATH = "./metadata_filtered.csv"  # donde quereos guardar el CSV filtrado.
