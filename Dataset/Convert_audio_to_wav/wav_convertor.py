@@ -8,8 +8,6 @@ import subprocess
 AUDIO_INPUT_FOLDER = "./Dataset/audio"
 AUDIO_OUTPUT_FOLDER = "./Dataset/audio_processed"
 
-TARGET_SAMPLE_RATE = 16000
-
 
 SUPPORTED_FORMATS = {
     ".wav",
@@ -23,7 +21,7 @@ SUPPORTED_FORMATS = {
 
 # ==================== PROCESS AUDIO ====================
 
-def process_audio(input_path, output_path):
+def process_audio(input_path, output_path, target_sample_rate):
     """
     Pipeline:
     1. Cargar audio
@@ -41,7 +39,7 @@ def process_audio(input_path, output_path):
             "-i", str(input_path),
             "-af", "silenceremove=start_periods=1:start_duration=0.2:start_threshold=-35dB",
             "-acodec", "pcm_s16le",
-            "-ar", "16000",
+            "-ar", str(target_sample_rate),
             "-ac", "1",
             str(output_path)
         ],
@@ -61,7 +59,7 @@ def process_audio(input_path, output_path):
 
 # ==================== MAIN ====================
 
-def process_all_audios(input_folder, output_folder):
+def process_all_audios(input_folder, output_folder, target_sample_rate):
 
     input_folder = Path(input_folder)
     output_folder = Path(output_folder)
@@ -90,7 +88,7 @@ def process_all_audios(input_folder, output_folder):
 
         print(f"⟳ Procesando {file.name}...", end=" ")
 
-        success = process_audio(file, output_path)
+        success = process_audio(file, output_path, target_sample_rate)
 
         if success:
             print("✓")
