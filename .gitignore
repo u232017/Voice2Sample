@@ -1,6 +1,7 @@
 .venv/
 __pycache__/
-Dataset/audio/
+Dataset/audio_temp/
+Dataset/Dataset_temp/
 Dataset/audio_processed/
 backend/tmp/
 backend/cache/
