@@ -2,6 +2,7 @@ import { RecordedAudio, AudioMetadata } from './types';
 
 const SUPPORTED_FORMATS = (import.meta.env.VITE_SUPPORTED_FORMATS || 'wav,mp3,ogg,flac').split(',');
 const MAX_FILE_SIZE = parseInt(import.meta.env.VITE_MAX_FILE_SIZE || '52428800');
+export const MAX_RECORDING_DURATION_SECONDS = 10;
 
 class AudioService {
   private mediaRecorder: MediaRecorder | null = null;
@@ -49,15 +50,22 @@ class AudioService {
 
   stopRecording(): Promise<RecordedAudio> {
     return new Promise((resolve, reject) => {
-      if (!this.mediaRecorder) {
+      const recorder = this.mediaRecorder;
+      if (!recorder) {
         reject(new Error('No recording in progress'));
         return;
       }
 
-      this.mediaRecorder.onstop = async () => {
+      const recordedDuration = Math.min(MAX_RECORDING_DURATION_SECONDS, Math.max(0, this.getRecordingDuration()));
+
+      recorder.onstop = async () => {
         try {
-          const audioBlob = new Blob(this.recordedChunks, { type: this.mediaRecorder!.mimeType });
-          const metadata = await this.getAudioMetadata(audioBlob);
+          const audioBlob = new Blob(this.recordedChunks, { type: recorder.mimeType });
+          const decodedMetadata = await this.getAudioMetadata(audioBlob);
+          const metadata = {
+            ...decodedMetadata,
+            duration: recordedDuration > 0.05 ? recordedDuration : decodedMetadata.duration,
+          };
           const arrayBuffer = await audioBlob.arrayBuffer();
 
           resolve({
@@ -70,15 +78,21 @@ class AudioService {
           });
 
           // Cleanup
-          if (this.mediaRecorder) {
-            this.mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+          recorder.stream.getTracks().forEach((track) => track.stop());
+          if (this.audioContext && this.audioContext.state !== 'closed') {
+            void this.audioContext.close();
           }
+          this.mediaRecorder = null;
+          this.audioContext = null;
+          this.analyser = null;
+          this.recordedChunks = [];
+          this.startTime = 0;
         } catch (error) {
           reject(error);
         }
       };
 
-      this.mediaRecorder.stop();
+      recorder.stop();
     });
   }
 

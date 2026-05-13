@@ -12,7 +12,7 @@ export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const previewUrl = freesoundAPI.getPreviewUrl(sound);
-  const waveformUrl = freesoundAPI.getWaveformUrl(sound);
+  const visualizationUrl = freesoundAPI.getVisualizationUrl(sound);
   const owner = sound.owner?.username || sound.username || 'Freesound user';
   const tags = sound.tags?.slice(0, 3) || [];
   const url = sound.url || `https://freesound.org/s/${sound.id}/`;
@@ -38,13 +38,11 @@ export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
       title="Open this sound on Freesound"
     >
       <div className="compact-result-wave">
-        {waveformUrl ? (
-          <img src={waveformUrl} alt="" />
+        {visualizationUrl ? (
+          <img src={visualizationUrl} alt={`Visualization for ${sound.name}`} />
         ) : (
-          <div className="sound-result-placeholder" aria-hidden="true">
-            {Array.from({ length: 18 }).map((_, index) => (
-              <span key={index} style={{ height: `${22 + ((index * 19) % 64)}%` }} />
-            ))}
+          <div className="compact-wave-placeholder">
+            <span>No waveform available</span>
           </div>
         )}
         <button onClick={togglePreview} disabled={!previewUrl} className="compact-play-button" aria-label={`Play ${sound.name}`}>

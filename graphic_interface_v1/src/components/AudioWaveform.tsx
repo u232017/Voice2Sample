@@ -11,6 +11,10 @@ interface AudioWaveformProps {
 }
 
 type DragMode = 'start' | 'end' | 'move' | 'new' | null;
+interface WaveformBar {
+  peak: number;
+  tone: number;
+}
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -27,7 +31,7 @@ export function AudioWaveform({
   const dragModeRef = useRef<DragMode>(null);
   const dragOffsetRef = useRef(0);
   const regionWidthRef = useRef(0);
-  const [peaks, setPeaks] = useState<number[]>([]);
+  const [bars, setBars] = useState<WaveformBar[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSelectionPlaying, setIsSelectionPlaying] = useState(false);
   const hasSelection = duration > 0 && selectedEnd > selectedStart;
@@ -44,27 +48,44 @@ export function AudioWaveform({
         const samples = 220;
         const blockSize = Math.max(1, Math.floor(channel.length / samples));
         const nextPeaks: number[] = [];
+        const nextTone: number[] = [];
 
         for (let index = 0; index < samples; index += 1) {
           let peak = 0;
+          let zeroCrossings = 0;
           const start = index * blockSize;
           const end = Math.min(start + blockSize, channel.length);
 
           for (let sampleIndex = start; sampleIndex < end; sampleIndex += 1) {
             peak = Math.max(peak, Math.abs(channel[sampleIndex]));
+            if (sampleIndex > start) {
+              const prev = channel[sampleIndex - 1];
+              const current = channel[sampleIndex];
+              if ((prev <= 0 && current > 0) || (prev >= 0 && current < 0)) {
+                zeroCrossings += 1;
+              }
+            }
           }
 
           nextPeaks.push(peak);
+          nextTone.push(zeroCrossings / Math.max(1, end - start));
         }
 
         const maxPeak = Math.max(...nextPeaks, 0.001);
+        const minTone = Math.min(...nextTone, 0);
+        const maxTone = Math.max(...nextTone, 0.001);
+        const toneRange = Math.max(0.00001, maxTone - minTone);
+
         if (isMounted) {
-          setPeaks(nextPeaks.map((peak) => peak / maxPeak));
+          setBars(nextPeaks.map((peak, index) => ({
+            peak: peak / maxPeak,
+            tone: clamp((nextTone[index] - minTone) / toneRange, 0, 1),
+          })));
         }
       } catch (error) {
         console.error('Failed to generate user waveform:', error);
         if (isMounted) {
-          setPeaks([]);
+          setBars([]);
         }
       }
     };
@@ -91,29 +112,31 @@ export function AudioWaveform({
     context.scale(dpr, dpr);
     context.clearRect(0, 0, rect.width, rect.height);
 
-    const gradient = context.createLinearGradient(0, 0, rect.width, 0);
-    gradient.addColorStop(0, '#facc15');
-    gradient.addColorStop(0.58, '#d9f99d');
-    gradient.addColorStop(1, '#67e8f9');
-
     const centerY = rect.height / 2;
-    const barWidth = Math.max(2, rect.width / Math.max(peaks.length, 1) - 1);
+    const barWidth = Math.max(2, rect.width / Math.max(bars.length, 1) - 1);
 
-    peaks.forEach((peak, index) => {
-      const x = (index / peaks.length) * rect.width;
-      const height = Math.max(4, peak * rect.height * 0.82);
-      context.fillStyle = gradient;
-      context.globalAlpha = 0.92;
+    bars.forEach((bar, index) => {
+      const x = (index / bars.length) * rect.width;
+      const height = Math.max(4, bar.peak * rect.height * 0.82);
+      const hue = 28 + bar.tone * 58;
+      const topColor = `hsla(${hue}, 90%, ${58 + bar.tone * 7}%, 0.96)`;
+      const bottomColor = `hsla(${hue}, 74%, ${30 + bar.tone * 10}%, 0.94)`;
+      const barGradient = context.createLinearGradient(0, centerY - height / 2, 0, centerY + height / 2);
+      barGradient.addColorStop(0, topColor);
+      barGradient.addColorStop(1, bottomColor);
+
+      context.fillStyle = barGradient;
+      context.globalAlpha = 0.94;
       context.fillRect(x, centerY - height / 2, barWidth, height);
     });
 
-    if (!peaks.length) {
+    if (!bars.length) {
       context.fillStyle = 'rgba(217, 249, 157, 0.2)';
       context.font = '600 13px Inter, sans-serif';
       context.textAlign = 'center';
       context.fillText('Generating waveform...', rect.width / 2, centerY);
     }
-  }, [peaks, selectedStart, selectedEnd]);
+  }, [bars]);
 
   const getTimeFromEvent = (event: PointerEvent | React.PointerEvent<HTMLDivElement>) => {
     const wrapper = wrapperRef.current;
