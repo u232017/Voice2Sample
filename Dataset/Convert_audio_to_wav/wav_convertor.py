@@ -1,5 +1,6 @@
 from pathlib import Path
 import subprocess
+from collections import defaultdict
 
 
 
@@ -7,8 +8,6 @@ import subprocess
 
 AUDIO_INPUT_FOLDER = "./Dataset/audio"
 AUDIO_OUTPUT_FOLDER = "./Dataset/audio_processed"
-
-TARGET_SAMPLE_RATE = 16000
 
 
 SUPPORTED_FORMATS = {
@@ -23,7 +22,7 @@ SUPPORTED_FORMATS = {
 
 # ==================== PROCESS AUDIO ====================
 
-def process_audio(input_path, output_path):
+def process_audio(input_path, output_path, target_sample_rate):
     """
     Pipeline:
     1. Cargar audio
@@ -41,7 +40,7 @@ def process_audio(input_path, output_path):
             "-i", str(input_path),
             "-af", "silenceremove=start_periods=1:start_duration=0.2:start_threshold=-35dB",
             "-acodec", "pcm_s16le",
-            "-ar", "16000",
+            "-ar", str(target_sample_rate),
             "-ac", "1",
             str(output_path)
         ],
@@ -61,7 +60,7 @@ def process_audio(input_path, output_path):
 
 # ==================== MAIN ====================
 
-def process_all_audios(input_folder, output_folder):
+def process_all_audios(input_folder, output_folder, target_sample_rate):
 
     input_folder = Path(input_folder)
     output_folder = Path(output_folder)
@@ -70,31 +69,28 @@ def process_all_audios(input_folder, output_folder):
 
     processed = 0
     errors = 0
+    format_counts = defaultdict(int)
 
     print("\n" + "="*60)
     print("PROCESANDO AUDIOS")
     print("="*60)
 
-    for file in sorted(input_folder.iterdir()):
+    files = [file for file in sorted(input_folder.iterdir()) if file.is_file()]
+    total_files = len(files)
 
-        if not file.is_file():
-            continue
+    for index, file in enumerate(files, start=1):
 
         extension = file.suffix.lower()
-
-        if extension not in SUPPORTED_FORMATS:
-            print(f"Formato no soportado: {file.name}")
-            continue
-
         output_path = output_folder / f"{file.stem}.wav"
 
-        print(f"⟳ Procesando {file.name}...", end=" ")
+        print(f"⟳ Procesando {index}/{total_files}: {file.name}...", end=" ")
 
-        success = process_audio(file, output_path)
+        success = process_audio(file, output_path, target_sample_rate)
 
         if success:
             print("✓")
             processed += 1
+            format_counts[extension if extension in SUPPORTED_FORMATS else "others"] += 1
         else:
             print("✗")
             errors += 1
@@ -104,4 +100,7 @@ def process_all_audios(input_folder, output_folder):
     print("="*60)
     print(f"✓ Procesados: {processed}")
     print(f"✗ Errores:    {errors}")
+    print("\nFORMATO DE CONVERSIÓN:")
+    for fmt, count in sorted(format_counts.items()):
+        print(f"{fmt}: {count}")
     print("="*60)

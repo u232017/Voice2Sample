@@ -2,9 +2,6 @@ import pandas as pd
 import json
 import re
 
-JSON_FILE = "./Dataset/2.Json_to_csv/metadata"  # Cambiar la ruta
-CSV_FILE = "./Dataset/3.Clean_csv/metadata.csv"  # Cambiar la ruta
-
 def clean_text(text):
     """
     Limpia el texto removiendo caracteres de control como \n, \t, \r.
@@ -52,7 +49,3 @@ def convert_metadata_to_csv(json_path, csv_path):
     print(f"Número de filas: {len(df)}")
     print(f"Columnas: {list(df.columns)}")
 
-# Ejemplo de uso
-if __name__ == "__main__":
-
-    convert_metadata_to_csv(JSON_FILE, CSV_FILE)
