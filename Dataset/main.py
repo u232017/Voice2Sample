@@ -43,21 +43,16 @@ def main():
     print("\nPaso 4: Verificar archivos de audio")
     check_audio_files(OUTPUT_CSV_PATH, AUDIO_OUTPUT_FOLDER)
 
-    #Paso 5: Analizar duraciones de audio
-    print("\nPaso 5: Analizar duraciones de audio")
-    stats, df, outliers = analyze_audio_durations(AUDIO_OUTPUT_FOLDER)
-    print("Durations summary:")
-    for key, value in stats.items():
-        print(f"  {key}: {value:.2f} s")
-    print(f"Found {len(outliers)} outliers.")
-
-    # Paso 6: Limpiar audios cortos
-    print("\nPaso 6: Limpiar audios cortos")
+    # Paso 5: Limpiar audios cortos
+    print("\nPaso 5: Limpiar audios cortos")
     clean_out_of_bounds_audios(OUTPUT_CSV_PATH, AUDIO_OUTPUT_FOLDER, MIN_DURATION_SECONDS, MAX_DURATION_SECONDS)
 
     print("\n" + "="*60)
     print("PROCESO COMPLETADO")
     print("Estadisticas finales de los audios procesados:")
+    
+    #Paso 6: Analizar duraciones de audio
+
     stats, df, outliers = analyze_audio_durations(AUDIO_OUTPUT_FOLDER)
     print("Durations summary:")
     for key, value in stats.items():
