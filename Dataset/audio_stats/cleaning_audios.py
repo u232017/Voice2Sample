@@ -2,14 +2,15 @@ import os
 import pandas as pd
 import librosa
 
-def clean_short_audios(csv_path, audio_folder, min_duration=1.5):
+def clean_out_of_bounds_audios(csv_path, audio_folder, min_duration=None, max_duration=None):
     """
-    Elimina audios con duración menor a min_duration segundos y actualiza el CSV.
+    Elimina audios fuera del rango de duración especificado y actualiza el CSV.
 
     Args:
         csv_path (str): Ruta al archivo CSV con metadata
         audio_folder (str): Carpeta donde están los audios WAV
-        min_duration (float): Duración mínima en segundos (default 1.5)
+        min_duration (float, optional): Duración mínima en segundos. Si se especifica, elimina audios más cortos.
+        max_duration (float, optional): Duración máxima en segundos. Si se especifica, elimina audios más largos.
     """
     # Cargar CSV
     df = pd.read_csv(csv_path)
@@ -20,30 +21,38 @@ def clean_short_audios(csv_path, audio_folder, min_duration=1.5):
 
     # Iterar sobre archivos en audio_folder
     for file_name in os.listdir(audio_folder):
-        if file_name.endswith('.wav'):
-            # Extraer ID del nombre del archivo
-            try:
-                audio_id = int(file_name.replace('.wav', ''))
-            except ValueError:
-                print(f"Nombre de archivo inválido: {file_name}")
-                continue
+        # Extraer ID del nombre del archivo
+        try:
+            audio_id = int(file_name.replace('.wav', ''))
+        except ValueError:
+            print(f"Nombre de archivo inválido: {file_name}")
+            continue
 
-            # Ruta completa del audio
-            audio_path = os.path.join(audio_folder, file_name)
+        # Ruta completa del audio
+        audio_path = os.path.join(audio_folder, file_name)
 
-            # Calcular duración
-            try:
-                duration_seconds = librosa.get_duration(filename=audio_path)
+        # Calcular duración
+        try:
+            duration_seconds = librosa.get_duration(filename=audio_path)
 
-                if duration_seconds < min_duration:
-                    print(f"Eliminando {file_name} (duración: {duration_seconds:.2f}s)")
-                    os.remove(audio_path)
-                    ids_to_remove.append(audio_id)
-                else:
-                    print(f"Manteniendo {file_name} (duración: {duration_seconds:.2f}s)")
+            should_remove = False
+            reason = ""
+            if min_duration is not None and duration_seconds < min_duration:
+                should_remove = True
+                reason = f"demasiado corto ({duration_seconds:.2f}s < {min_duration}s)"
+            elif max_duration is not None and duration_seconds > max_duration:
+                should_remove = True
+                reason = f"demasiado largo ({duration_seconds:.2f}s > {max_duration}s)"
 
-            except Exception as e:
-                print(f"Error procesando {file_name}: {e}")
+            if should_remove:
+                print(f"Eliminando {file_name} ({reason})")
+                os.remove(audio_path)
+                ids_to_remove.append(audio_id)
+            '''else:
+                print(f"Manteniendo {file_name} (duración: {duration_seconds:.2f}s)")
+            '''
+        except Exception as e:
+            print(f"Error procesando {file_name}: {e}")
 
     # Filtrar CSV removiendo filas con IDs en ids_to_remove
     df_filtered = df[~df['id'].isin(ids_to_remove)]

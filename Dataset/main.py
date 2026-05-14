@@ -6,13 +6,15 @@ from download_dataset.zenodo_downloader import download_dataset_via_tool as down
 from audio_stats.extract_stats import analyze_audio_durations as analyze_audio_durations
 from Clean_csv.csv_filter import check_audio_files as check_audio_files
 from download_dataset.zenodo_downloader import unzip_dataset as unzip_dataset
-from audio_stats.cleaning_audios import clean_short_audios as clean_short_audios
+from audio_stats.cleaning_audios import clean_out_of_bounds_audios as clean_out_of_bounds_audios
 
 DATASET_FOLDER = "./Dataset_temp" #Donde se guardara el datset descargado de zenodo.
 AUDIO_OUTPUT_FOLDER = "./audio_processed" #Donde queremos guardar los auidos procesados, no hace falta que exista.
 COLUMNS = ['id', 'name', 'description', 'username', 'license', 'bpm']  # Columnas a mantener (puedes modificar esta lista)
 OUTPUT_CSV_PATH = "./metadata_filtered.csv"  # donde quereos guardar el CSV filtrado.
 TARGET_SAMPLE_RATE = 48000
+MIN_DURATION_SECONDS = 1.5  # Duración mínima en segundos para mantener un audio
+MAX_DURATION_SECONDS = 8.0  # Duración máxima en segundos para mantener un audio
 
 def main():
 
@@ -51,10 +53,16 @@ def main():
 
     # Paso 6: Limpiar audios cortos
     print("\nPaso 6: Limpiar audios cortos")
-    clean_short_audios(OUTPUT_CSV_PATH, AUDIO_OUTPUT_FOLDER)
+    clean_out_of_bounds_audios(OUTPUT_CSV_PATH, AUDIO_OUTPUT_FOLDER, MIN_DURATION_SECONDS, MAX_DURATION_SECONDS)
 
     print("\n" + "="*60)
     print("PROCESO COMPLETADO")
+    print("Estadisticas finales de los audios procesados:")
+    stats, df, outliers = analyze_audio_durations(AUDIO_OUTPUT_FOLDER)
+    print("Durations summary:")
+    for key, value in stats.items():
+        print(f"  {key}: {value:.2f} s")
+    print(f"Found {len(outliers)} outliers.")
     print(f"Audios procesados guardados en: {AUDIO_OUTPUT_FOLDER}")
     print(f"CSV filtrado guardado en: {OUTPUT_CSV_PATH}")
     print(f"Puedes borrar la carpetas temporales './audio_temp' y './Dataset_temp' si ya no la necesitas.")
