@@ -40,9 +40,9 @@ const recommendationModelOptions: Array<{ label: string; value: RecommendationMo
 ];
 const recommendationModelDescriptions: Record<RecommendationModel, string> = {
   essentia:
-    'Essentia focuses on traditional audio features such as rhythm, timbre, pitch, and spectral information. Useful for recommendations based on measurable sound characteristics.',
+    'Essentia extracts traditional audio features such as rhythm, timbre, pitch, energy, and spectral information. With this model, you can choose which characteristic should be prioritized, so the filters below are available when Essentia is selected.',
   clap:
-    'CLAP compares audio with a machine-learning model in a more semantic way. Useful for results that feel similar in meaning, mood, or general audio context.',
+    'CLAP represents the sound as a complete audio embedding and compares that full vector with sounds in our dataset. Because it uses the whole sound representation at once, the individual similarity filters are not needed.',
 };
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
@@ -421,24 +421,26 @@ export function RecordUpload() {
             </div>
           </div>
 
-          <div className="similarity-focus-card">
-            <div className="subsection-head">
-              <p>Similarity focus</p>
+          {recommendationModel === 'essentia' && (
+            <div className="similarity-focus-card">
+              <div className="subsection-head">
+                <p>Similarity results by</p>
+              </div>
+              <div className="similarity-focus-grid">
+                {similarityOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={similarityFocus === option.value ? 'similarity-toggle active' : 'similarity-toggle'}
+                    aria-pressed={similarityFocus === option.value}
+                    onClick={() => setSimilarityFocus(option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="similarity-focus-grid">
-              {similarityOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={similarityFocus === option.value ? 'similarity-toggle active' : 'similarity-toggle'}
-                  aria-pressed={similarityFocus === option.value}
-                  onClick={() => setSimilarityFocus(option.value)}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
+          )}
 
           <button
             className="primary-action search-main-button"
