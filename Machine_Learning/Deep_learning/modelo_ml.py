@@ -45,9 +45,6 @@ _embeddings_bd = None
 # Ruta de la carpeta que contiene la base de datos de audios
 RUTA_BASE_DATOS = os.path.join(os.path.dirname(__file__), "base_datos_audios")
 
-# Archivo de cache para embeddings de la base de datos
-ARCHIVO_CACHE_EMBEDDINGS = os.path.join(RUTA_BASE_DATOS, "_cache_embeddings.npz")
-
 
 # ==============================================================================
 # FUNCIONES DE FORMATEO PARA TERMINAL
@@ -95,42 +92,7 @@ def _imprimir_separador_final():
     print("█" * 80 + "\n")
 
 
-def _cargar_cache_embeddings(archivos_wav):
-    """Carga embeddings cacheados si coinciden rutas y marcas de tiempo."""
-    if not os.path.exists(ARCHIVO_CACHE_EMBEDDINGS):
-        return None, None
-
-    try:
-        datos = np.load(ARCHIVO_CACHE_EMBEDDINGS, allow_pickle=True)
-        rutas_cache = datos["rutas"].tolist()
-        mtimes_cache = datos["mtimes"]
-
-        if rutas_cache != archivos_wav:
-            return None, None
-
-        mtimes_actuales = np.array([os.path.getmtime(ruta) for ruta in archivos_wav])
-        if not np.allclose(mtimes_cache, mtimes_actuales):
-            return None, None
-
-        embeddings = datos["embeddings"]
-        return embeddings, rutas_cache
-    except Exception as e:
-        _imprimir_advertencia(f"Cache inválida, se recalculará: {str(e)[:60]}")
-        return None, None
-
-
-def _guardar_cache_embeddings(archivos_wav, embeddings_matriz):
-    """Guarda embeddings en cache junto con rutas y marcas de tiempo."""
-    try:
-        mtimes_actuales = np.array([os.path.getmtime(ruta) for ruta in archivos_wav])
-        np.savez(
-            ARCHIVO_CACHE_EMBEDDINGS,
-            embeddings=embeddings_matriz,
-            rutas=np.array(archivos_wav, dtype=object),
-            mtimes=mtimes_actuales,
-        )
-    except Exception as e:
-        _imprimir_advertencia(f"No se pudo guardar cache: {str(e)[:60]}")
+# Nota: Se eliminó la lógica de cache de embeddings (archivos .npz) por simplificación.
 
 
 # ==============================================================================
@@ -358,21 +320,7 @@ def inicializar_base_datos():
     _imprimir_exito(f"Se encontraron {len(archivos_wav)} archivos de audio")
     _imprimir_linea_separadora()
 
-    # -----------------------------------------------------------------------------
-    # Intentar cargar embeddings desde cache
-    # -----------------------------------------------------------------------------
-    embeddings_cache, rutas_cache = _cargar_cache_embeddings(archivos_wav)
-    if embeddings_cache is not None:
-        _imprimir_exito("Embeddings cargados desde cache")
-        _embeddings_bd = embeddings_cache
-        _rutas_archivos_bd = rutas_cache
-
-        _imprimir_info("Entrenando buscador KNN...")
-        _indexador_knn = NearestNeighbors(metric='cosine', algorithm='brute')
-        _indexador_knn.fit(_embeddings_bd)
-        _imprimir_exito("Buscador KNN entrenado exitosamente")
-        _imprimir_separador_final()
-        return
+    # Nota: Se omite carga desde cache; siempre se recalculan los embeddings
     
     # -----------------------------------------------------------------------------
     # Paso 2: Extraer embeddings para cada archivo de audio
@@ -415,10 +363,7 @@ def inicializar_base_datos():
     _embeddings_bd = embeddings_matriz
     _rutas_archivos_bd = lista_rutas
 
-    if len(lista_rutas) == len(archivos_wav):
-        _guardar_cache_embeddings(archivos_wav, embeddings_matriz)
-    else:
-        _imprimir_advertencia("Cache omitida por archivos fallidos")
+    # No se guarda cache; se usa la matriz calculada en memoria
     
     _imprimir_exito(f"Embeddings extraídos: {embeddings_matriz.shape[0]} archivos × {embeddings_matriz.shape[1]} dimensiones")
     _imprimir_linea_separadora()

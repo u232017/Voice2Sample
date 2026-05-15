@@ -1,8 +1,9 @@
+.venv2/
+.venv-1/
 .venv/
 __pycache__/
 Dataset/audio_temp/
 Dataset/audio_processed/
-Dataset/embeddings_output.json
 Dataset/Dataset_temp/
 backend/tmp/
 backend/cache/
