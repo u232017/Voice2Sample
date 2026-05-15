@@ -203,6 +203,13 @@ def inicializar_modelo():
     except Exception as e:
         # Manejo de errores durante la carga del modelo
         _imprimir_error(f"Error al cargar el modelo: {str(e)}")
+        # Imprimir traceback completo para depuración
+        try:
+            import traceback
+
+            traceback.print_exc()
+        except Exception:
+            pass
         _imprimir_separador_final()
         raise
 
