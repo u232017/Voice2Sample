@@ -422,3 +422,4 @@ Audio BD 2:         [0.5, 0.6, 0.7, ...]     → Distancia: 0.85 ✗ MUY DIFEREN
 **Documento versión:** 1.0  
 **Última actualización:** Abril 2026  
 **Autor:** Equipo de Machine Learning
+

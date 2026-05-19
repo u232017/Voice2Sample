@@ -556,3 +556,4 @@ if __name__ == "__main__":
     except Exception as e:
         _imprimir_error(f"Error durante la inicialización: {str(e)}")
         raise
+    

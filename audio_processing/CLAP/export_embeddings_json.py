@@ -118,3 +118,4 @@ if __name__ == "__main__":
 
     resumen = exportar_embeddings_a_json(dataset_path, output_json)
     print(f"Exported {resumen['count']} embeddings to {resumen['output']}")
+
