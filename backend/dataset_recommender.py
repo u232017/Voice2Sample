@@ -295,3 +295,4 @@ def tags_from_metadata(metadata: dict[str, Any], fallback_name: str) -> list[str
 
     words = re.split(r"[\s_\-.]+", fallback_name.lower())
     return [word for word in words if len(word) > 2 and not word.isdigit()][:5] or ["dataset"]
+

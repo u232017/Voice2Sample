@@ -179,3 +179,4 @@ async def recommendations(
         "error": error,
         "results": results,
     }
+

@@ -72,3 +72,4 @@ Esta carpeta es parte del proyecto **Voice2Sample** y se integra con:
 - **Dataset/**: Almacena metadatos y audios procesados
 - **audio_processing/**: Módulos de procesamiento de audio avanzado
 - **graphic_interface_v1/**: Frontend que consume esta API
+
