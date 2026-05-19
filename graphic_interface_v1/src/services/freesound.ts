@@ -1,8 +1,10 @@
 import {
+  AudioAnalysisResult,
   FreesoundSearchFilters,
   FreesoundSearchRequest,
   FreesoundSearchResponse,
   FreesoundSound,
+  SimilarityFocus,
 } from './types';
 
 const RAW_API_BASE = import.meta.env.VITE_FREESOUND_API_BASE || 'https://freesound.org/apiv2';
@@ -10,21 +12,16 @@ const API_BASE = RAW_API_BASE.replace('/api/v2', '/apiv2').replace(/\/$/, '');
 const API_KEY = import.meta.env.VITE_FREESOUND_API_KEY;
 
 const FALLBACK_QUERIES = [
-  'ambient',
-  'rain',
-  'footsteps',
-  'synth',
-  'bass',
-  'city',
-  'nature',
+  'ambient texture',
+  'drum loop',
+  'melodic loop',
+  'synth one shot',
+  'bright hit',
+  'dark drone',
   'percussion',
-  'piano',
-  'wind',
-  'glitch',
-  'loop',
-  'texture',
-  'impact',
-  'drone',
+  'piano note',
+  'vocal texture',
+  'foley impact',
 ];
 
 const sortMap: Record<FreesoundSearchFilters['sort'], string> = {
@@ -38,8 +35,6 @@ interface RequestOptions {
   retries?: number;
   timeout?: number;
 }
-
-interface FreesoundSoundDetailResponse extends Partial<FreesoundSound> {}
 
 class FreesoundAPI {
   private apiKey: string;
@@ -110,10 +105,18 @@ class FreesoundAPI {
   }
 
   async search(request: FreesoundSearchRequest): Promise<FreesoundSound[]> {
-    const query = this.resolveQuery(request.query, request.filters);
+    const query = this.resolveQuery(request);
     const filter = this.buildFilter(request.filters);
     const limit = Math.min(Math.max(request.limit, 1), 4);
-    const cacheKey = this.getCacheKey('search', { query, filter, limit, filters: request.filters });
+    const cacheKey = this.getCacheKey('search', {
+      query,
+      filter,
+      limit,
+      filters: request.filters,
+      model: request.model,
+      focus: request.focus,
+      analysis: request.frontendAnalysis?.descriptors,
+    });
     const cached = this.requestCache.get(cacheKey);
 
     if (cached && this.isCacheValid(cached)) {
@@ -172,55 +175,62 @@ class FreesoundAPI {
   getWaveformUrl(sound: FreesoundSound): string | undefined {
     return sound.images?.waveform_m || sound.images?.waveform_l;
   }
-
-  getVisualizationUrl(sound: FreesoundSound): string | undefined {
+    getVisualizationUrl(sound: FreesoundSound): string | undefined {
     return (
+      this.getWaveformUrl(sound) ||
       sound.images?.spectral_m ||
-      sound.images?.waveform_m ||
-      sound.images?.waveform_l ||
       sound.images?.spectral_l
     );
   }
 
   async getSoundDetail(soundId: number): Promise<Partial<FreesoundSound> | null> {
-    if (!Number.isFinite(soundId) || soundId <= 0) {
-      return null;
-    }
-
     const cacheKey = this.getCacheKey('sound-detail', { soundId });
     const cached = this.requestCache.get(cacheKey);
+
     if (cached && this.isCacheValid(cached)) {
-      return cached.data as Partial<FreesoundSound>;
+      return cached.data as FreesoundSound;
     }
 
-    const url = new URL(`${this.baseUrl}/sounds/${soundId}/`);
-    url.searchParams.set('token', this.apiKey);
-    url.searchParams.set(
-      'fields',
-      [
-        'id',
-        'name',
-        'username',
-        'duration',
-        'tags',
-        'previews',
-        'images',
-        'url',
-        'license',
-        'created',
-        'num_downloads',
-        'avg_rating',
-        'num_ratings',
-        'num_comments',
-      ].join(',')
-    );
-
     try {
-      const data = await this.fetchJson<FreesoundSoundDetailResponse>(url.toString(), { retries: 0 });
-      this.requestCache.set(cacheKey, { data, timestamp: Date.now() });
-      return data;
+      const url = new URL(`${this.baseUrl}/sounds/${soundId}/`);
+      url.searchParams.set('token', this.apiKey);
+      url.searchParams.set(
+        'fields',
+        [
+          'id',
+          'name',
+          'username',
+          'duration',
+          'tags',
+          'previews',
+          'images',
+          'url',
+          'license',
+          'description',
+          'created',
+          'num_downloads',
+          'avg_rating',
+          'num_ratings',
+          'num_comments',
+          'samplerate',
+          'channels',
+          'bitrate',
+        ].join(',')
+      );
+
+      const detail = await this.fetchJson<FreesoundSound>(url.toString(), {
+        retries: 1,
+        timeout: 12000,
+      });
+
+      this.requestCache.set(cacheKey, {
+        data: detail,
+        timestamp: Date.now(),
+      });
+
+      return detail;
     } catch (error) {
-      console.warn('Could not load Freesound detail for visualization fallback:', error);
+      console.warn(`Could not load Freesound details for sound ${soundId}:`, error);
       return null;
     }
   }
@@ -251,19 +261,23 @@ class FreesoundAPI {
     this.requestCache.clear();
   }
 
-  private resolveQuery(query: string, filters: FreesoundSearchFilters): string {
-    const terms = [filters.mood, filters.category].filter((term) => term !== 'any');
+  private resolveQuery(request: FreesoundSearchRequest): string {
+    if (request.query.trim()) {
+      return request.query.trim();
+    }
 
-    if (filters.license === 'creative_commons') {
+    if (request.model === 'essentia' && request.frontendAnalysis && request.focus) {
+      return this.queryFromEssentia(request.frontendAnalysis, request.focus);
+    }
+
+    const terms: string[] = [request.filters.mood, request.filters.category].filter((term) => term !== 'any');
+
+    if (request.filters.license === 'creative_commons') {
       terms.push('creative commons');
     }
 
-    if (filters.license === 'commercial_friendly') {
+    if (request.filters.license === 'commercial_friendly') {
       terms.push('cc0');
-    }
-
-    if (query.trim()) {
-      return query.trim();
     }
 
     if (terms.length) {
@@ -271,6 +285,35 @@ class FreesoundAPI {
     }
 
     return FALLBACK_QUERIES[Math.floor(Math.random() * FALLBACK_QUERIES.length)];
+  }
+
+  private queryFromEssentia(analysis: AudioAnalysisResult, focus: SimilarityFocus): string {
+    const descriptors = analysis.descriptors;
+
+    if (focus === 'melodic') {
+      if (descriptors.melody.melodicLabel === 'melodic') return 'melodic loop tone';
+      if (descriptors.melody.melodicLabel === 'tonal') return 'tonal one shot instrument';
+      return descriptors.timbre.timbreLabel === 'noisy' ? 'noisy texture' : 'sound texture';
+    }
+
+    if (focus === 'bpm') {
+      if (descriptors.rhythm.bpm) return `${Math.round(descriptors.rhythm.bpm)} bpm loop rhythm`;
+      if (descriptors.rhythm.rhythmLabel === 'one-shot') return 'one shot percussion hit';
+      if (descriptors.rhythm.rhythmLabel === 'percussive') return 'percussive rhythm loop';
+      return 'rhythmic loop';
+    }
+
+    if (focus === 'energy') {
+      if (descriptors.energy.energyLabel === 'loud') return 'loud impact hit energetic';
+      if (descriptors.energy.energyLabel === 'quiet') return 'soft quiet ambience texture';
+      return 'balanced sound effect';
+    }
+
+    if (descriptors.timbre.timbreLabel === 'bright') return 'bright timbre sound';
+    if (descriptors.timbre.timbreLabel === 'dark') return 'dark timbre sound';
+    if (descriptors.timbre.timbreLabel === 'noisy') return 'noisy texture glitch';
+    if (descriptors.timbre.timbreLabel === 'clean') return 'clean tone sample';
+    return 'textured timbre sound';
   }
 
   private buildFilter(filters: FreesoundSearchFilters): string {

@@ -84,6 +84,10 @@ export type SearchDuration = 'any' | 'short' | 'medium' | 'long';
 export type SearchSort = 'relevance' | 'rating' | 'downloads' | 'recent';
 export type SearchLicense = 'any' | 'creative_commons' | 'commercial_friendly';
 
+export type RecommendationModel = 'essentia' | 'clap';
+export type SimilarityFocus = 'melodic' | 'bpm' | 'timbre' | 'energy';
+export type AudioAnalysisEngine = 'essentia.js' | 'web-audio-fallback';
+
 export interface AudioTrimSelection {
   start: number;
   end: number;
@@ -97,29 +101,83 @@ export interface FreesoundSearchFilters {
   license: SearchLicense;
 }
 
+export interface EssentiaTimbreDescriptors {
+  spectralCentroid: number;
+  spectralRolloff: number;
+  zeroCrossingRate: number;
+  spectralFlatness: number;
+  brightnessLabel: 'dark' | 'balanced' | 'bright';
+  timbreLabel: 'clean' | 'noisy' | 'bright' | 'dark' | 'textured';
+}
+
+export interface EssentiaRhythmDescriptors {
+  bpm: number | null;
+  bpmConfidence: number;
+  onsetRate: number;
+  percussiveScore: number;
+  rhythmLabel: 'one-shot' | 'percussive' | 'loop-like' | 'sustained';
+}
+
+export interface EssentiaMelodyDescriptors {
+  estimatedPitch: number | null;
+  pitchConfidence: number;
+  tonalScore: number;
+  melodicLabel: 'melodic' | 'tonal' | 'textured' | 'noisy';
+  pitchRangeLabel: string;
+}
+
+export interface EssentiaEnergyDescriptors {
+  rms: number;
+  energy: number;
+  peakAmplitude: number;
+  dynamicRange: number;
+  energyLabel: 'quiet' | 'balanced' | 'loud';
+}
+
+export interface EssentiaDescriptorSummary {
+  duration: number;
+  selectedDuration: number;
+  sampleRate: number;
+  channels: number;
+  timbre: EssentiaTimbreDescriptors;
+  rhythm: EssentiaRhythmDescriptors;
+  melody: EssentiaMelodyDescriptors;
+  energy: EssentiaEnergyDescriptors;
+}
+
+export interface AudioDescriptorSummary extends EssentiaDescriptorSummary {}
+
+export interface AudioAnalysisResult {
+  descriptors: EssentiaDescriptorSummary;
+  query: string;
+  notes: string[];
+  engine: AudioAnalysisEngine;
+}
+
+export interface EssentiaSearchPayload {
+  model: 'essentia';
+  focus: SimilarityFocus;
+  trim: AudioTrimSelection;
+  descriptors: EssentiaDescriptorSummary;
+  suggestedQuery: string;
+}
+
+export interface ClapSearchPayload {
+  model: 'clap';
+  trim: AudioTrimSelection;
+  note: 'CLAP search is expected to be handled by the backend using audio embeddings.';
+}
+
 export interface FreesoundSearchRequest {
   query: string;
   filters: FreesoundSearchFilters;
   limit: number;
-}
-
-export interface AudioDescriptorSummary {
-  duration: number;
-  sampleRate: number;
-  channels: number;
-  rms: number;
-  peakAmplitude: number;
-  zeroCrossingRate: number;
-  spectralCentroid: number;
-  energyLabel: 'quiet' | 'balanced' | 'loud';
-  brightnessLabel: 'dark' | 'balanced' | 'bright';
-}
-
-export interface AudioAnalysisResult {
-  descriptors: AudioDescriptorSummary;
-  query: string;
-  notes: string[];
-  engine: 'web-audio-fallback' | 'essentia';
+  model?: RecommendationModel;
+  focus?: SimilarityFocus;
+  trimSelection?: AudioTrimSelection;
+  frontendAnalysis?: AudioAnalysisResult | null;
+  essentiaPayload?: EssentiaSearchPayload | null;
+  clapPayload?: ClapSearchPayload | null;
 }
 
 export interface SearchResult {
