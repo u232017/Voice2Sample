@@ -1,173 +1,79 @@
 # Voice2Sample
 
-Voice2Sample is an application for producers who want to search for loops and sounds for their creations. It includes tools for dataset preparation, audio analysis with descriptors, machine learning models, and a web interface for testing.
+Voice2Sample is a project for finding and comparing sound samples from an input recording. It includes dataset utilities, audio descriptor experiments, machine learning prototypes, and a Vite/React web interface.
 
 ## What the project does
-- Dataset preparation (WAV conversion, CSV cleanup, JSON to CSV).
-- Audio analysis with descriptors (timbre, rhythm, melody).
-- Similarity search using acoustic descriptors over the local `Dataset` audio files.
-- Web UI to upload or record audio and view results.
+
+- Dataset preparation: WAV conversion, CSV cleanup, and JSON to CSV tools.
+- Audio analysis experiments with timbre, rhythm, melody, and general descriptors.
+- Machine learning prototypes for local audio similarity experiments.
+- Web UI to record or upload audio, preview a waveform, trim the useful region, and search related sounds through Freesound.
 
 ## General requirements
-- Python 3.10+.
-- Node.js 18+ (for the web interface).
+
+- Python 3.10+ for the analysis, dataset, and machine learning scripts.
+- Node.js 18+ for the web interface.
 - Python dependencies in [requeriments.txt](requeriments.txt).
 
-## Requirements by area (Python)
-- Dataset: `pandas`,`ffmpeg`.
-- Audio analysis: `essentia`, `numpy`, `matplotlib`, `seaborn`, `scikit-learn`.
-- Machine learning: `torch`, `transformers`, `librosa`, `scikit-learn`, `scipy`, `numpy`.
-- Visualization: `npm`, `matplotlib`, `seaborn`.
+## Python Setup
 
-Note: `essentia` does not provide official Windows binaries. On Windows, use WSL and set up a Linux environment with the `essentia` dependencies.
-
-## Installation (Python)
 ```bash
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requeriments.txt
 ```
 
-## Installation (Backend API)
-Run the local API from the repository root:
+Note: `essentia` does not provide official Windows binaries. On Windows, use WSL or another Linux environment if you need the Essentia scripts.
 
-```bash
-python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
-```
+## Web Interface
 
-The API will be available at `http://127.0.0.1:8000`.
-Recommendations are produced from `Dataset/audio_prueba` and `Dataset/metadata_prueba`; the API does not perform global Freesound searches for final results.
-
-## Installation (Web interface v1)
 ```bash
 cd graphic_interface_v1
 npm install
 npm run dev
 ```
 
-The web app runs at `http://localhost:4173`.
+Create `graphic_interface_v1/.env.local` from `graphic_interface_v1/.env.example` and add a Freesound API key:
 
-## Repository structure
-Note: environment and dependency folders are included to reflect the full structure, even if their internal files are not listed.
+```env
+VITE_FREESOUND_API_KEY=your_freesound_api_key_here
+VITE_FREESOUND_API_BASE=https://freesound.org/apiv2
+VITE_MAX_FILE_SIZE=52428800
+VITE_SUPPORTED_FORMATS=wav,mp3,ogg,flac,m4a
+```
+
+The web app runs with Vite, normally at `http://localhost:5173`.
+
+## Repository Structure
 
 ```text
 Voice2Sample/
-├─ .git/
-├─ .venv/
-├─ .vscode/
-├─ audio_analysis/
-│  ├─ .venv/
-│  ├─ __pycache__/
-│  ├─ descriptors/
-│  │  ├─ melodic_descriptors.json
-│  │  ├─ music_descriptors.json
-│  │  ├─ rhythmic_descriptors.json
-│  │  └─ timbre_descriptors.json
-│  ├─ audio.txt
-│  ├─ general_features.py
-│  ├─ main.py
-│  ├─ melodic_features.py
-│  ├─ pruebawa.wav
-│  ├─ README.md
-│  ├─ rhythmic_features.py
-│  └─ timbre_features.py
-├
-├─ Dataset/
-│  ├─ .venv/
-│  ├─ audio_processed/
-│  ├─ audio_prueba/
-│  │  ├─ 114688.wav
-│  │  ├─ 253959.mp3
-│  │  └─ 40962.wav
-│  ├─ Clean_csv/
-│  │  ├─ __pycache__/
-│  │  └─ csv_filter.py
-│  ├─ Convert_audio_to_wav/
-│  │  ├─ __pycache__/
-│  │  ├─ detect_audio_extensiuons.py
-│  │  └─ wav_convertor.py
-│  ├─ Json_to_csv/
-│  │  ├─ __pycache__/
-│  │  └─ json_to_csv.py
-│  ├─ Acknowledgements (need change).txt
-│  ├─ main.py
-│  ├─ metadata_prueba/
-│  └─ readme.md
-├─ evaluation/
-│  └─ añgo.txt
-├─ graphic_interface_v1/
-│  ├─ image/
-│  │  └─ readme-assets/
-│  │     └─ 1777977902041.png
-│  ├─ node_modules/
-│  ├─ src/
-│  │  ├─ components/
-│  │  │  ├─ AudioUploadInput.tsx
-│  │  │  ├─ ErrorBoundary.tsx
-│  │  │  ├─ Home.tsx
-│  │  │  ├─ Layout.tsx
-│  │  │  ├─ LoadingSpinner.tsx
-│  │  │  ├─ RecordUpload.tsx
-│  │  │  ├─ Results.tsx
-│  │  │  └─ SoundCard.tsx
-│  │  ├─ context/
-│  │  │  ├─ AudioContext.tsx
-│  │  │  └─ FreesoundContext.tsx
-│  │  ├─ hooks/
-│  │  │  ├─ useAudioRecorder.ts
-│  │  │  ├─ useFileUpload.ts
-│  │  │  └─ useFreesound.ts
-│  │  ├─ services/
-│  │  │  ├─ audio.ts
-│  │  │  ├─ audioAnalysisService.ts
-│  │  │  ├─ freesound.ts
-│  │  │  └─ types.ts
-│  │  ├─ styles/
-│  │  │  ├─ fonts.css
-│  │  │  ├─ index.css
-│  │  │  ├─ tailwind.css
-│  │  │  └─ theme.css
-│  │  ├─ App.tsx
-│  │  ├─ main.tsx
-│  │  └─ vite-env.d.ts
-│  ├─ .env.example
-│  ├─ .gitignore
-│  ├─ index.html
-│  ├─ interface-flow.md
-│  ├─ package.json
-│  ├─ pnpm-workspace.yaml
-│  ├─ postcss.config.mjs
-│  ├─ README.md
-│  ├─ tailwind.config.js
-│  ├─ tsconfig.json
-│  ├─ tsconfig.node.json
-│  └─ vite.config.ts
-├─ graphic_interface_v1/
-│  └─ node_modules/
-├─ graphic_interface_v2/
-│  └─ holi.txt
-├─ Machine_learning/
-│  ├─ base_datos_audios/
-│  │  ├─ 246288__afleetingspeck__open-e-guitar-chord-hit-percussion.wav
-│  │  ├─ 339787__djfroyd__groovy-synth-drum-loop.wav
-│  │  ├─ 423867__uzbazur__oliviolin-bowed.wav
-│  │  ├─ 646823__josefpres__virtual-instrument-002-v02-11-g2.wav
-│  │  └─ 735631__sensacionarsm__shhhh-silence.wav
-│  ├─ Deep_learning/
-│  │  ├─ base_datos_audios/
-│  │  ├─ __pycache__/
-│  │  │  └─ modelo_ml.cpython-313.pyc
-│  │  ├─ embeddings_cache.npz
-│  │  └─ modelo_ml.py
-│  ├─ mi_imitacion.wav
-│  ├─ modelo_ml.py
-│  ├─ README.md
-│  └─ requeriments.txt
-|
-├─ .gitignore
-├─ README.md
-└─ requeriments.txt
+  audio_analysis/
+    descriptors/
+    general_features.py
+    melodic_features.py
+    rhythmic_features.py
+    timbre_features.py
+  Dataset/
+    Clean_csv/
+    Convert_audio_to_wav/
+    Json_to_csv/
+    audio_prueba/
+  Evaluation/
+  graphic_interface_v1/
+    src/
+      components/
+      context/
+      hooks/
+      services/
+      styles/
+  Machine_Learning/
+    Deep_learning/
+    Machine/
+  README.md
+  requeriments.txt
 ```
 
 ## License
-Add a license when the project requires it.
+
+See [LICENSE](LICENSE).

@@ -458,7 +458,7 @@ export function RecordUpload() {
               <p>Similar sound results</p>
               <h2>{results.length ? `${results.length} results ready` : 'Ready when you are'}</h2>
             </div>
-            <span className="tiny-note">Frontend preview - backend pending</span>
+            <span className="tiny-note">Freesound-powered preview</span>
           </div>
 
           {isRecommendationLoading && <LoadingRecommendations />}
