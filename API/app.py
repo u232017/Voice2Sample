@@ -21,8 +21,8 @@ from .dataset_recommender import (
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATASET_DIR = ROOT_DIR / "Dataset"
-DATASET_AUDIO_DIR = DATASET_DIR / "audio_prueba"
-DATASET_METADATA_PATH = DATASET_DIR / "metadata_prueba"
+DATASET_AUDIO_DIR = DATASET_DIR / "audio_processed"
+DATASET_METADATA_PATH = DATASET_DIR / "metadata_filtered.csv"
 CACHE_DIR = ROOT_DIR / "backend" / "cache"
 DATASET_FEATURE_CACHE = CACHE_DIR / "dataset_features.json"
 UPLOAD_TMP_DIR = ROOT_DIR / "backend" / "tmp"
@@ -84,7 +84,8 @@ def _dataset_sound_payload(item: Any, similarity: float | None = None, distance:
     username = metadata.get("username") or "Voice2Sample dataset"
     license_value = metadata.get("license") or "Dataset audio"
     source_url = f"https://freesound.org/s/{sound_id}/" if str(sound_id) == item.audio_id else preview_url
-    bpm = metadata.get("annotations", {}).get("bpm") if isinstance(metadata.get("annotations"), dict) else None
+    bpm_raw = metadata.get("bpm") or (metadata.get("annotations", {}).get("bpm") if isinstance(metadata.get("annotations"), dict) else None)
+    bpm = float(bpm_raw) if bpm_raw not in (None, "", "None") else None
 
     return {
         "id": sound_id,
@@ -111,12 +112,12 @@ def _dataset_sound_payload(item: Any, similarity: float | None = None, distance:
     }
 
 
-def _dataset_recommendations(audio_path: Path, limit: int) -> list[dict[str, Any]]:
-    items = _load_dataset()
+def _dataset_recommendations(audio_path: Path, limit: int, focus: str = "general") -> list[dict[str, Any]]:
+    items = _get_dataset()
     if not items:
         raise RuntimeError("Dataset/audio_prueba does not contain supported audio files")
 
-    ranked = rank_similar_items(audio_path, items, limit)
+    ranked = rank_similar_items(audio_path, items, limit, focus)
     return [_dataset_sound_payload(item, similarity, distance) for item, distance, similarity in ranked]
 
 
@@ -146,10 +147,12 @@ async def recommendations(
     audio: UploadFile = File(...),
     trim_start: float | None = Form(default=None),
     trim_end: float | None = Form(default=None),
+    focus: str = Form(default="general"),
     limit: int = Form(default=4),
 ) -> dict[str, Any]:
     suffix = Path(audio.filename or "input.wav").suffix or ".wav"
     limit = min(max(limit, 1), 4)
+    focus = focus.lower() if focus else "general"
 
     temp_dir = UPLOAD_TMP_DIR / f"voice2sample_{uuid.uuid4().hex}"
     temp_dir.mkdir(parents=True, exist_ok=False)
@@ -163,7 +166,7 @@ async def recommendations(
         analysis_path = trim_audio_file(input_path, input_path.with_suffix(".trimmed.wav"), trim_start, trim_end)
 
         try:
-            results = _dataset_recommendations(analysis_path, limit)
+            results = _dataset_recommendations(analysis_path, limit, focus)
             engine = "dataset-audio-descriptors"
             error = None
         except Exception as exc:

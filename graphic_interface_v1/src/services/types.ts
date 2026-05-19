@@ -85,7 +85,7 @@ export type SearchSort = 'relevance' | 'rating' | 'downloads' | 'recent';
 export type SearchLicense = 'any' | 'creative_commons' | 'commercial_friendly';
 
 export type RecommendationModel = 'essentia' | 'clap';
-export type SimilarityFocus = 'melodic' | 'bpm' | 'timbre' | 'energy';
+export type SimilarityFocus = 'melodic' | 'bpm' | 'timbre' | 'energy' | 'general';
 export type AudioAnalysisEngine = 'essentia.js' | 'web-audio-fallback';
 
 export interface AudioTrimSelection {

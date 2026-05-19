@@ -23,6 +23,7 @@ const similarityOptions: Array<{ value: SimilarityFocus; label: string }> = [
   { value: 'bpm', label: 'BPM' },
   { value: 'timbre', label: 'Timbre' },
   { value: 'energy', label: 'Energy' },
+  { value: 'general', label: 'General' },
 ];
 
 export function RecordUpload() {
@@ -205,7 +206,10 @@ export function RecordUpload() {
     setTrimSelection(trimSelection);
 
     try {
-      await Promise.all([searchExamples(request), minimumLoadingTime]);
+      await Promise.all([
+        searchExamples(request, currentAudio, trimSelection),
+        minimumLoadingTime,
+      ]);
     } finally {
       searchDelayRef.current = null;
       searchDelayResolveRef.current = null;

@@ -1,7 +1,9 @@
 import { AudioTrimSelection, FreesoundSearchRequest, FreesoundSound, RecordedAudio } from './types';
 import { freesoundAPI } from './freesound';
 
-const RAW_BACKEND_API_BASE = import.meta.env.VITE_BACKEND_API_BASE || 'http://127.0.0.1:8000/api';
+const RAW_BACKEND_API_BASE =
+  import.meta.env.VITE_BACKEND_API_BASE ||
+  (import.meta.env.DEV ? '/api' : 'http://127.0.0.1:8000/api');
 const BACKEND_API_BASE = RAW_BACKEND_API_BASE.replace(/\/$/, '');
 
 interface BackendRecommendationResponse {
@@ -161,6 +163,11 @@ class RecommendationAPI {
     const backendAudio = await prepareBackendAudio(audio, trim);
     formData.append('audio', backendAudio, `${audio.name || 'voice2sample-input'}.wav`);
     formData.append('limit', String(Math.min(Math.max(request.limit, 1), 4)));
+    
+    // Send the focus parameter if available (for essentia general search)
+    if (request.focus) {
+      formData.append('focus', request.focus);
+    }
 
     const response = await fetch(`${BACKEND_API_BASE}/recommendations`, {
       method: 'POST',

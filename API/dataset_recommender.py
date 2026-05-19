@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import math
 import re
@@ -27,9 +28,18 @@ def load_metadata(metadata_path: Path) -> dict[str, dict[str, Any]]:
     if not metadata_path.exists():
         return {}
 
+    if metadata_path.suffix.lower() == ".csv":
+        result: dict[str, dict[str, Any]] = {}
+        with metadata_path.open("r", encoding="utf-8", newline="") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                audio_id = str(row.get("id") or row.get("freesound_id") or row.get("audio_id") or "").strip()
+                if audio_id:
+                    result[audio_id] = dict(row)
+        return result
+
     with metadata_path.open("r", encoding="utf-8") as handle:
         raw = json.load(handle)
-
     return {str(key): value for key, value in raw.items()}
 
 
@@ -218,14 +228,50 @@ def _standardize(dataset_matrix: np.ndarray, query_vector: np.ndarray) -> tuple[
     return (dataset_matrix - mean) / std, (query_vector - mean) / std
 
 
-def rank_similar_items(query_audio: Path, items: list[DatasetItem], limit: int) -> list[tuple[DatasetItem, float, float]]:
+def _get_feature_focus_indices(focus: str) -> list[int]:
+    """Get feature indices to use based on similarity focus.
+    
+    Feature indices (from extract_audio_features):
+    0: log(duration)
+    1-5: amplitude and attack (energy)
+    6-8: RMS stats
+    9-11: ZCR stats (rhythm)
+    12-14: Centroid stats (melodic)
+    15-17: Bandwidth stats (timbre)
+    18-20: Rolloff stats (melodic)
+    21-23: Flux stats (rhythm)
+    24-31: Band energies (timbre/energy)
+    """
+    if focus == "melodic":
+        # Pitch and melodic contour: centroid, rolloff
+        return [12, 13, 14, 18, 19, 20]
+    elif focus == "bpm":
+        # Rhythm and tempo: RMS, ZCR, flux
+        return [6, 7, 8, 9, 10, 11, 21, 22, 23]
+    elif focus == "timbre":
+        # Spectral characteristics: bandwidth, rolloff, band energies
+        return [15, 16, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 30, 31]
+    elif focus == "energy":
+        # Energy content: amplitude, RMS, band energies
+        return [1, 2, 6, 7, 8, 24, 25, 26, 27, 28, 29, 30, 31]
+    else:  # "general" or default
+        # Use all features
+        return list(range(32))
+
+
+def rank_similar_items(query_audio: Path, items: list[DatasetItem], limit: int, focus: str = "general") -> list[tuple[DatasetItem, float, float]]:
     if not items:
         return []
 
     query_features = np.asarray(extract_audio_features(query_audio), dtype=np.float32)
     matrix = np.asarray([item.features for item in items], dtype=np.float32)
+    
+    # Filter features based on focus
+    focus_indices = _get_feature_focus_indices(focus)
+    query_features_focused = query_features[focus_indices]
+    matrix_focused = matrix[:, focus_indices]
 
-    dataset_scaled, query_scaled = _standardize(matrix, query_features)
+    dataset_scaled, query_scaled = _standardize(matrix_focused, query_features_focused)
     distances = np.linalg.norm(dataset_scaled - query_scaled, axis=1)
     order = np.argsort(distances)
 

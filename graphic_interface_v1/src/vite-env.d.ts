@@ -1,10 +1,27 @@
-/// <reference types="vite/client" />
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
-declare module 'essentia.js/dist/essentia-wasm.es.js' {
-  export const EssentiaWASM: unknown;
-}
-
-declare module 'essentia.js/dist/essentia.js-core.es.js' {
-  const Essentia: unknown;
-  export default Essentia;
-}
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 4173,
+    open: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+    },
+  },
+  preview: {
+    port: 4173,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+    },
+  },
+})

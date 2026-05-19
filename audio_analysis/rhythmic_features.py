@@ -1,56 +1,86 @@
-import essentia.standard as es
-import numpy as np
 import os
 import json
+import time
+import traceback
 
 
 def save_json(data, filename):
-    """Guarda un diccionario en un archivo JSON con indentación."""
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def to_serializable(val):
-    # Convierte valores de Essentia / numpy a tipos básicos de Python
-    # para que el resultado se pueda usar fácilmente en JSON, CSV o impresión.
-    if val is None:
-        return []
-    if hasattr(val, "tolist"):
-        return val.tolist()
-    if isinstance(val, (list, tuple)):
-        return list(val)
-    if isinstance(val, (int, float)):
-        return float(val)
-    return str(val)
-
+def save_log(message, log_file="reports/rhythmic_report.txt"):
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(message + "\n")
 
 def extract_rhythmic_descriptors(audio_file):
-    # Verifica que el archivo de audio exista antes de procesarlo
-    if not os.path.exists(audio_file):
-        raise FileNotFoundError(f"Archivo no encontrado: {audio_file}")
 
-    # Carga el audio en mono con Essentia
-    audio = es.MonoLoader(filename=audio_file)()
+    start_time = time.time()
+    filename = os.path.splitext(os.path.basename(audio_file))[0]
 
-    # Crea el extractor rítmico de Essentia
-    rhythm_extractor = es.RhythmExtractor2013()
+    try:
+        temporal_file = f"descriptors/music/{filename}.json"
 
-    # Ejecuta el extractor y obtiene los valores rítmicos
-    bpm, beats, beats_confidence, _, beats_intervals = rhythm_extractor(audio)
+        if not os.path.exists(temporal_file):
+            raise FileNotFoundError(f"No existe: {temporal_file}")
 
-    # Devuelve los descriptores en tipos serializables
-    result = {
-        "bpm": float(bpm),
-        "beats": to_serializable(beats),
-        "beat_confidence": to_serializable(beats_confidence),
-        "beat_intervals": to_serializable(beats_intervals)
-    }
-    
-    # Guardar en JSON
-    output_dir = "descriptors"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "rhythmic_descriptors.json")
-    save_json(result, output_file)
-    print(f"✓ Descriptores rítmicos guardados en: {output_file}")
-    
-    return result
+        with open(temporal_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        if filename not in data:
+            raise KeyError(f"La ID '{filename}' no está en temporal.json")
+
+        song = data[filename]
+
+        # ============================
+        # 1. Descriptores rítmicos reales
+        # ============================
+        bpm = song.get("rhythm.bpm", 0.0)
+        beats_count = song.get("rhythm.beats_count", 0)
+
+        beat_conf = song.get("rhythm.beats_loudness.mean", None)
+
+        # NUEVOS DESCRIPTORES ÚTILES
+        onset_rate = song.get("rhythm.onset_rate", None)
+        danceability = song.get("rhythm.danceability", None)
+
+        # ============================
+        # 2. Formato final
+        # ============================
+        result = {
+            "bpm": bpm,
+            "beats": beats_count,
+            "beat_confidence": beat_conf,
+            "onset_rate": onset_rate,
+            "danceability": danceability
+        }
+
+        # ============================
+        # 3. Guardar JSON global
+        # ============================
+        output_file = "descriptors/rhythmic_descriptors.json"
+
+        if os.path.exists(output_file):
+            with open(output_file, "r", encoding="utf-8") as f:
+                all_data = json.load(f)
+        else:
+            all_data = {}
+
+        all_data[filename] = result
+        save_json(all_data, output_file)
+
+        elapsed = time.time() - start_time
+        save_log(f"OK - {filename} rítmico guardado | time={elapsed:.2f}s")
+
+        print(f"✓ Rítmico extraído desde temporal.json: {filename}")
+        return result
+
+    except Exception as e:
+        elapsed = time.time() - start_time
+        error = f"ERROR - {filename}: {str(e)} | time={elapsed:.2f}s"
+        save_log(error)
+        save_log(traceback.format_exc())
+        print(error)
+        return None
