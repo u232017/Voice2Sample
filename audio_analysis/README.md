@@ -62,11 +62,12 @@ Esto extraerá automáticamente todos los descriptores musicales y los guardará
 
 Después de ejecutar, encontrarás estos archivos en la carpeta `descriptors/`:
 
-- `music_descriptors.json` - Descriptores generales (577 características)
-- `timbre_descriptors.json` - Descriptores de timbre (MFCC, centroid, etc.)
-- `rhythmic_descriptors.json` - Descriptores rítmicos (BPM, beats, etc.)
-- `melodic_descriptors.json` - Descriptores melódicos (pitch, HPCP, key, etc.)
+- `music_all.json` - JSON final fusionado con todos los descriptores generales de `descriptors/music/`
+- `timbre_descriptors.json` - Descriptores de timbre extraídos del JSON general
+- `rhythmic_descriptors.json` - Descriptores rítmicos extraídos del JSON general
+- `melodic_descriptors.json` - Descriptores melódicos extraídos del JSON general
 
+También se crea la carpeta intermedia `descriptors/music/` con un JSON por archivo de audio antes de fusionar.
 ## 📁 Estructura del Proyecto
 
 ```
@@ -86,26 +87,32 @@ audio_analysis/
 ### Descriptores Extraídos
 
 1. **Descriptores Generales** (MusicExtractor)
-   - 577 características de bajo, medio y alto nivel
-   - Tempo, dinámica, timbre, armonía, etc.
+   - 577 características agregadas a partir de `MusicExtractor`
+   - Estadísticas `mean` de descriptores `lowlevel`, `rhythm`, `tonal` y `mfcc`
+   - Incluye tempo, energía, brillo espectral, armonía, dinamismo y más
 
 2. **Descriptores de Timbre**
-   - MFCC (13 coeficientes)
-   - GFCC (13 coeficientes)
-   - Centroid espectral, spread, rolloff
-   - Flux espectral, zero crossing rate
+   - MFCC (`lowlevel.mfcc.mean`, `lowlevel.mfcc.cov`)
+   - GFCC (`lowlevel.gfcc.mean`, `lowlevel.gfcc.cov`)
+   - Centroid espectral (`lowlevel.spectral_centroid.*`)
+   - Spread espectral (`lowlevel.spectral_spread.*`)
+   - Rolloff espectral (`lowlevel.spectral_rolloff.*`)
+   - Flux espectral (`lowlevel.spectral_flux.*`)
+   - Zero crossing rate (`lowlevel.zerocrossingrate.*`)
 
 3. **Descriptores Rítmicos**
-   - BPM (tempo)
-   - Posiciones de beats
-   - Confianza de detección
-   - Intervalos entre beats
+   - BPM global (`rhythm.bpm`)
+   - Número de beats (`rhythm.beats_count`)
+   - Confianza rítmica basada en loudness (`rhythm.beats_loudness.mean`)
+   - Tasa de onsets (`rhythm.onset_rate`)
+   - Danceability (`rhythm.danceability`)
 
 4. **Descriptores Melódicos**
-   - Pitch por frame con confianza
-   - Harmonic Pitch Class Profile (HPCP)
-   - Tonalidad y modo detectados
-   - Fuerza de la detección de key
+   - Pitch promedio, mediano, máximo y mínimo (`lowlevel.pitch_salience.*`)
+   - `pitch_confidence` como desviación estándar de pitch salience
+   - HPCP crest promedio/mediano/máximo/mínimo (`tonal.hpcp_crest.*`)
+   - Entropía de HPCP (`tonal.hpcp_entropy.mean`)
+   - Fuerza de tonalidad según EDMA, Krumhansl y Temperley
 
 ## ❓ Por qué estos descriptores (y por qué en loops)
 
@@ -114,56 +121,62 @@ He escogido estos descriptores porque representan bien cada aspecto del audio y,
 ---
 
 ### 🎼 Melódicos
-- **pitch**: indica la nota (frecuencia fundamental) → base de la melodía  
-  👉 En loops permite seguir cómo cambia la melodía instante a instante  
+- **pitch_mean / pitch_median / pitch_max / pitch_min**: resumen la claridad de pitch detectada por `lowlevel.pitch_salience.*`  
+  👉 Capturan cómo cambia la presencia melódica en el audio, incluso cuando la señal es variable.  
 
-- **pitch_confidence**: indica la fiabilidad del pitch detectado  
-  👉 En loops permite descartar frames donde la estimación es incorrecta (ruido, percusión, etc.)  
+- **pitch_confidence**: desviación estándar de `lowlevel.pitch_salience`  
+  👉 Mide cuánta variación hay en la detección de pitch; valores bajos indican estimaciones más estables.  
 
-- **hpcp**: representa la energía por clases de nota (Do, Re, Mi…)  
-  👉 En loops captura cómo evoluciona la armonía a lo largo del tiempo  
+- **hpcp_crest_mean / hpcp_crest_median / hpcp_crest_max / hpcp_crest_min**: energía máxima de HPCP (`tonal.hpcp_crest.*`)  
+  👉 Refleja la fuerza armónica de la pista y cómo cambia la concentración de notas.  
 
-- **key, scale, key_strength**: resumen la tonalidad global  
-  👉 Se calculan a partir de todos los frames, aprovechando la información acumulada del loop  
+- **hpcp_entropy**: entropía de HPCP (`tonal.hpcp_entropy.mean`)  
+  👉 Indica si la armonía es más ordenada (poca entropía) o más dispersa.  
+
+- **key_strength_edma / key_strength_krumhansl / key_strength_temperley**: fuerza de tonalidad según tres algoritmos distintos  
+  👉 Mide cuán clara es la tonalidad bajo diferentes reglas de detección musical.  
 
 ---
 
 ### 🥁 Rítmicos
-- **bpm**: velocidad global de la canción  
-  👉 Se estima a partir de muchos frames, detectando patrones repetidos en el tiempo  
+- **bpm**: velocidad global calculada por `rhythm.bpm`  
+  👉 Describe la velocidad base de la pista y sirve de referencia para el ritmo.  
 
-- **beats**: posiciones de los pulsos rítmicos  
-  👉 En loops permite detectar eventos distribuidos temporalmente  
+- **beats**: recuento de beats detectados (`rhythm.beats_count`)  
+  👉 Muestra cuántos pulsos rítmicos se identifican en el audio; útil para medir densidad rítmica.  
 
-- **beat_confidence**: mide si los beats siguen un patrón regular  
-  👉 En loops evalúa la consistencia del ritmo entre frames  
+- **beat_confidence**: loudness promedio de los beats (`rhythm.beats_loudness.mean`)  
+  👉 Usa la energía de los beats como proxy de fiabilidad rítmica.  
 
-- **beat_intervals**: tiempo entre beats  
-  👉 En loops permite analizar si el ritmo es estable o varía  
+- **onset_rate**: tasa de transitorios detectados (`rhythm.onset_rate`)  
+  👉 Indica cuántos eventos de ataque ocurren por segundo, útil para percusión y articulación.  
+
+- **danceability**: medida de bailabilidad (`rhythm.danceability`)  
+  👉 Refleja qué tan “bailable” es la pista según su patrón rítmico.  
 
 ---
 
 ### 🎧 Tímbricos
-- **mfcc**: resumen la forma del espectro → diferencian sonidos  
-  👉 En loops capturan cambios de timbre a lo largo del tiempo  
+- **mfcc.mean / mfcc.cov**: coeficientes MFCC y su covarianza  
+  👉 Capturan la forma general del espectro y su variabilidad para distinguir sonoridades.  
 
-- **gfcc**: similares a MFCC pero más robustos al ruido  
-  👉 En loops mantienen estabilidad incluso si la señal cambia  
+- **gfcc.mean / gfcc.cov**: coeficientes GFCC y su covarianza  
+  👉 Ofrecen una representación robusta frente al ruido, complementando los MFCC.  
 
-- **spectral_centroid**: indica el “brillo” del sonido  
-  👉 En loops permite ver variaciones de brillo entre frames  
+- **spectral_centroid.*:** brillo espectral en media, mediana, máximo, mínimo y desviación estándar  
+  👉 Mide hacia dónde se concentra la energía espectral.  
 
-- **spectral_spread**: dispersión de frecuencias  
-  👉 En loops detecta cambios en la distribución espectral  
+- **spectral_spread.*:** dispersión espectral en media, mediana, máximo, mínimo y desviación estándar  
+  👉 Indica si la energía está concentrada o dispersa en el espectro.  
 
-- **spectral_rolloff**: distribución de energía en frecuencias  
-  👉 En loops sigue cómo cambia la energía en el espectro  
+- **spectral_rolloff.*:** rolloff espectral en media, mediana, máximo, mínimo y desviación estándar  
+  👉 Indica hasta qué frecuencia se concentra la mayor parte de la energía.  
 
-- **spectral_flux**: cambio entre frames  
-  👉 En loops mide directamente la dinámica temporal  
+- **spectral_flux.*:** cambio espectral entre frames en media, mediana, máximo, mínimo y desviación estándar  
+  👉 Mide qué tan rápido varía el espectro, útil para detectar dinámicas y transiciones.  
 
-- **zero_crossing_rate**: nivel de ruido/percusividad  
-  👉 En loops detecta variaciones rápidas en la señal  
+- **zerocrossingrate.*:** tasa de cruces por cero en media, mediana, máximo, mínimo y desviación estándar  
+  👉 Ayuda a distinguir sonidos tonales de sonidos más ruidosos o percusivos.  
 
 ---
 
@@ -203,3 +216,4 @@ He escogido estos descriptores porque:
 ---
 
 **Proyecto desarrollado para análisis de señales musicales usando técnicas de machine learning.**
+
