@@ -41,10 +41,10 @@ def extract_music_descriptors(audio_file):
     try:
         # MusicExtractor se crea aquí (como antes)
         extractor = es.MusicExtractor(
-            lowlevelStats=['mean'],
-            rhythmStats=['mean'],
-            tonalStats=['mean'],
-            mfccStats=['mean']
+            lowlevelStats=['mean', 'var'],
+            rhythmStats=['mean', 'var'],
+            tonalStats=['mean', 'var'],
+            mfccStats=['mean', 'var']
         )
 
         features, _ = extractor(audio_file)

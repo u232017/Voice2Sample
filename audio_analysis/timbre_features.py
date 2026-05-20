@@ -22,9 +22,6 @@ def extract_timbre_descriptors(audio_file):
     filename = os.path.splitext(os.path.basename(audio_file))[0]
 
     try:
-        # ============================
-        # 1. Cargar temporal.json
-        # ============================
         temporal_file = f"descriptors/music/{filename}.json"
 
         if not os.path.exists(temporal_file):
@@ -33,65 +30,47 @@ def extract_timbre_descriptors(audio_file):
         with open(temporal_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # ============================
-        # 2. Verificar ID
-        # ============================
         if filename not in data:
             raise KeyError(f"La ID '{filename}' no está en temporal.json")
 
         song = data[filename]
 
         # ============================
-        # 3. Descriptores tímbricos reales
+        # SOLO mean + var (ACTUALIZADO)
         # ============================
         useful_keys = [
+
             # MFCC
-            "lowlevel.mfcc.mean", "lowlevel.mfcc.cov",
+            "lowlevel.mfcc.mean",
+            "lowlevel.mfcc.var",
 
             # GFCC
-            "lowlevel.gfcc.mean", "lowlevel.gfcc.cov",
+            "lowlevel.gfcc.mean",
+            "lowlevel.gfcc.var",
 
             # Spectral centroid
             "lowlevel.spectral_centroid.mean",
-            "lowlevel.spectral_centroid.median",
-            "lowlevel.spectral_centroid.max",
-            "lowlevel.spectral_centroid.min",
-            "lowlevel.spectral_centroid.stdev",
+            "lowlevel.spectral_centroid.var",
 
             # Spectral spread
             "lowlevel.spectral_spread.mean",
-            "lowlevel.spectral_spread.median",
-            "lowlevel.spectral_spread.max",
-            "lowlevel.spectral_spread.min",
-            "lowlevel.spectral_spread.stdev",
+            "lowlevel.spectral_spread.var",
 
             # Spectral rolloff
             "lowlevel.spectral_rolloff.mean",
-            "lowlevel.spectral_rolloff.median",
-            "lowlevel.spectral_rolloff.max",
-            "lowlevel.spectral_rolloff.min",
-            "lowlevel.spectral_rolloff.stdev",
+            "lowlevel.spectral_rolloff.var",
 
             # Spectral flux
             "lowlevel.spectral_flux.mean",
-            "lowlevel.spectral_flux.median",
-            "lowlevel.spectral_flux.max",
-            "lowlevel.spectral_flux.min",
-            "lowlevel.spectral_flux.stdev",
+            "lowlevel.spectral_flux.var",
 
             # Zero crossing rate
             "lowlevel.zerocrossingrate.mean",
-            "lowlevel.zerocrossingrate.median",
-            "lowlevel.zerocrossingrate.max",
-            "lowlevel.zerocrossingrate.min",
-            "lowlevel.zerocrossingrate.stdev"
+            "lowlevel.zerocrossingrate.var"
         ]
 
         timbre = {k: song[k] for k in useful_keys if k in song}
 
-        # ============================
-        # 4. Guardar JSON global
-        # ============================
         output_file = "descriptors/timbre_descriptors.json"
 
         if os.path.exists(output_file):
@@ -106,12 +85,13 @@ def extract_timbre_descriptors(audio_file):
         elapsed = time.time() - start_time
         save_log(f"OK - {filename} tímbrico guardado | time={elapsed:.2f}s")
 
-        print(f"✓ Tímbrico extraído correctamente y temporal.json eliminado")
+        print(f"✓ Tímbrico extraído correctamente: {filename}")
         return timbre
 
     except Exception as e:
         elapsed = time.time() - start_time
         error = f"ERROR - {filename}: {str(e)} | time={elapsed:.2f}s"
         save_log(error)
+        save_log(traceback.format_exc())
         print(error)
         return None

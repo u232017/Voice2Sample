@@ -1,2 +1,12 @@
+.venv2/
+.venv-1/
 .venv/
 __pycache__/
+Dataset/audio_temp/
+Dataset/audio_processed/
+Dataset/Dataset_temp/
+Dataset/audio_processed/
+backend/tmp/
+backend/cache/
+audio_analysis/descriptors
+audio_analysis/reports

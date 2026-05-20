@@ -65,7 +65,7 @@ def merge_music_jsons():
 #   MAIN (SECUENCIAL + MERGE FINAL + BORRADO)
 # ============================================================
 def main():
-    audio_dir = "../Dataset/audio_processed_prueba"
+    audio_dir = "../Dataset/audio_processed"
 
     audio_files = [
         os.path.join(audio_dir, f)

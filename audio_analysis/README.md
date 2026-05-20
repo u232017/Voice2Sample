@@ -62,21 +62,23 @@ Esto extraerá automáticamente todos los descriptores musicales y los guardará
 
 Después de ejecutar, encontrarás estos archivos en la carpeta `descriptors/`:
 
-- `music_descriptors.json` - Descriptores generales (577 características)
-- `timbre_descriptors.json` - Descriptores de timbre (MFCC, centroid, etc.)
-- `rhythmic_descriptors.json` - Descriptores rítmicos (BPM, beats, etc.)
-- `melodic_descriptors.json` - Descriptores melódicos (pitch, HPCP, key, etc.)
+- `music_all.json` - JSON final fusionado con todos los descriptores generales de `descriptors/music/`
+- `timbre_descriptors.json` - Descriptores de timbre extraídos desde `descriptors/music/*.json`
+- `rhythmic_descriptors.json` - Descriptores rítmicos extraídos desde `descriptors/music/*.json`
+- `melodic_descriptors.json` - Descriptores melódicos extraídos desde `descriptors/music/*.json`
 
+También se crea la carpeta intermedia `descriptors/music/` con un JSON por archivo de audio antes de fusionar.
 ## 📁 Estructura del Proyecto
 
 ```
 audio_analysis/
 ├── main.py                    # Script principal de ejecución
-├── general_features.py        # Extracción de descriptores generales
-├── timbre_features.py         # Extracción de descriptores de timbre
-├── rhythmic_features.py       # Extracción de descriptores rítmicos
-├── melodic_features.py        # Extracción de descriptores melódicos
+├── general_features.py        # Extracción de descriptores generales con Essentia MusicExtractor
+├── timbre_features.py         # Selección de descriptores de timbre desde el JSON general
+├── rhythmic_features.py       # Selección de descriptores rítmicos desde el JSON general
+├── melodic_features.py        # Selección de descriptores melódicos desde el JSON general
 ├── descriptors/               # Carpeta con resultados JSON (generada)
+├── reports/                   # Carpetas de logs de ejecución
 ├── README.md                  # Este archivo
 └── requeriments.txt           # Lista de dependencias
 ```
@@ -86,26 +88,107 @@ audio_analysis/
 ### Descriptores Extraídos
 
 1. **Descriptores Generales** (MusicExtractor)
-   - 577 características de bajo, medio y alto nivel
-   - Tempo, dinámica, timbre, armonía, etc.
+   - Extrae estadísticas `mean` y `var` de descriptores `lowlevel`, `rhythm`, `tonal` y `mfcc`
+   - Genera un JSON individual por audio en `descriptors/music/`
+   - Fusiona esos JSON en `descriptors/music_all.json`
 
 2. **Descriptores de Timbre**
-   - MFCC (13 coeficientes)
-   - GFCC (13 coeficientes)
-   - Centroid espectral, spread, rolloff
-   - Flux espectral, zero crossing rate
+   - MFCC (`lowlevel.mfcc.mean`, `lowlevel.mfcc.var`)
+   - GFCC (`lowlevel.gfcc.mean`, `lowlevel.gfcc.var`)
+   - Centroid espectral (`lowlevel.spectral_centroid.mean`, `lowlevel.spectral_centroid.var`)
+   - Spread espectral (`lowlevel.spectral_spread.mean`, `lowlevel.spectral_spread.var`)
+   - Rolloff espectral (`lowlevel.spectral_rolloff.mean`, `lowlevel.spectral_rolloff.var`)
+   - Flux espectral (`lowlevel.spectral_flux.mean`, `lowlevel.spectral_flux.var`)
+   - Zero crossing rate (`lowlevel.zerocrossingrate.mean`, `lowlevel.zerocrossingrate.var`)
 
 3. **Descriptores Rítmicos**
-   - BPM (tempo)
-   - Posiciones de beats
-   - Confianza de detección
-   - Intervalos entre beats
+   - BPM global (`rhythm.bpm`)
+   - Número de beats (`rhythm.beats_count`)
+   - Confianza rítmica basada en loudness de beats (`rhythm.beats_loudness.mean`)
+   - Tasa de onsets (`rhythm.onset_rate`)
+   - Danceability (`rhythm.danceability`)
+   - Histograma de BPM: primer y segundo pico con peso y spread
 
 4. **Descriptores Melódicos**
-   - Pitch por frame con confianza
-   - Harmonic Pitch Class Profile (HPCP)
-   - Tonalidad y modo detectados
-   - Fuerza de la detección de key
+   - Pitch salience media y varianza (`lowlevel.pitch_salience.mean`, `lowlevel.pitch_salience.var`)
+   - HPCP crest media y varianza (`tonal.hpcp_crest.mean`, `tonal.hpcp_crest.var`)
+   - Entropía de HPCP media (`tonal.hpcp_entropy.mean`)
+   - Fuerza de tonalidad: EDMA, Krumhansl y Temperley (`tonal.key_edma.strength`, `tonal.key_krumhansl.strength`, `tonal.key_temperley.strength`)
+
+## ❓ Por qué estos descriptores (y por qué en loops)
+
+He escogido estos descriptores porque representan bien cada aspecto del audio y, además, se benefician del análisis por frames (loops), ya que permiten capturar cambios en el tiempo.
+
+---
+
+### 🎼 Melódicos
+- **pitch_mean / pitch_var**: resumen la claridad y estabilidad del pitch detectado por `lowlevel.pitch_salience`  
+  👉 Capturan cómo varía la presencia melódica en el audio y su consistencia.  
+
+- **hpcp_crest_mean / hpcp_crest_var**: energía armónica de HPCP  
+  👉 Refleja la fuerza y la variabilidad de la armonía en la pista.  
+
+- **hpcp_entropy_mean**: entropía de HPCP  
+  👉 Indica si la armonía está más ordenada o dispersa.  
+
+- **key_strength_edma / key_strength_krumhansl / key_strength_temperley**: fuerza de tonalidad según tres criterios  
+  👉 Mide la claridad tonal desde diferentes métodos de detección.  
+
+---
+
+### 🥁 Rítmicos
+- **bpm**: velocidad global calculada por `rhythm.bpm`  
+  👉 Describe la base rítmica de la pista.  
+
+- **beats**: recuento de beats detectados (`rhythm.beats_count`)  
+  👉 Indica la densidad rítmica del audio.  
+
+- **beat_confidence**: loudness promedio de beats (`rhythm.beats_loudness.mean`)  
+  👉 Usa la energía de los pulsos para estimar la fiabilidad del ritmo.  
+
+- **onset_rate**: tasa de transitorios (`rhythm.onset_rate`)  
+  👉 Mide cuántos ataques o eventos por segundo aparecen.  
+
+- **danceability**: medida de bailabilidad (`rhythm.danceability`)  
+  👉 Refleja qué tan fluido y regular es el ritmo para bailar.  
+
+- **bpm_hist_first_peak_bpm / bpm_hist_first_peak_weight**: primer pico del histograma de BPM  
+  👉 Indica el tempo dominante y su importancia.  
+
+- **bpm_hist_second_peak_bpm / bpm_hist_second_peak_spread / bpm_hist_second_peak_weight**: segundo pico del histograma de BPM  
+  👉 Mide tempo alternativo y su consistencia.  
+
+---
+
+### 🎧 Tímbricos
+- **mfcc.mean / mfcc.var**: coeficientes MFCC y su variabilidad  
+  👉 Describen la forma espectral y la textura sonora.  
+
+- **gfcc.mean / gfcc.var**: coeficientes GFCC y su variabilidad  
+  👉 Complementan los MFCC con robustez frente al ruido.  
+
+- **spectral_centroid.mean / spectral_centroid.var**: brillo espectral  
+  👉 Mide dónde se concentra la energía en el espectro.  
+
+- **spectral_spread.mean / spectral_spread.var**: dispersión espectral  
+  👉 Indica cuán extendida está la energía espectral.  
+
+- **spectral_rolloff.mean / spectral_rolloff.var**: rolloff espectral  
+  👉 Marca el límite superior de la energía dominante.  
+
+- **spectral_flux.mean / spectral_flux.var**: cambio espectral  
+  👉 Detecta transiciones y dinámicas en el timbre.  
+
+- **zerocrossingrate.mean / zerocrossingrate.var**: tasa de cruces por cero  
+  👉 Diferencia sonidos más tonales de sonidos más ruidosos.  
+
+---
+
+### 🎯 Resumen
+He escogido estos descriptores porque:
+- describen bien **melodía, ritmo y timbre**  
+- permiten analizar la **evolución temporal** mediante loops  
+- capturan tanto información **instantánea (por frame)** como **global (agregada)**  
 
 ## ❓ Por qué estos descriptores (y por qué en loops)
 

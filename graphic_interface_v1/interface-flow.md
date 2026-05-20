@@ -5,7 +5,7 @@ This document describes the expected user interaction for the first desktop prot
 The interface is designed to be simple, visual, and easy to use.  
 The user begins by opening the application and choosing between recording a sound or uploading an existing audio file.  
 After the audio is received, the system processes it, shows a loading stage, and then displays several recommended sounds retrieved from Freesound.  
-The user can listen to the results, compare them, and download the preferred sample.
+The user can listen to real Freesound previews, compare results, and open the original sound page on Freesound.
 
 ## User Flow Diagram
 
@@ -27,7 +27,7 @@ flowchart TD
     I --> J[Play and compare samples]
     J --> K{Satisfied with a result?}
 
-    K -->|Yes| L[Download selected sound]
+    K -->|Yes| L[Open selected sound on Freesound]
     K -->|No| M[Try another recommendation]
     M --> J
 

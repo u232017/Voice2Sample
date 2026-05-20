@@ -19,51 +19,41 @@ def extract_melodic_features(audio_file):
     filename = os.path.splitext(os.path.basename(audio_file))[0]
 
     try:
-        # ============================
-        # 1. Cargar temporal.json
-        # ============================
         temporal_file = f"descriptors/music/{filename}.json"
+
         if not os.path.exists(temporal_file):
             raise FileNotFoundError(f"No existe: {temporal_file}")
 
         with open(temporal_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        # ============================
-        # 2. Verificar ID
-        # ============================
         if filename not in data:
             raise KeyError(f"La ID '{filename}' no está en temporal.json")
 
         song = data[filename]
 
         # ============================
-        # 3. Descriptores melódicos REALES
+        # MELODÍA (solo mean + var reales)
         # ============================
         melodic = {
-            # Pitch (salience = claridad del pitch)
+
+            # pitch salience (SOLO EXISTEN ESTOS 2)
             "pitch_mean": song.get("lowlevel.pitch_salience.mean"),
-            "pitch_median": song.get("lowlevel.pitch_salience.median"),
-            "pitch_max": song.get("lowlevel.pitch_salience.max"),
-            "pitch_min": song.get("lowlevel.pitch_salience.min"),
-            "pitch_confidence": song.get("lowlevel.pitch_salience.stdev"),
+            "pitch_var": song.get("lowlevel.pitch_salience.var"),
 
             # HPCP (armonía)
             "hpcp_crest_mean": song.get("tonal.hpcp_crest.mean"),
-            "hpcp_crest_median": song.get("tonal.hpcp_crest.median"),
-            "hpcp_crest_max": song.get("tonal.hpcp_crest.max"),
-            "hpcp_crest_min": song.get("tonal.hpcp_crest.min"),
-            "hpcp_entropy": song.get("tonal.hpcp_entropy.mean"),
+            "hpcp_crest_var": song.get("tonal.hpcp_crest.var"),
 
-            # Tonalidad
+            "hpcp_entropy_mean": song.get("tonal.hpcp_entropy.mean"),
+            "hpcp_entropy_var": song.get("tonal.hpcp_entropy.var"),
+
+            # tonalidad
             "key_strength_edma": song.get("tonal.key_edma.strength"),
             "key_strength_krumhansl": song.get("tonal.key_krumhansl.strength"),
             "key_strength_temperley": song.get("tonal.key_temperley.strength")
         }
 
-        # ============================
-        # 4. Guardar JSON global
-        # ============================
         output_file = "descriptors/melodic_descriptors.json"
 
         if os.path.exists(output_file):
@@ -75,15 +65,12 @@ def extract_melodic_features(audio_file):
         all_data[filename] = melodic
         save_json(all_data, output_file)
 
-        elapsed = time.time() - start_time
-        save_log(f"OK - {filename} melódico guardado | time={elapsed:.2f}s")
+        save_log(f"OK - {filename} melódico | time={time.time()-start_time:.2f}s")
 
-        print(f"✓ Melódico extraído desde temporal.json: {filename}")
+        print(f"✓ Melódico extraído correctamente: {filename}")
         return melodic
 
     except Exception as e:
-        elapsed = time.time() - start_time
-        error = f"ERROR - {filename}: {str(e)} | time={elapsed:.2f}s"
-        save_log(error)
-        print(error)
+        save_log(f"ERROR - {filename}: {e}")
+        print(f"ERROR - {filename}: {e}")
         return None
