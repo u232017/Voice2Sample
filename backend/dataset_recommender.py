@@ -14,6 +14,16 @@ import soundfile as sf
 
 
 SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".aiff", ".aif", ".m4a"}
+BPM_MIN = 60.0
+BPM_MAX = 180.0
+# Adaptive candidate filtering windows for BPM mode.
+BPM_COMPATIBLE_TOLERANCES = (10.0, 15.0, 20.0)
+# Hybrid ranking weight for focus="bpm": combined_distance = feature_distance + weight * bpm_penalty
+BPM_DISTANCE_WEIGHT = 2.0
+# Stronger penalty used when tolerance windows cannot provide enough candidates.
+BPM_DISTANCE_WEIGHT_FALLBACK = 2.5
+# BPM normalization scale for penalty.
+BPM_PENALTY_SCALE = 20.0
 
 
 @dataclass(frozen=True)
@@ -113,6 +123,118 @@ def _safe_stats(values: np.ndarray) -> list[float]:
 
     values = values[np.isfinite(values)]
     return [float(np.mean(values)), float(np.std(values)), float(np.median(values))]
+
+
+def _safe_float(value: Any) -> float | None:
+    if value in (None, "", "None"):
+        return None
+    try:
+        number = float(value)
+        if np.isfinite(number):
+            return number
+    except (TypeError, ValueError):
+        return None
+    return None
+
+
+def _metadata_bpm(metadata: dict[str, Any]) -> float | None:
+    bpm = _safe_float(metadata.get("bpm"))
+    if bpm is not None:
+        return bpm
+    annotations = metadata.get("annotations")
+    if isinstance(annotations, dict):
+        return _safe_float(annotations.get("bpm"))
+    return None
+
+
+def _get_item_bpm(item: DatasetItem) -> float | None:
+    return _metadata_bpm(item.metadata or {})
+
+
+def get_query_bpm(query_path: Path, items: list[DatasetItem]) -> float | None:
+    """Resolve query BPM from dataset metadata when possible, otherwise estimate from audio."""
+    query_stem = query_path.stem.lower()
+
+    for item in items:
+        if query_stem == item.path.stem.lower():
+            bpm = _get_item_bpm(item)
+            if bpm is not None:
+                return bpm
+
+    return estimate_audio_bpm(query_path)
+
+
+def estimate_audio_bpm(path: Path) -> float | None:
+    """Estimate BPM from audio with a lightweight flux-autocorrelation method."""
+    try:
+        audio, sample_rate = read_audio_mono(path)
+    except Exception:
+        return None
+
+    if audio.size == 0:
+        return None
+
+    audio = np.nan_to_num(audio).astype(np.float32)
+    peak = float(np.max(np.abs(audio)) + 1e-9)
+    if peak <= 1e-9:
+        return None
+    normalized = audio / peak
+
+    frame_size = 1024
+    hop_size = 512
+    if normalized.size < frame_size * 2:
+        return None
+
+    envelope = []
+    for start in range(0, normalized.size - frame_size, hop_size):
+        frame = normalized[start : start + frame_size]
+        envelope.append(float(np.mean(frame * frame)))
+
+    if len(envelope) < 12:
+        return None
+
+    flux = np.maximum(0.0, np.diff(np.asarray(envelope, dtype=np.float32)))
+    if flux.size < 12:
+        return None
+
+    flux_rate = float(sample_rate) / float(hop_size)
+    min_lag = max(1, int((60.0 / BPM_MAX) * flux_rate))
+    max_lag = max(min_lag, int((60.0 / BPM_MIN) * flux_rate))
+    max_lag = min(max_lag, int(flux.size - 1))
+    if min_lag >= max_lag:
+        return None
+
+    best_lag = 0
+    best_score = 0.0
+    for lag in range(min_lag, max_lag + 1):
+        score = float(np.dot(flux[lag:], flux[:-lag]))
+        if score > best_score:
+            best_score = score
+            best_lag = lag
+
+    if best_lag <= 0 or best_score <= 0.0:
+        return None
+
+    bpm = (60.0 * flux_rate) / float(best_lag)
+    if not np.isfinite(bpm):
+        return None
+    return float(np.clip(bpm, BPM_MIN, BPM_MAX))
+
+
+def robust_bpm_distance(input_bpm: float, candidate_bpm: float) -> float:
+    """Half-time / double-time aware BPM difference."""
+    return min(
+        abs(input_bpm - candidate_bpm),
+        abs(input_bpm - (candidate_bpm * 2.0)),
+        abs(input_bpm - (candidate_bpm * 0.5)),
+    )
+
+
+def normalize_bpm_penalty(bpm_diff: float) -> float:
+    """Normalize BPM distance and clip it to keep the score bounded."""
+    if bpm_diff <= 0:
+        return 0.0
+    return float(np.clip(bpm_diff / BPM_PENALTY_SCALE, 0.0, 1.0))
 
 
 def extract_audio_features(path: Path) -> list[float]:
@@ -272,12 +394,67 @@ def rank_similar_items(query_audio: Path, items: list[DatasetItem], limit: int, 
     matrix_focused = matrix[:, focus_indices]
 
     dataset_scaled, query_scaled = _standardize(matrix_focused, query_features_focused)
-    distances = np.linalg.norm(dataset_scaled - query_scaled, axis=1)
-    order = np.argsort(distances)
+    feature_distances = np.linalg.norm(dataset_scaled - query_scaled, axis=1).astype(np.float32)
+
+    # Keep non-BPM modes unchanged.
+    if focus != "bpm":
+        order = np.argsort(feature_distances)
+        ranked = []
+        for index in order[:limit]:
+            distance = float(feature_distances[index])
+            similarity = float(1.0 / (1.0 + distance))
+            ranked.append((items[int(index)], distance, similarity))
+        return ranked
+
+    # BPM mode is a two-stage hybrid:
+    # 1) Adaptive BPM-compatible filtering (10 -> 15 -> 20 BPM windows)
+    # 2) Feature distance + BPM penalty ranking inside the selected candidate set
+    query_bpm = get_query_bpm(query_audio, items)
+    if query_bpm is None:
+        order = np.argsort(feature_distances)
+        ranked = []
+        for index in order[:limit]:
+            distance = float(feature_distances[index])
+            similarity = float(1.0 / (1.0 + distance))
+            ranked.append((items[int(index)], distance, similarity))
+        return ranked
+
+    item_bpms: list[float | None] = [_get_item_bpm(item) for item in items]
+    bpm_diffs: list[float | None] = []
+    for bpm in item_bpms:
+        if bpm is None:
+            bpm_diffs.append(None)
+        else:
+            bpm_diffs.append(robust_bpm_distance(query_bpm, bpm))
+
+    candidate_indices: list[int] | None = None
+    for tolerance in BPM_COMPATIBLE_TOLERANCES:
+        compatible = [idx for idx, diff in enumerate(bpm_diffs) if diff is not None and diff <= tolerance]
+        if len(compatible) >= limit:
+            candidate_indices = compatible
+            break
+
+    fallback_full_dataset = False
+    if candidate_indices is None:
+        candidate_indices = list(range(len(items)))
+        fallback_full_dataset = True
+
+    combined_distances = feature_distances.copy()
+    bpm_weight = BPM_DISTANCE_WEIGHT_FALLBACK if fallback_full_dataset else BPM_DISTANCE_WEIGHT
+
+    for idx in candidate_indices:
+        diff = bpm_diffs[idx]
+        if diff is None:
+            # Missing BPM for this candidate: keep feature-only distance.
+            continue
+        bpm_penalty = normalize_bpm_penalty(diff)
+        combined_distances[idx] = float(feature_distances[idx] + (bpm_weight * bpm_penalty))
+
+    order = sorted(candidate_indices, key=lambda idx: combined_distances[idx])
 
     ranked = []
     for index in order[:limit]:
-        distance = float(distances[index])
+        distance = float(combined_distances[index])
         similarity = float(1.0 / (1.0 + distance))
         ranked.append((items[int(index)], distance, similarity))
 
