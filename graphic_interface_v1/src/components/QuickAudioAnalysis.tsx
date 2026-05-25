@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Activity, AudioLines, Drum, Music2, Sparkles } from 'lucide-react';
+import {
+  Activity,
+  AlertTriangle,
+  AudioLines,
+  Drum,
+  Music2,
+  Sparkles,
+} from 'lucide-react';
 import { audioAnalysisService } from '../services/audioAnalysisService';
-import { AudioAnalysisResult, AudioTrimSelection, RecordedAudio, SimilarityFocus } from '../services/types';
+import {
+  AudioAnalysisResult,
+  AudioTrimSelection,
+  DescriptorProvenance,
+  RecordedAudio,
+  SimilarityFocus,
+} from '../services/types';
 import { audioService } from '../services/audio';
 
 interface QuickAudioAnalysisProps {
@@ -11,23 +24,87 @@ interface QuickAudioAnalysisProps {
   onAnalysisChange: (analysis: AudioAnalysisResult | null) => void;
 }
 
-const labelText = (value: string) => value.charAt(0).toUpperCase() + value.slice(1).replace('-', ' ');
+interface MetricRowProps {
+  label: string;
+  value: string;
+  provenance: DescriptorProvenance;
+}
 
 const formatFrequency = (value: number | null) => {
-  if (!value || !Number.isFinite(value)) return '--';
-  if (value >= 1000) return `${(value / 1000).toFixed(1)} kHz`;
+  if (value === null || !Number.isFinite(value)) {
+    return '--';
+  }
+
+  if (value >= 1000) {
+    return `${(value / 1000).toFixed(2)} kHz`;
+  }
+
   return `${Math.round(value)} Hz`;
 };
 
 const formatBpm = (value: number | null) => {
-  if (!value || !Number.isFinite(value)) return '--';
+  if (value === null || !Number.isFinite(value)) {
+    return '--';
+  }
+
   return `${Math.round(value)} BPM`;
 };
 
-export function QuickAudioAnalysis({ audio, trimSelection, focus, onAnalysisChange }: QuickAudioAnalysisProps) {
-  const [analysis, setAnalysis] = useState<AudioAnalysisResult | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const formatDecimal = (value: number, decimals = 3) => {
+  if (!Number.isFinite(value)) {
+    return '--';
+  }
+
+  return value.toFixed(decimals);
+};
+
+const formatPercentage = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return '--';
+  }
+
+  return `${Math.round(value * 100)}%`;
+};
+
+function MetricRow({
+  label,
+  value,
+  provenance,
+}: MetricRowProps) {
+  return (
+    <div className="analysis-metric-row">
+      <div>
+        <span>{label}</span>
+        <strong>{value}</strong>
+      </div>
+
+      <small
+        className={`descriptor-source ${
+          provenance.source === 'essentia.js'
+            ? 'essentia'
+            : 'approximation'
+        }`}
+      >
+        {provenance.source === 'essentia.js'
+          ? 'Essentia.js'
+          : 'Approximation'}
+      </small>
+    </div>
+  );
+}
+
+export function QuickAudioAnalysis({
+  audio,
+  trimSelection,
+  focus,
+  onAnalysisChange,
+}: QuickAudioAnalysisProps) {
+  const [analysis, setAnalysis] =
+    useState<AudioAnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] =
+    useState(false);
+  const [error, setError] =
+    useState<string | null>(null);
 
   useEffect(() => {
     if (!audio || !trimSelection) {
@@ -38,23 +115,33 @@ export function QuickAudioAnalysis({ audio, trimSelection, focus, onAnalysisChan
     }
 
     let cancelled = false;
+
     const timeoutId = window.setTimeout(async () => {
       try {
         setIsAnalyzing(true);
         setError(null);
-        const result = await audioAnalysisService.analyze(audio, trimSelection);
+
+        const result = await audioAnalysisService.analyze(
+          audio,
+          trimSelection
+        );
 
         if (!cancelled) {
           setAnalysis(result);
           onAnalysisChange(result);
         }
       } catch (analysisError) {
-        console.error('Quick audio analysis failed:', analysisError);
+        console.error(
+          'Quick audio analysis failed:',
+          analysisError
+        );
 
         if (!cancelled) {
           setAnalysis(null);
           onAnalysisChange(null);
-          setError('Essentia analysis is not available for this audio yet.');
+          setError(
+            'The selected audio segment could not be analyzed.'
+          );
         }
       } finally {
         if (!cancelled) {
@@ -69,20 +156,36 @@ export function QuickAudioAnalysis({ audio, trimSelection, focus, onAnalysisChan
     };
   }, [audio, trimSelection, onAnalysisChange]);
 
-  if (!audio) return null;
+  if (!audio) {
+    return null;
+  }
 
   const descriptors = analysis?.descriptors;
+  const sources = analysis?.sources;
 
   return (
     <div className="quick-analysis-card">
       <div className="quick-analysis-head">
-        <div>
-          <span className="quick-analysis-kicker">Essentia.js analysis</span>
-          <h3>Timbre, rhythm and melody descriptors</h3>
-        </div>
+        <span className="quick-analysis-kicker">
+          Audio descriptor analysis
+        </span>
 
-        <span className={`analysis-engine-pill ${analysis?.engine === 'essentia.js' ? 'essentia' : ''}`}>
-          {analysis?.engine || 'analyzing'}
+        <span
+          className={`analysis-engine-pill ${
+            analysis?.engine === 'essentia.js'
+              ? 'essentia'
+              : analysis?.engine === 'mixed-analysis'
+                ? 'mixed'
+                : 'approximation'
+          }`}
+        >
+          {analysis?.engine === 'essentia.js'
+            ? 'Essentia.js'
+            : analysis?.engine === 'mixed-analysis'
+              ? 'Mixed analysis'
+              : analysis?.engine === 'approximation'
+                ? 'Approximation'
+                : 'Analyzing'}
         </span>
       </div>
 
@@ -93,52 +196,175 @@ export function QuickAudioAnalysis({ audio, trimSelection, focus, onAnalysisChan
         </div>
       )}
 
-      {error && <p className="quick-analysis-error">{error}</p>}
+      {error && (
+        <p className="quick-analysis-error">
+          {error}
+        </p>
+      )}
 
-      {descriptors && (
+      {descriptors && sources && (
         <>
-          <div className="quick-analysis-grid">
-            <div className={focus === 'melodic' ? 'active' : ''}>
-              <Music2 className="h-4 w-4" />
-              <span>Melodic</span>
-              <strong>{labelText(descriptors.melody.melodicLabel)}</strong>
-              <small>{formatFrequency(descriptors.melody.estimatedPitch)}</small>
+          {analysis.hasApproximations && (
+            <div className="analysis-approximation-notice">
+              <AlertTriangle className="h-4 w-4" />
+              <p>
+                Values marked <strong>Approximation</strong> are fallback
+                estimates shown when Essentia.js cannot return a reliable
+                value for that descriptor in the selected audio segment.
+              </p>
             </div>
+          )}
 
-            <div className={focus === 'bpm' ? 'active' : ''}>
-              <Drum className="h-4 w-4" />
-              <span>BPM / rhythm</span>
-              <strong>{formatBpm(descriptors.rhythm.bpm)}</strong>
-              <small>{labelText(descriptors.rhythm.rhythmLabel)}</small>
-            </div>
+          <div className="quick-analysis-grid precise-grid">
+            <section className={focus === 'melodic' ? 'active' : ''}>
+              <div className="descriptor-group-title">
+                <Music2 className="h-4 w-4" />
+                <span>Melodic</span>
+              </div>
 
-            <div className={focus === 'timbre' ? 'active' : ''}>
-              <AudioLines className="h-4 w-4" />
-              <span>Timbre</span>
-              <strong>{labelText(descriptors.timbre.timbreLabel)}</strong>
-              <small>{formatFrequency(descriptors.timbre.spectralCentroid)}</small>
-            </div>
+              <MetricRow
+                label="Predominant pitch"
+                value={formatFrequency(
+                  descriptors.melody.estimatedPitch
+                )}
+                provenance={sources.melody.estimatedPitch}
+              />
 
-            <div className={focus === 'energy' ? 'active' : ''}>
-              <Activity className="h-4 w-4" />
-              <span>Energy</span>
-              <strong>{labelText(descriptors.energy.energyLabel)}</strong>
-              <small>RMS {descriptors.energy.rms.toFixed(3)}</small>
-            </div>
+              <MetricRow
+                label="Pitch confidence"
+                value={formatPercentage(
+                  descriptors.melody.pitchConfidence
+                )}
+                provenance={sources.melody.pitchConfidence}
+              />
+            </section>
+
+            <section className={focus === 'bpm' ? 'active' : ''}>
+              <div className="descriptor-group-title">
+                <Drum className="h-4 w-4" />
+                <span>BPM / rhythm</span>
+              </div>
+
+              <MetricRow
+                label="BPM"
+                value={formatBpm(descriptors.rhythm.bpm)}
+                provenance={sources.rhythm.bpm}
+              />
+
+              <MetricRow
+                label="Rhythm confidence"
+                value={formatPercentage(
+                  descriptors.rhythm.bpmConfidence
+                )}
+                provenance={sources.rhythm.bpmConfidence}
+              />
+
+              <MetricRow
+                label="Onset rate"
+                value={`${formatDecimal(
+                  descriptors.rhythm.onsetRate,
+                  2
+                )}/s`}
+                provenance={sources.rhythm.onsetRate}
+              />
+            </section>
+
+            <section className={focus === 'timbre' ? 'active' : ''}>
+              <div className="descriptor-group-title">
+                <AudioLines className="h-4 w-4" />
+                <span>Timbre</span>
+              </div>
+
+              <MetricRow
+                label="Spectral centroid"
+                value={formatFrequency(
+                  descriptors.timbre.spectralCentroid
+                )}
+                provenance={sources.timbre.spectralCentroid}
+              />
+
+              <MetricRow
+                label="Spectral rolloff"
+                value={formatFrequency(
+                  descriptors.timbre.spectralRolloff
+                )}
+                provenance={sources.timbre.spectralRolloff}
+              />
+
+              <MetricRow
+                label="Spectral flatness"
+                value={formatDecimal(
+                  descriptors.timbre.spectralFlatness
+                )}
+                provenance={sources.timbre.spectralFlatness}
+              />
+
+              <MetricRow
+                label="ZCR"
+                value={formatDecimal(
+                  descriptors.timbre.zeroCrossingRate
+                )}
+                provenance={sources.timbre.zeroCrossingRate}
+              />
+            </section>
+
+            <section className={focus === 'energy' ? 'active' : ''}>
+              <div className="descriptor-group-title">
+                <Activity className="h-4 w-4" />
+                <span>Energy</span>
+              </div>
+
+              <MetricRow
+                label="RMS"
+                value={formatDecimal(descriptors.energy.rms)}
+                provenance={sources.energy.rms}
+              />
+
+              <MetricRow
+                label="Energy"
+                value={formatDecimal(
+                  descriptors.energy.energy,
+                  2
+                )}
+                provenance={sources.energy.energy}
+              />
+
+              <MetricRow
+                label="Dynamic complexity"
+                value={formatDecimal(
+                  descriptors.energy.dynamicComplexity,
+                  2
+                )}
+                provenance={sources.energy.dynamicComplexity}
+              />
+            </section>
           </div>
 
           <div className="quick-analysis-details">
-            <span>Selected: {audioService.formatPreciseDuration(descriptors.selectedDuration)}</span>
-            <span>Onsets: {descriptors.rhythm.onsetRate.toFixed(2)}/s</span>
-            <span>ZCR: {descriptors.timbre.zeroCrossingRate.toFixed(3)}</span>
-            <span>Pitch confidence: {(descriptors.melody.pitchConfidence * 100).toFixed(0)}%</span>
+            <span>
+              Selected:{' '}
+              {audioService.formatPreciseDuration(
+                descriptors.selectedDuration
+              )}
+            </span>
+
+            <span>
+              Sample rate: {Math.round(descriptors.sampleRate)} Hz
+            </span>
+
+            <span>
+              Channels: {descriptors.channels}
+            </span>
           </div>
 
           <div className="essentia-ready-box">
             <strong>Essentia search ready</strong>
+
             <p>
-              These descriptors are extracted in the frontend and will be used when the Essentia model is selected.
-              The current priority is <b>{focus}</b> similarity.
+              Metrics tagged <b>Essentia.js</b> are calculated using
+              Essentia algorithms. Values tagged <b>Approximation</b> are
+              fallback estimates used only when a reliable Essentia value is
+              unavailable. Current priority: <b>{focus}</b> similarity.
             </p>
           </div>
         </>

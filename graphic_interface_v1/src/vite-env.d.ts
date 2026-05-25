@@ -1,27 +1,22 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+/// <reference types="vite/client" />
 
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 4173,
-    open: true,
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        rewrite: (path) => path,
-      },
-    },
-  },
-  preview: {
-    port: 4173,
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:8000',
-        changeOrigin: true,
-        rewrite: (path) => path,
-      },
-    },
-  },
-})
+interface ImportMetaEnv {
+  readonly VITE_FREESOUND_API_KEY: string;
+  readonly VITE_FREESOUND_API_BASE: string;
+  readonly VITE_MAX_FILE_SIZE: string;
+  readonly VITE_SUPPORTED_FORMATS: string;
+  readonly VITE_BACKEND_API_BASE: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+declare module 'essentia.js/dist/essentia-wasm.es.js' {
+  export const EssentiaWASM: unknown;
+}
+
+declare module 'essentia.js/dist/essentia.js-core.es.js' {
+  const Essentia: unknown;
+  export default Essentia;
+}
