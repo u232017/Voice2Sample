@@ -1,31 +1,66 @@
 # Voice2Sample
 
-Voice2Sample is a project for finding and comparing sound samples from an input recording. It includes dataset utilities, audio descriptor experiments, machine learning prototypes, and a Vite/React web interface.
+Voice2Sample is a project for producers and developers that makes it easy to search and compare loops, samples, and short audio fragments by extracting acoustic descriptors, processing metadata, and using similarity models. The repository contains tools to prepare datasets, extract musical descriptors, train or run machine learning models, and a web interface to test recommendations.
 
-## What the project does
+**Summary of features**
+- Dataset preparation: convert audio to WAV, clean metadata, and generate CSV files ready for ML.
+- Extraction of acoustic and musical descriptors (timbre, rhythm, melodic) from `audio_analysis/` (uses Essentia).
+- Search for similar samples based on descriptors and embeddings.
+- Backend API that serves recommendations and a frontend for visualization and interaction.
 
-- Dataset preparation: WAV conversion, CSV cleanup, and JSON to CSV tools.
-- Audio analysis experiments with timbre, rhythm, melody, and general descriptors.
-- Machine learning prototypes for local audio similarity experiments.
-- Web UI to record or upload audio, preview a waveform, trim the useful region, and search related sounds through Freesound.
+**Dataset used in this repository**
+- The main collection is located in the `Dataset/` folder.
+	- `Dataset/audio_prueba`: example processed audio used for local testing.
+	- `Dataset/metadata_prueba`: metadata associated with those audio files.
+- The pipeline supports downloading collections from Zenodo (see `download_dataset/zenodo_downloader.py`) and the dependencies listed in `Dataset/readme.md` include `zenodo-get`. Therefore, the intended source for bulk data is Zenodo when using the downloader script; otherwise, you can place audio and metadata manually into the folders above.
 
-## General requirements
+**Repository highlights**
+- `audio_analysis/` — Descriptor extraction and generation of JSON files in `descriptors/` (melodic, timbre, rhythmic, music).
+- `Dataset/` — Audio conversion, JSON→CSV conversion, cleaning and validation (main pipeline in `Dataset/main.py`).
+- `backend/` — FastAPI backend that exposes recommendation endpoints for the UI.
+- `graphic_interface_v1/` — Web interface (Vite + React/TypeScript) for uploading/recording audio and displaying results.
+- `Machine_Learning/` — Experiments, embeddings and models for similarity.
 
-- Python 3.10+ for the analysis, dataset, and machine learning scripts.
-- Node.js 18+ for the web interface.
-- Python dependencies in [requeriments.txt](requeriments.txt).
-
-## Python Setup
+**Quick installation and run guide**
+1. Create and activate a Python environment:
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\activate    # Windows PowerShell
+# or: source .venv/bin/activate    # WSL / Linux
+```
+
+2. Install dependencies:
+
+```bash
 pip install -r requeriments.txt
 ```
 
-Note: `essentia` does not provide official Windows binaries. On Windows, use WSL or another Linux environment if you need the Essentia scripts.
+3. Prepare or download the dataset (optional):
+- Edit paths in `Dataset/main.py` to point to your audio/metadata folders.
+- To download collections from Zenodo, use `download_dataset/zenodo_downloader.py`.
 
-## Web Interface
+4. Run the Dataset pipeline:
+
+```bash
+cd Dataset
+python main.py
+```
+
+5. Extract acoustic descriptors:
+
+```bash
+cd audio_analysis
+python main.py
+```
+
+6. Run the backend API (from the repository root):
+
+```bash
+python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
+```
+
+7. Start the web interface (optional):
 
 ```bash
 cd graphic_interface_v1
@@ -33,47 +68,13 @@ npm install
 npm run dev
 ```
 
-Create `graphic_interface_v1/.env.local` from `graphic_interface_v1/.env.example` and add a Freesound API key:
+**Important notes**
+- `essentia` does not provide official Windows binaries; using WSL is recommended for analysis with Essentia (`audio_analysis/README.md` and `Dataset/readme.md` include instructions).
+- Make sure `ffmpeg` is installed for audio conversions.
+- By default, the backend uses the files in `Dataset/audio_prueba` and `Dataset/metadata_prueba` for local recommendations; you can change that source by editing the configuration in `backend/app.py`.
 
-```env
-VITE_FREESOUND_API_KEY=your_freesound_api_key_here
-VITE_FREESOUND_API_BASE=https://freesound.org/apiv2
-VITE_MAX_FILE_SIZE=52428800
-VITE_SUPPORTED_FORMATS=wav,mp3,ogg,flac,m4a
-```
+Would you like me to also add:
+- step-by-step instructions specifically for Windows/WSL,
+- example API request snippets,
+- or a contribution and licensing section?
 
-The web app runs with Vite, normally at `http://localhost:5173`.
-
-## Repository Structure
-
-```text
-Voice2Sample/
-  audio_analysis/
-    descriptors/
-    general_features.py
-    melodic_features.py
-    rhythmic_features.py
-    timbre_features.py
-  Dataset/
-    Clean_csv/
-    Convert_audio_to_wav/
-    Json_to_csv/
-    audio_prueba/
-  Evaluation/
-  graphic_interface_v1/
-    src/
-      components/
-      context/
-      hooks/
-      services/
-      styles/
-  Machine_Learning/
-    Deep_learning/
-    Machine/
-  README.md
-  requeriments.txt
-```
-
-## License
-
-See [LICENSE](LICENSE).

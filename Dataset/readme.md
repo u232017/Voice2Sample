@@ -121,13 +121,15 @@ source .venv/bin/activate
 
 pip install --upgrade pip
 pip install pandas
+pip install zenodo-get
+pip install librosa
+pip install numpy
 sudo apt install ffmpeg
+sudo apt install p7zip-full -y
 
-## 3.1 Ejecutar el script para detectar formatos de auido.
 
-- Ejecutar detect_audio_extensions.py que esta en Convert_audio_to_wav para no generar errores, cambiar primero el path del audio.
 
-## 3.2 Ejecutar el main script.
+## 3 Ejecutar el main script.
 
 - Abrir el main.py y cambiar los paths donde esta guardado cada cosa, de base estara el ejemplo.
 -Ejecutar:

@@ -1,78 +1,89 @@
-import essentia.standard as es
-import numpy as np
-import os
-import json
+import os, json, time
 
 
 def save_json(data, filename):
-    """Guarda un diccionario en un archivo JSON con indentación."""
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def save_log(message, log_file="reports/melodic_report.txt"):
+    os.makedirs(os.path.dirname(log_file), exist_ok=True)
+    with open(log_file, "a", encoding="utf-8") as f:
+        f.write(message + "\n")
+
+
 def extract_melodic_features(audio_file):
 
-    # Verifica que el archivo exista antes de procesarlo
-    if not os.path.exists(audio_file):
-        raise FileNotFoundError(f"Archivo no encontrado: {audio_file}")
+    start_time = time.time()
+    filename = os.path.splitext(os.path.basename(audio_file))[0]
 
-    # Carga el audio en mono
-    audio = es.MonoLoader(filename=audio_file)()
+    try:
+        # ============================
+        # 1. Cargar temporal.json
+        # ============================
+        temporal_file = f"descriptors/music/{filename}.json"
+        if not os.path.exists(temporal_file):
+            raise FileNotFoundError(f"No existe: {temporal_file}")
 
-    # Inicializa los extractores de Essentia necesarios
-    pitch_extractor = es.PitchYinFFT()      # detección de pitch en cada frame
-    spectrum = es.Spectrum()               # espectro de magnitudes
-    window = es.Windowing(type="hann")    # ventana para suavizar cada frame
+        with open(temporal_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-    spectral_peaks = es.SpectralPeaks()     # detección de picos espectrales
-    hpcp = es.HPCP(size=12)                 # Harmonic Pitch Class Profile
-    key_extractor = es.KeyExtractor()       # detección de tonalidad global
+        # ============================
+        # 2. Verificar ID
+        # ============================
+        if filename not in data:
+            raise KeyError(f"La ID '{filename}' no está en temporal.json")
 
-    # Parámetros de frame
-    frame_size = 2048
-    hop_size = 1024
+        song = data[filename]
 
-    # Listas para guardar los descriptores por frame
-    pitches = []
-    confidences = []
-    hpcp_vectors = []
+        # ============================
+        # 3. Descriptores melódicos REALES
+        # ============================
+        melodic = {
+            # Pitch (salience = claridad del pitch)
+            "pitch_mean": song.get("lowlevel.pitch_salience.mean"),
+            "pitch_median": song.get("lowlevel.pitch_salience.median"),
+            "pitch_max": song.get("lowlevel.pitch_salience.max"),
+            "pitch_min": song.get("lowlevel.pitch_salience.min"),
+            "pitch_confidence": song.get("lowlevel.pitch_salience.stdev"),
 
-    # Recorre el audio en frames
-    for frame in es.FrameGenerator(audio, frameSize=frame_size, hopSize=hop_size):
+            # HPCP (armonía)
+            "hpcp_crest_mean": song.get("tonal.hpcp_crest.mean"),
+            "hpcp_crest_median": song.get("tonal.hpcp_crest.median"),
+            "hpcp_crest_max": song.get("tonal.hpcp_crest.max"),
+            "hpcp_crest_min": song.get("tonal.hpcp_crest.min"),
+            "hpcp_entropy": song.get("tonal.hpcp_entropy.mean"),
 
-        # Aplica ventana y calcula el espectro de magnitud
-        w = window(frame)
-        spec = spectrum(w)
+            # Tonalidad
+            "key_strength_edma": song.get("tonal.key_edma.strength"),
+            "key_strength_krumhansl": song.get("tonal.key_krumhansl.strength"),
+            "key_strength_temperley": song.get("tonal.key_temperley.strength")
+        }
 
-        # Extrae pitch y su confianza para cada frame
-        pitch, conf = pitch_extractor(w)
-        pitches.append(float(pitch))
-        confidences.append(float(conf))
+        # ============================
+        # 4. Guardar JSON global
+        # ============================
+        output_file = "descriptors/melodic_descriptors.json"
 
-        # Encuentra los picos espectrales necesarios para HPCP
-        freqs, mags = spectral_peaks(spec)
+        if os.path.exists(output_file):
+            with open(output_file, "r", encoding="utf-8") as f:
+                all_data = json.load(f)
+        else:
+            all_data = {}
 
-        # Calcula HPCP usando frecuencias y magnitudes de los picos
-        h = hpcp(freqs, mags)
-        hpcp_vectors.append(h.tolist())
+        all_data[filename] = melodic
+        save_json(all_data, output_file)
 
-    # Extrae la tonalidad global a partir de todo el audio
-    key, scale, strength = key_extractor(audio)
+        elapsed = time.time() - start_time
+        save_log(f"OK - {filename} melódico guardado | time={elapsed:.2f}s")
 
-    result = {
-        "pitch": pitches,
-        "pitch_confidence": confidences,
-        "hpcp": hpcp_vectors,
-        "key": str(key),
-        "scale": str(scale),
-        "key_strength": float(strength)
-    }
-    
-    # Guardar en JSON
-    output_dir = "descriptors"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "melodic_descriptors.json")
-    save_json(result, output_file)
-    print(f"✓ Descriptores melódicos guardados en: {output_file}")
-    
-    return result
+        print(f"✓ Melódico extraído desde temporal.json: {filename}")
+        return melodic
+
+    except Exception as e:
+        elapsed = time.time() - start_time
+        error = f"ERROR - {filename}: {str(e)} | time={elapsed:.2f}s"
+        save_log(error)
+        print(error)
+        return None
