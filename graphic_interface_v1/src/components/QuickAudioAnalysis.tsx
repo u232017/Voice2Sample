@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -106,55 +106,69 @@ export function QuickAudioAnalysis({
   const [error, setError] =
     useState<string | null>(null);
 
+  /*
+    This identifier prevents an analysis of an old trim selection
+    from being displayed after the user has already changed the cut.
+  */
+  const analysisRequestIdRef = useRef(0);
+
+  /*
+    When the user uploads another audio or changes the selected region,
+    the previous analysis is no longer valid. It is cleared immediately,
+    but no new Essentia.js analysis is launched automatically.
+  */
   useEffect(() => {
-    if (!audio || !trimSelection) {
-      setAnalysis(null);
-      setError(null);
-      onAnalysisChange(null);
+    analysisRequestIdRef.current += 1;
+    setAnalysis(null);
+    setIsAnalyzing(false);
+    setError(null);
+    onAnalysisChange(null);
+  }, [audio, trimSelection, onAnalysisChange]);
+
+  const handleAnalyzeSelectedSegment = async () => {
+    if (!audio || !trimSelection || isAnalyzing) {
       return;
     }
 
-    let cancelled = false;
+    const requestId = analysisRequestIdRef.current + 1;
+    analysisRequestIdRef.current = requestId;
 
-    const timeoutId = window.setTimeout(async () => {
-      try {
-        setIsAnalyzing(true);
-        setError(null);
+    try {
+      setIsAnalyzing(true);
+      setError(null);
 
-        const result = await audioAnalysisService.analyze(
-          audio,
-          trimSelection
-        );
+      const result = await audioAnalysisService.analyze(
+        audio,
+        trimSelection
+      );
 
-        if (!cancelled) {
-          setAnalysis(result);
-          onAnalysisChange(result);
-        }
-      } catch (analysisError) {
-        console.error(
-          'Quick audio analysis failed:',
-          analysisError
-        );
-
-        if (!cancelled) {
-          setAnalysis(null);
-          onAnalysisChange(null);
-          setError(
-            'The selected audio segment could not be analyzed.'
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setIsAnalyzing(false);
-        }
+      if (requestId !== analysisRequestIdRef.current) {
+        return;
       }
-    }, 350);
 
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timeoutId);
-    };
-  }, [audio, trimSelection, onAnalysisChange]);
+      setAnalysis(result);
+      onAnalysisChange(result);
+    } catch (analysisError) {
+      console.error(
+        'Quick audio analysis failed:',
+        analysisError
+      );
+
+      if (requestId !== analysisRequestIdRef.current) {
+        return;
+      }
+
+      setAnalysis(null);
+      onAnalysisChange(null);
+      setError(
+        'The selected audio segment could not be analyzed.'
+      );
+    } finally {
+      if (requestId === analysisRequestIdRef.current) {
+        setIsAnalyzing(false);
+      }
+    }
+  };
 
   if (!audio) {
     return null;
@@ -176,7 +190,9 @@ export function QuickAudioAnalysis({
               ? 'essentia'
               : analysis?.engine === 'mixed-analysis'
                 ? 'mixed'
-                : 'approximation'
+                : analysis?.engine === 'approximation'
+                  ? 'approximation'
+                  : ''
           }`}
         >
           {analysis?.engine === 'essentia.js'
@@ -185,9 +201,37 @@ export function QuickAudioAnalysis({
               ? 'Mixed analysis'
               : analysis?.engine === 'approximation'
                 ? 'Approximation'
-                : 'Analyzing'}
+                : 'Not analyzed'}
         </span>
       </div>
+
+      <button
+        type="button"
+        className="primary-action search-main-button"
+        onClick={handleAnalyzeSelectedSegment}
+        disabled={!trimSelection || isAnalyzing}
+      >
+        <Sparkles className="h-5 w-5" />
+
+        {isAnalyzing
+          ? 'Analyzing selected segment...'
+          : analysis
+            ? 'Re-analyze selected segment'
+            : 'Analyze selected segment'}
+      </button>
+
+      {!analysis && !isAnalyzing && !error && (
+        <div className="essentia-ready-box">
+          <strong>Analysis not started</strong>
+
+          <p>
+            Adjust the audio selection first and press{' '}
+            <b>Analyze selected segment</b> when you are ready.
+            Essentia.js will not run automatically while you are
+            trimming the waveform.
+          </p>
+        </div>
+      )}
 
       {isAnalyzing && (
         <div className="quick-analysis-loading">
@@ -207,10 +251,12 @@ export function QuickAudioAnalysis({
           {analysis.hasApproximations && (
             <div className="analysis-approximation-notice">
               <AlertTriangle className="h-4 w-4" />
+
               <p>
-                Values marked <strong>Approximation</strong> are fallback
-                estimates shown when Essentia.js cannot return a reliable
-                value for that descriptor in the selected audio segment.
+                Values marked <strong>Approximation</strong> are
+                fallback estimates shown when Essentia.js cannot
+                return a reliable value for that descriptor in the
+                selected audio segment.
               </p>
             </div>
           )}
@@ -362,9 +408,10 @@ export function QuickAudioAnalysis({
 
             <p>
               Metrics tagged <b>Essentia.js</b> are calculated using
-              Essentia algorithms. Values tagged <b>Approximation</b> are
-              fallback estimates used only when a reliable Essentia value is
-              unavailable. Current priority: <b>{focus}</b> similarity.
+              Essentia algorithms. Values tagged{' '}
+              <b>Approximation</b> are fallback estimates used only
+              when a reliable Essentia value is unavailable. Current
+              priority: <b>{focus}</b> similarity.
             </p>
           </div>
         </>
