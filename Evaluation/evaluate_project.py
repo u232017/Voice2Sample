@@ -161,13 +161,13 @@ def compute_dataset_stats(audio_root: Path, limit: Optional[int] = None) -> Tupl
 def _load_clap_helpers() -> Tuple[object, object]:
     repo_root = _repo_root()
     sys.path.insert(0, str(repo_root))
-    from Machine_Learning import modelo_ml  # pylint: disable=import-error
+    from audio_processing.CLAP import run_search_with_json  # pylint: disable=import-error
 
-    return modelo_ml, modelo_ml.inicializar_modelo
+    return run_search_with_json, run_search_with_json.inicializar_modelo
 
 
 def _embed_files(files: List[Path]) -> Tuple[np.ndarray, EmbeddingStats, List[Path]]:
-    modelo_ml, init_fn = _load_clap_helpers()
+    run_search_with_json, init_fn = _load_clap_helpers()
     init_fn()
 
     embeddings: List[np.ndarray] = []
@@ -178,7 +178,7 @@ def _embed_files(files: List[Path]) -> Tuple[np.ndarray, EmbeddingStats, List[Pa
     for path in files:
         start = time.time()
         try:
-            emb = modelo_ml.extraer_embedding(str(path))
+            emb = run_search_with_json.extraer_embedding(str(path))
             embeddings.append(emb)
             ok_files.append(path)
             timings.append(time.time() - start)
