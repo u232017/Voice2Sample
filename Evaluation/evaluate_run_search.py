@@ -28,7 +28,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--imitation",
-        default=str(repo_root / "audio_processing" / "CLAP" / "imitacion.wav"),
+        default=str(repo_root / "Dataset" / "audio_processed" / "100270.wav"),
         help="Path to imitation audio file",
     )
     parser.add_argument("--k", type=int, default=5, help="Top-K to retrieve")

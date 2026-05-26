@@ -1,0 +1,46 @@
+{
+  "query": "C:\\Users\\34615\\Desktop\\Voice2Sample\\Dataset\\audio_processed\\100270.wav",
+  "embeddings_json": "C:\\Users\\34615\\Desktop\\Voice2Sample\\Dataset\\embeddings_output.json",
+  "n_results": 5,
+  "time_sec": 10.291720390319824,
+  "mean_similarity": 78.97361636161804,
+  "max_similarity": 100.0,
+  "mean_distance": 0.21026383638381957,
+  "results": [
+    {
+      "rank": 1,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\100270.wav",
+      "archivo": "100270.wav",
+      "distancia": 0.0,
+      "similitud": 100.0
+    },
+    {
+      "rank": 2,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\249868.wav",
+      "archivo": "249868.wav",
+      "distancia": 0.24213409423828125,
+      "similitud": 75.78659057617188
+    },
+    {
+      "rank": 3,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\201027.wav",
+      "archivo": "201027.wav",
+      "distancia": 0.24850594997406006,
+      "similitud": 75.149405002594
+    },
+    {
+      "rank": 4,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\113614.wav",
+      "archivo": "113614.wav",
+      "distancia": 0.27064549922943115,
+      "similitud": 72.93545007705688
+    },
+    {
+      "rank": 5,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\115529.wav",
+      "archivo": "115529.wav",
+      "distancia": 0.29003363847732544,
+      "similitud": 70.99663615226746
+    }
+  ]
+}
