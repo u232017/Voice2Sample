@@ -15,9 +15,9 @@ export function Results({ onBack }: ResultsProps) {
 
   useEffect(() => {
     if (currentAudio) {
-      searchExamples(searchRequest);
+      searchExamples(searchRequest, currentAudio, trimSelection);
     }
-  }, [currentAudio, searchExamples, searchRequest]);
+  }, [currentAudio, searchExamples, searchRequest, trimSelection]);
 
   const handleBack = () => {
     clearResults();
