@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
 from .dataset_recommender import (
+    build_map_results,
     clean_name_from_path,
     duration_seconds,
     load_dataset_items,
@@ -120,6 +121,50 @@ def _dataset_recommendations(audio_path: Path, limit: int, focus: str = "general
     ranked = rank_similar_items(audio_path, items, limit, focus)
     return [_dataset_sound_payload(item, similarity, distance) for item, distance, similarity in ranked]
 
+def _dataset_map_payload(
+    audio_path: Path,
+    limit: int,
+    focus: str = "general",
+) -> dict[str, Any]:
+    """
+    Build the payload returned to the frontend similarity map.
+
+    Each result is a real dataset sound selected by the existing backend
+    similarity system. The x/y coordinates are only the two-dimensional
+    visual projection used by the map.
+    """
+    items = _get_dataset()
+
+    if not items:
+        raise RuntimeError(
+            "Dataset/audio_processed does not contain supported audio files"
+        )
+
+    input_point, ranked_points = build_map_results(
+        query_audio=audio_path,
+        items=items,
+        limit=limit,
+        focus=focus,
+    )
+
+    results: list[dict[str, Any]] = []
+
+    for item, distance, similarity, x, y in ranked_points:
+        payload = _dataset_sound_payload(
+            item=item,
+            similarity=similarity,
+            distance=distance,
+        )
+
+        payload["x"] = x
+        payload["y"] = y
+
+        results.append(payload)
+
+    return {
+        "input": input_point,
+        "results": results,
+    }
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
@@ -180,3 +225,61 @@ async def recommendations(
         "results": results,
     }
 
+@app.post("/api/map-results")
+async def map_results(
+    audio: UploadFile = File(...),
+    trim_start: float | None = Form(default=None),
+    trim_end: float | None = Form(default=None),
+    focus: str = Form(default="general"),
+    limit: int = Form(default=50),
+) -> dict[str, Any]:
+    """
+    Return the real nearest dataset sounds used by the interactive map.
+
+    This endpoint is separate from /api/recommendations so the normal
+    recommendation cards can keep returning only four sounds, while the
+    map can request a larger set only when the user opens it.
+    """
+    suffix = Path(audio.filename or "input.wav").suffix or ".wav"
+
+    limit = min(max(limit, 1), 50)
+    focus = focus.lower() if focus else "general"
+
+    temp_dir = UPLOAD_TMP_DIR / f"voice2sample_map_{uuid.uuid4().hex}"
+    temp_dir.mkdir(parents=True, exist_ok=False)
+
+    try:
+        input_path = temp_dir / f"input{suffix}"
+
+        with input_path.open("wb") as output_file:
+            shutil.copyfileobj(audio.file, output_file)
+
+        analysis_path = trim_audio_file(
+            input_path,
+            input_path.with_suffix(".trimmed.wav"),
+            trim_start,
+            trim_end,
+        )
+
+        try:
+            map_payload = _dataset_map_payload(
+                audio_path=analysis_path,
+                limit=limit,
+                focus=focus,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Dataset map generation failed: {exc}",
+            ) from exc
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+    return {
+        "engine": "dataset-audio-descriptors",
+        "projection": "pca",
+        "focus": focus,
+        "count": len(map_payload["results"]),
+        "input": map_payload["input"],
+        "results": map_payload["results"],
+    }

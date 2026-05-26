@@ -41,6 +41,8 @@ export interface FreesoundSound {
     zoom: number;
   };
   similarity?: number;
+  distance?: number;
+  bpm?: number | null;
 }
 
 export interface FreesoundSearchResponse {
@@ -79,7 +81,14 @@ export type SearchCategory =
   | 'synth'
   | 'voice';
 
-export type SearchMood = 'any' | 'calm' | 'dark' | 'bright' | 'energetic' | 'mysterious';
+export type SearchMood =
+  | 'any'
+  | 'calm'
+  | 'dark'
+  | 'bright'
+  | 'energetic'
+  | 'mysterious';
+
 export type SearchDuration = 'any' | 'short' | 'medium' | 'long';
 export type SearchSort = 'relevance' | 'rating' | 'downloads' | 'recent';
 export type SearchLicense = 'any' | 'creative_commons' | 'commercial_friendly';
@@ -218,6 +227,24 @@ export interface FreesoundSearchRequest {
   frontendAnalysis?: AudioAnalysisResult | null;
   essentiaPayload?: EssentiaSearchPayload | null;
   clapPayload?: ClapSearchPayload | null;
+}
+
+export interface SoundMapPoint extends FreesoundSound {
+  x: number;
+  y: number;
+  distance: number;
+}
+
+export interface SoundMapResponse {
+  engine: string;
+  projection: 'pca' | string;
+  focus: SimilarityFocus;
+  count: number;
+  input: {
+    x: number;
+    y: number;
+  };
+  results: SoundMapPoint[];
 }
 
 export interface SearchResult {

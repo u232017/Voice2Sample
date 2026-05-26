@@ -1,4 +1,12 @@
-import { AudioTrimSelection, FreesoundSearchRequest, FreesoundSound, RecordedAudio } from './types';
+import {
+  AudioTrimSelection,
+  FreesoundSearchRequest,
+  FreesoundSound,
+  RecordedAudio,
+  SimilarityFocus,
+  SoundMapPoint,
+  SoundMapResponse,
+} from './types';
 import { freesoundAPI } from './freesound';
 
 const RAW_BACKEND_API_BASE =
@@ -12,12 +20,24 @@ interface BackendRecommendationResponse {
   results: FreesoundSound[];
 }
 
+interface BackendMapResponse {
+  engine: string;
+  projection: string;
+  focus: SimilarityFocus;
+  count: number;
+  input: {
+    x: number;
+    y: number;
+  };
+  results: SoundMapPoint[];
+}
+
 function absolutizeBackendUrl(url?: string): string | undefined {
   if (!url || /^https?:\/\//i.test(url)) return url;
   return `${BACKEND_API_BASE}${url.startsWith('/api') ? url.slice(4) : url}`;
 }
 
-function normalizeBackendSound(sound: FreesoundSound): FreesoundSound {
+function normalizeBackendSound<T extends FreesoundSound>(sound: T): T {
   return {
     ...sound,
     url: absolutizeBackendUrl(sound.url),
@@ -70,11 +90,18 @@ function writeString(view: DataView, offset: number, value: string) {
   }
 }
 
-function encodeAudioBufferToWav(audioBuffer: AudioBuffer, trim?: AudioTrimSelection | null): Blob {
+function encodeAudioBufferToWav(
+  audioBuffer: AudioBuffer,
+  trim?: AudioTrimSelection | null
+): Blob {
   const sampleRate = audioBuffer.sampleRate;
   const channelCount = audioBuffer.numberOfChannels;
-  const safeStart = trim ? Math.max(0, Math.min(trim.start, audioBuffer.duration)) : 0;
-  const safeEnd = trim ? Math.max(safeStart, Math.min(trim.end, audioBuffer.duration)) : audioBuffer.duration;
+  const safeStart = trim
+    ? Math.max(0, Math.min(trim.start, audioBuffer.duration))
+    : 0;
+  const safeEnd = trim
+    ? Math.max(safeStart, Math.min(trim.end, audioBuffer.duration))
+    : audioBuffer.duration;
   const startSample = Math.floor(safeStart * sampleRate);
   const endSample = Math.max(startSample + 1, Math.floor(safeEnd * sampleRate));
   const frameCount = Math.min(audioBuffer.length, endSample) - startSample;
@@ -98,11 +125,21 @@ function encodeAudioBufferToWav(audioBuffer: AudioBuffer, trim?: AudioTrimSelect
   view.setUint32(40, frameCount * blockAlign, true);
 
   let offset = 44;
+
   for (let sampleIndex = 0; sampleIndex < frameCount; sampleIndex += 1) {
     for (let channelIndex = 0; channelIndex < channelCount; channelIndex += 1) {
       const channel = audioBuffer.getChannelData(channelIndex);
-      const sample = Math.max(-1, Math.min(1, channel[startSample + sampleIndex] || 0));
-      view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+      const sample = Math.max(
+        -1,
+        Math.min(1, channel[startSample + sampleIndex] || 0)
+      );
+
+      view.setInt16(
+        offset,
+        sample < 0 ? sample * 0x8000 : sample * 0x7fff,
+        true
+      );
+
       offset += bytesPerSample;
     }
   }
@@ -110,31 +147,47 @@ function encodeAudioBufferToWav(audioBuffer: AudioBuffer, trim?: AudioTrimSelect
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
-async function prepareBackendAudio(audio: RecordedAudio, trim?: AudioTrimSelection | null): Promise<Blob> {
+async function prepareBackendAudio(
+  audio: RecordedAudio,
+  trim?: AudioTrimSelection | null
+): Promise<Blob> {
   try {
     const context = new AudioContext();
     const sourceBuffer = await audio.blob.arrayBuffer();
     const decoded = await context.decodeAudioData(sourceBuffer.slice(0));
     const wavBlob = encodeAudioBufferToWav(decoded, trim);
+
     await context.close();
+
     return wavBlob;
   } catch (error) {
-    console.warn('Could not transcode browser audio to WAV before backend upload:', error);
+    console.warn(
+      'Could not transcode browser audio to WAV before backend upload:',
+      error
+    );
+
     return audio.blob;
   }
 }
 
 class RecommendationAPI {
-  private async hydrateMissingVisualizations(sounds: FreesoundSound[]): Promise<FreesoundSound[]> {
-    const soundsMissingVisualization = sounds.filter((sound) => !freesoundAPI.getVisualizationUrl(sound));
+  private async hydrateMissingVisualizations(
+    sounds: FreesoundSound[]
+  ): Promise<FreesoundSound[]> {
+    const soundsMissingVisualization = sounds.filter(
+      (sound) => !freesoundAPI.getVisualizationUrl(sound)
+    );
+
     if (!soundsMissingVisualization.length) {
       return sounds;
     }
 
     const detailsById = new Map<number, Partial<FreesoundSound>>();
+
     await Promise.all(
       soundsMissingVisualization.map(async (sound) => {
         const detail = await freesoundAPI.getSoundDetail(sound.id);
+
         if (detail) {
           detailsById.set(sound.id, detail);
         }
@@ -143,9 +196,11 @@ class RecommendationAPI {
 
     return sounds.map((sound) => {
       const detail = detailsById.get(sound.id);
+
       if (!detail) {
         return sound;
       }
+
       return mergeSoundWithFreesoundDetail(sound, detail);
     });
   }
@@ -161,10 +216,18 @@ class RecommendationAPI {
 
     const formData = new FormData();
     const backendAudio = await prepareBackendAudio(audio, trim);
-    formData.append('audio', backendAudio, `${audio.name || 'voice2sample-input'}.wav`);
-    formData.append('limit', String(Math.min(Math.max(request.limit, 1), 4)));
-    
-    // Send the focus parameter if available (for essentia general search)
+
+    formData.append(
+      'audio',
+      backendAudio,
+      `${audio.name || 'voice2sample-input'}.wav`
+    );
+
+    formData.append(
+      'limit',
+      String(Math.min(Math.max(request.limit, 1), 4))
+    );
+
     if (request.focus) {
       formData.append('focus', request.focus);
     }
@@ -185,7 +248,43 @@ class RecommendationAPI {
     }
 
     const normalizedResults = data.results.map(normalizeBackendSound);
+
     return this.hydrateMissingVisualizations(normalizedResults);
+  }
+
+  async getMapResults(
+    audio: RecordedAudio,
+    trim: AudioTrimSelection,
+    focus: SimilarityFocus,
+    limit = 50
+  ): Promise<SoundMapResponse> {
+    const formData = new FormData();
+    const backendAudio = await prepareBackendAudio(audio, trim);
+
+    formData.append(
+      'audio',
+      backendAudio,
+      `${audio.name || 'voice2sample-input'}.wav`
+    );
+
+    formData.append('focus', focus);
+    formData.append('limit', String(Math.min(Math.max(limit, 1), 50)));
+
+    const response = await fetch(`${BACKEND_API_BASE}/map-results`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`BACKEND_MAP_HTTP_${response.status}`);
+    }
+
+    const data = (await response.json()) as BackendMapResponse;
+
+    return {
+      ...data,
+      results: data.results.map((sound) => normalizeBackendSound(sound)),
+    };
   }
 }
 
