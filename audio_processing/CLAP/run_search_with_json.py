@@ -4,11 +4,7 @@ import argparse
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
-try:
-    from .modelo_ml import inicializar_modelo, extraer_embedding  # type: ignore
-except Exception:
-    # Fallback when executed as a script or package-relative imports fail
-    from modelo_ml import inicializar_modelo, extraer_embedding
+from modelo_ml import inicializar_modelo, extraer_embedding
 
 
 def cargar_embeddings_json(ruta_json):
