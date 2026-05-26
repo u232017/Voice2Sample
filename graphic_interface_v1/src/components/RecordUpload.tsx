@@ -375,7 +375,16 @@ export function RecordUpload() {
                       clearResults();
                     }}
                   >
-                    {option.label}
+                    <span>{option.label}</span>
+                    {option.value === 'bpm' && (
+                      <span className="similarity-info-anchor" aria-hidden="true">
+                        <span className="similarity-info-dot">i</span>
+                        <span className="similarity-info-tooltip">
+                          We recommend sounds with a BPM very close to your recording, or half-time BPM matches,
+                          because both can sound the same to the human ear.
+                        </span>
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
