@@ -377,7 +377,18 @@ def _get_feature_focus_indices(focus: str) -> list[int]:
     elif focus == "timbre":
         # Spectral shape: bandwidth, rolloff, all band energies, ZCR.
         return [15, 16, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 30, 31, 9, 10, 11]
-    else:  # "general" or any unknown focus — use all features
+    elif focus == "energy":
+        return [1, 2, 3, 4, 5, 6, 7, 8]
+    elif focus == "essentia_general":
+        # Perceptual combination: rhythm + melody + timbre.
+        # Excludes pure energy features so results differ from CLAP.
+        return [21, 22, 23,          # flux (rhythm / onsets)
+                12, 13, 14,          # centroid (pitch region)
+                18, 19, 20,          # rolloff (tonal extent)
+                15, 16, 17,          # bandwidth (harmonic richness)
+                9,  10, 11,          # ZCR (noisiness / timbre)
+                24, 25, 26, 27, 28, 29, 30, 31]  # all 8 spectral bands
+    else:  # "general" / CLAP -- use all 32 features
         return list(range(32))
 
 

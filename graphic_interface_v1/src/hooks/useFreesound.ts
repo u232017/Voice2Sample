@@ -23,23 +23,19 @@ export const useFreesound = () => {
         let sounds: FreesoundSound[];
 
         if (request.model === 'clap') {
-          // CLAP: backend audio embeddings
-          console.info('CLAP: sending audio to backend');
+          // CLAP: all 32 features via backend
+          console.info('CLAP: sending audio to backend (all 32 features)');
           sounds = await recommendationAPI.recommend(request, audio, trim);
-
         } else if (request.model === 'essentia' && request.focus === 'general') {
-          // Essentia General: send audio to backend, compare all 32 features
-          // (timbre + melody + rhythm) against the local dataset via KNN.
-          // Same endpoint as CLAP, backend uses focus=general automatically.
-          console.info('Essentia General: sending audio to backend (full-feature KNN)');
-          sounds = await recommendationAPI.recommend(request, audio, trim);
-
+          // Essentia General: backend KNN with perceptual feature subset
+          // (rhythm + melody + timbre, no energy) so results differ from CLAP.
+          console.info('Essentia General: sending audio to backend (perceptual KNN)');
+          const essentiaGeneralRequest = { ...request, focus: 'essentia_general' as const };
+          sounds = await recommendationAPI.recommend(essentiaGeneralRequest, audio, trim);
         } else if (request.model === 'essentia') {
-          // Other Essentia focuses (melodic, bpm, timbre, energy):
-          // build a descriptor-driven text query and search Freesound directly.
+          // Other Essentia focuses: text query to Freesound
           console.info(`Essentia (${request.focus}): Freesound text search`);
           sounds = await freesoundAPI.search({ ...request, limit: 4 });
-
         } else {
           // Plain Freesound text search (no model)
           console.info('Freesound: text-based search');
