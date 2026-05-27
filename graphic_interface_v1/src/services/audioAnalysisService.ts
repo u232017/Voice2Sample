@@ -143,7 +143,54 @@ type EssentiaConstructor = new (
 ) => EssentiaInstance;
 
 class AudioAnalysisService {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private essentiaPromise: Promise<EssentiaInstance | null> | null = null;
+
+  // Worker that runs WASM off the main thread so the UI never freezes.
+  private worker: Worker | null = null;
+
+  private getWorker(): Worker | null {
+    if (this.worker) return this.worker;
+    try {
+      this.worker = new Worker(
+        new URL('./essentiaWorker.ts', import.meta.url),
+        { type: 'module' }
+      );
+      return this.worker;
+    } catch (e) {
+      console.warn('[AudioAnalysisService] Web Worker unavailable, falling back to main thread.', e);
+      return null;
+    }
+  }
+
+  // Send samples to the worker and wait for the result.
+  private extractValuesViaWorker(
+    samples: Float32Array,
+    sampleRate: number
+  ): Promise<BaseValues> {
+    return new Promise((resolve, reject) => {
+      const worker = this.getWorker();
+      if (!worker) {
+        reject(new Error('no-worker'));
+        return;
+      }
+      const onMessage = (e: MessageEvent) => {
+        worker.removeEventListener('message', onMessage);
+        worker.removeEventListener('error', onError);
+        if (e.data.error) reject(new Error(e.data.error));
+        else resolve(e.data.values as BaseValues);
+      };
+      const onError = (e: ErrorEvent) => {
+        worker.removeEventListener('message', onMessage);
+        worker.removeEventListener('error', onError);
+        reject(new Error(e.message));
+      };
+      worker.addEventListener('message', onMessage);
+      worker.addEventListener('error', onError);
+      // Transfer the buffer so no copy is needed.
+      worker.postMessage({ samples, sampleRate }, [samples.buffer]);
+    });
+  }
 
   async analyze(
     audio: RecordedAudio,
@@ -242,101 +289,102 @@ class AudioAnalysisService {
   createEssentiaQuery(
     descriptors: AudioDescriptorSummary,
     focus: SimilarityFocus,
-    fileName?: string
+    _fileName?: string
   ): string {
-    const fileTokens = fileName
-      ?.replace(/\.[a-z0-9]+$/i, '')
-      .split(/[\s_-]+/)
-      .filter((token) => token.length > 2 && !/^\d+$/.test(token))
-      .slice(0, 2);
-
-    if (fileTokens?.length) {
-      return fileTokens.join(' ');
-    }
+    // Always derive the query from audio descriptors.
+    // File names are unreliable as search terms and are ignored.
 
     if (focus === 'melodic') {
-      if (descriptors.melody.melodicLabel === 'melodic') {
-        return 'melodic loop tone';
-      }
+      const label = descriptors.melody.melodicLabel;
+      const range = descriptors.melody.pitchRangeLabel;
+      const pitch = descriptors.melody.estimatedPitch;
 
-      if (descriptors.melody.melodicLabel === 'tonal') {
-        return 'tonal one shot';
+      if (label === 'melodic') {
+        if (range === 'low') return 'bass melody instrument loop';
+        if (range === 'high') return 'lead melody synth high pitched';
+        return 'melodic instrument loop tonal';
       }
-
-      return descriptors.timbre.timbreLabel === 'noisy'
-        ? 'noisy texture'
-        : 'sound texture';
+      if (label === 'tonal') {
+        if (pitch && pitch < 200) return 'bass note instrument low';
+        if (pitch && pitch > 600) return 'high pitched note tonal synth';
+        return 'tonal note instrument single';
+      }
+      if (label === 'noisy') return 'atonal noise texture harsh';
+      return 'pad texture drone sustained';
     }
 
     if (focus === 'bpm') {
-      if (descriptors.rhythm.bpm) {
-        return `${Math.round(descriptors.rhythm.bpm)} bpm loop`;
+      const bpm = descriptors.rhythm.bpm;
+      const rhythmLabel = descriptors.rhythm.rhythmLabel;
+      const percussive = descriptors.rhythm.percussiveScore;
+
+      if (bpm) {
+        const rounded = Math.round(bpm / 5) * 5;
+        if (percussive > 0.5) return `${rounded} bpm drum loop percussion`;
+        return `${rounded} bpm rhythm loop`;
       }
-
-      return descriptors.rhythm.rhythmLabel === 'percussive'
-        ? 'percussive rhythm hit'
-        : 'rhythmic loop';
-    }
-
-    if (focus === 'energy') {
-      if (descriptors.energy.energyLabel === 'loud') {
-        return 'loud impact hit';
-      }
-
-      if (descriptors.energy.energyLabel === 'quiet') {
-        return 'soft ambience texture';
-      }
-
-      return 'balanced sound effect';
+      if (rhythmLabel === 'one-shot') return 'one shot percussion hit transient';
+      if (rhythmLabel === 'percussive') return 'percussion drum hit rhythmic';
+      if (rhythmLabel === 'loop-like') return 'rhythm loop beat pattern';
+      return 'rhythm groove loop';
     }
 
     if (focus === 'timbre') {
-      if (descriptors.timbre.brightnessLabel === 'bright') {
-        return 'bright timbre sound';
-      }
+      const timbre = descriptors.timbre.timbreLabel;
+      const brightness = descriptors.timbre.brightnessLabel;
 
-      if (descriptors.timbre.brightnessLabel === 'dark') {
-        return 'dark timbre sound';
-      }
-
-      return descriptors.timbre.timbreLabel === 'noisy'
-        ? 'noisy texture'
-        : 'clean texture';
+      if (timbre === 'bright') return 'bright crisp high frequency shimmer';
+      if (timbre === 'dark') return 'dark muted low frequency warm';
+      if (timbre === 'noisy') return 'noise texture rough gritty';
+      if (timbre === 'textured') return 'textured granular complex timbre';
+      if (brightness === 'bright') return 'clean bright tone sample';
+      if (brightness === 'dark') return 'clean dark warm tone';
+      return 'clean pure tone sample';
     }
 
-    const generalTerms: string[] = [];
+    // focus === 'general': combine ALL descriptor families for a balanced query
+    const parts: string[] = [];
 
-    if (descriptors.melody.estimatedPitch !== null) {
-      generalTerms.push('tonal');
+    if (descriptors.energy.energyLabel === 'loud') parts.push('energetic loud');
+    else if (descriptors.energy.energyLabel === 'quiet') parts.push('soft quiet');
+
+    if (descriptors.timbre.timbreLabel === 'bright') parts.push('bright');
+    else if (descriptors.timbre.timbreLabel === 'dark') parts.push('dark');
+    else if (descriptors.timbre.timbreLabel === 'noisy') parts.push('noisy');
+
+    const bpm = descriptors.rhythm.bpm;
+    if (bpm) {
+      const rounded = Math.round(bpm / 5) * 5;
+      parts.push(`${rounded}bpm`);
+    } else if (descriptors.rhythm.rhythmLabel === 'percussive') {
+      parts.push('percussive');
+    } else if (descriptors.rhythm.rhythmLabel === 'sustained') {
+      parts.push('sustained');
     }
 
-    if (descriptors.rhythm.bpm !== null) {
-      generalTerms.push('rhythmic');
-    }
+    if (descriptors.melody.melodicLabel === 'melodic') parts.push('melodic');
+    else if (descriptors.melody.melodicLabel === 'tonal') parts.push('tonal');
 
-    if (descriptors.energy.energyLabel === 'loud') {
-      generalTerms.push('impact');
-    } else if (descriptors.energy.energyLabel === 'quiet') {
-      generalTerms.push('soft');
-    }
-
-    if (descriptors.timbre.brightnessLabel === 'bright') {
-      generalTerms.push('bright');
-    } else if (descriptors.timbre.brightnessLabel === 'dark') {
-      generalTerms.push('dark');
-    }
-
-    if (descriptors.timbre.timbreLabel === 'noisy') {
-      generalTerms.push('texture');
-    }
-
-    return generalTerms.length ? generalTerms.join(' ') : 'sound texture';
+    if (parts.length === 0) return 'sound texture sample';
+    return parts.join(' ') + ' sound sample';
   }
 
   private async extractValues(
     samples: Float32Array,
     sampleRate: number
   ): Promise<BaseValues> {
+    // Try the Worker first -- keeps WASM off the main thread.
+    try {
+      const samplesCopy = samples.slice();
+      return await this.extractValuesViaWorker(samplesCopy, sampleRate);
+    } catch (workerError) {
+      console.warn(
+        "[AudioAnalysisService] Worker extraction failed, running on main thread.",
+        workerError
+      );
+    }
+
+    // Fallback: main-thread path (original behaviour)
     const values = this.extractFallbackValues(samples, sampleRate);
     const essentia = await this.getEssentia();
 
@@ -1309,18 +1357,24 @@ class AudioAnalysisService {
       sampleRate / hopSize
     );
 
+    // percussiveScore: ratio of frames with sharp onset vs total frames.
+    // Using peak-flux / mean-flux ratio is more stable than totalFlux/rms
+    // because it doesn't deflate for loud (high RMS) percussive loops.
+    const meanFlux = totalFlux / Math.max(flux.length, 1);
+    const peakFlux = Math.max(...flux, 1e-9);
+    const percussiveScore = clamp(
+      (onsets / Math.max(envelope.length, 1)) * (peakFlux / Math.max(meanFlux * 2, 1e-9)),
+      0,
+      1
+    );
+
     return {
       bpm: bpm.bpm,
       confidence: bpm.confidence,
       onsetRate:
         onsets /
         Math.max(samples.length / sampleRate, 0.001),
-      percussiveScore: clamp(
-        totalFlux /
-          Math.max(rms * flux.length, 0.0001),
-        0,
-        1
-      ),
+      percussiveScore,
     };
   }
 

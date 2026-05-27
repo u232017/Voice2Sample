@@ -22,7 +22,6 @@ const similarityOptions: Array<{ value: SimilarityFocus; label: string }> = [
   { value: 'melodic', label: 'Melodic' },
   { value: 'bpm', label: 'BPM' },
   { value: 'timbre', label: 'Timbre' },
-  { value: 'energy', label: 'Energy' },
   { value: 'general', label: 'General' },
 ];
 
@@ -160,10 +159,23 @@ export function RecordUpload() {
       setFrontendAnalysis(analysis);
     }
 
+    const essentiaQuery = recommendationModel === 'essentia' && analysis
+      ? audioAnalysisService.createEssentiaQuery(analysis.descriptors, similarityFocus, currentAudio.name)
+      : '';
+
+    if (recommendationModel === 'essentia') {
+      console.info(`Essentia query [${similarityFocus}]: "${essentiaQuery}"`);
+      console.info('Essentia descriptors:', analysis?.descriptors ? {
+        melodicLabel: analysis.descriptors.melody.melodicLabel,
+        rhythmLabel: analysis.descriptors.rhythm.rhythmLabel,
+        bpm: analysis.descriptors.rhythm.bpm,
+        timbreLabel: analysis.descriptors.timbre.timbreLabel,
+        energyLabel: analysis.descriptors.energy.energyLabel,
+      } : 'no analysis');
+    }
+
     const request = {
-      query: recommendationModel === 'essentia' && analysis
-        ? audioAnalysisService.createEssentiaQuery(analysis.descriptors, similarityFocus, currentAudio.name)
-        : '',
+      query: essentiaQuery,
       filters,
       limit: 4,
       model: recommendationModel,
