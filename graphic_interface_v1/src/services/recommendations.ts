@@ -174,10 +174,13 @@ class RecommendationAPI {
   private async hydrateMissingVisualizations(
     sounds: FreesoundSound[]
   ): Promise<FreesoundSound[]> {
+    if (!freesoundAPI.hasApiKey()) {
+      return sounds;
+    }
+
     const soundsMissingVisualization = sounds.filter(
       (sound) => !freesoundAPI.getVisualizationUrl(sound)
     );
-
     if (!soundsMissingVisualization.length) {
       return sounds;
     }

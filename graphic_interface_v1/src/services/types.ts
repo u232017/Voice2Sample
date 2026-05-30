@@ -94,7 +94,7 @@ export type SearchSort = 'relevance' | 'rating' | 'downloads' | 'recent';
 export type SearchLicense = 'any' | 'creative_commons' | 'commercial_friendly';
 
 export type RecommendationModel = 'essentia' | 'clap';
-export type SimilarityFocus = 'general' | 'melodic' | 'bpm' | 'timbre' | 'energy';
+export type SimilarityFocus = 'general' | 'melodic' | 'bpm' | 'timbre';
 export type AudioAnalysisEngine = 'essentia.js' | 'mixed-analysis' | 'approximation';
 export type DescriptorSource = 'essentia.js' | 'approximation';
 

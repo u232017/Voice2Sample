@@ -47,6 +47,10 @@ class FreesoundAPI {
     this.baseUrl = baseUrl;
   }
 
+  hasApiKey(): boolean {
+    return !!this.apiKey;
+  }
+
   private ensureConfigured(): void {
     if (!this.apiKey) {
       throw new Error('FREESOUND_API_KEY_MISSING');
@@ -106,7 +110,7 @@ class FreesoundAPI {
 
   async search(request: FreesoundSearchRequest): Promise<FreesoundSound[]> {
     const query = this.resolveQuery(request);
-    const filter = this.buildFilter(request.filters);
+    const filter = this.buildFilter(request.filters, request.focus);
     const limit = Math.min(Math.max(request.limit, 1), 4);
     const cacheKey = this.getCacheKey('search', {
       query,
@@ -288,47 +292,84 @@ class FreesoundAPI {
   }
 
   private queryFromEssentia(analysis: AudioAnalysisResult, focus: SimilarityFocus): string {
-    const descriptors = analysis.descriptors;
+    const d = analysis.descriptors;
 
     if (focus === 'melodic') {
-      if (descriptors.melody.melodicLabel === 'melodic') return 'melodic loop tone';
-      if (descriptors.melody.melodicLabel === 'tonal') return 'tonal one shot instrument';
-      return descriptors.timbre.timbreLabel === 'noisy' ? 'noisy texture' : 'sound texture';
+      const label = d.melody.melodicLabel;
+      const range = d.melody.pitchRangeLabel;
+      const pitch = d.melody.estimatedPitch;
+      if (label === 'melodic') {
+        if (range === 'low') return 'bass melody instrument loop';
+        if (range === 'high') return 'lead melody synth high pitched';
+        return 'melodic instrument loop tonal';
+      }
+      if (label === 'tonal') {
+        if (pitch && pitch < 200) return 'bass note instrument low';
+        if (pitch && pitch > 600) return 'high pitched note tonal synth';
+        return 'tonal note instrument single';
+      }
+      if (label === 'noisy') return 'atonal noise texture harsh';
+      return 'pad texture drone sustained';
     }
 
     if (focus === 'bpm') {
-      if (descriptors.rhythm.bpm) return `${Math.round(descriptors.rhythm.bpm)} bpm loop rhythm`;
-      if (descriptors.rhythm.rhythmLabel === 'one-shot') return 'one shot percussion hit';
-      if (descriptors.rhythm.rhythmLabel === 'percussive') return 'percussive rhythm loop';
-      return 'rhythmic loop';
+      const bpm = d.rhythm.bpm;
+      const rhythmLabel = d.rhythm.rhythmLabel;
+      const percussive = d.rhythm.percussiveScore;
+      if (bpm) {
+        const rounded = Math.round(bpm / 5) * 5;
+        if (percussive > 0.5) return `${rounded} bpm drum loop percussion`;
+        return `${rounded} bpm rhythm loop`;
+      }
+      if (rhythmLabel === 'one-shot') return 'one shot percussion hit transient';
+      if (rhythmLabel === 'percussive') return 'percussion drum hit rhythmic';
+      if (rhythmLabel === 'loop-like') return 'rhythm loop beat pattern';
+      return 'rhythm groove loop';
     }
 
-    if (focus === 'energy') {
-      if (descriptors.energy.energyLabel === 'loud') return 'loud impact hit energetic';
-      if (descriptors.energy.energyLabel === 'quiet') return 'soft quiet ambience texture';
-      return 'balanced sound effect';
+    if (focus === 'timbre') {
+      const timbre = d.timbre.timbreLabel;
+      const brightness = d.timbre.brightnessLabel;
+      if (timbre === 'bright') return 'bright crisp high frequency shimmer';
+      if (timbre === 'dark') return 'dark muted low frequency warm';
+      if (timbre === 'noisy') return 'noise texture rough gritty';
+      if (timbre === 'textured') return 'textured granular complex timbre';
+      if (brightness === 'bright') return 'clean bright tone sample';
+      if (brightness === 'dark') return 'clean dark warm tone';
+      return 'clean pure tone sample';
     }
 
-    if (descriptors.timbre.timbreLabel === 'bright') return 'bright timbre sound';
-    if (descriptors.timbre.timbreLabel === 'dark') return 'dark timbre sound';
-    if (descriptors.timbre.timbreLabel === 'noisy') return 'noisy texture glitch';
-    if (descriptors.timbre.timbreLabel === 'clean') return 'clean tone sample';
-    return 'textured timbre sound';
+    // general
+    const parts: string[] = [];
+    if (d.energy.energyLabel === 'loud') parts.push('energetic loud');
+    else if (d.energy.energyLabel === 'quiet') parts.push('soft quiet');
+    if (d.timbre.timbreLabel === 'bright') parts.push('bright');
+    else if (d.timbre.timbreLabel === 'dark') parts.push('dark');
+    else if (d.timbre.timbreLabel === 'noisy') parts.push('noisy');
+    const bpm = d.rhythm.bpm;
+    if (bpm) {
+      parts.push(`${Math.round(bpm / 5) * 5}bpm`);
+    } else if (d.rhythm.rhythmLabel === 'percussive') {
+      parts.push('percussive');
+    } else if (d.rhythm.rhythmLabel === 'sustained') {
+      parts.push('sustained');
+    }
+    if (d.melody.melodicLabel === 'melodic') parts.push('melodic');
+    else if (d.melody.melodicLabel === 'tonal') parts.push('tonal');
+    return parts.length ? parts.join(' ') + ' sound sample' : 'sound texture sample';
   }
 
-  private buildFilter(filters: FreesoundSearchFilters): string {
+  private buildFilter(filters: FreesoundSearchFilters, focus?: SimilarityFocus): string {
     const parts: string[] = [];
 
-    if (filters.duration === 'short') {
-      parts.push('duration:[0 TO 5]');
-    }
+    if (filters.duration === 'short') parts.push('duration:[0 TO 5]');
+    if (filters.duration === 'medium') parts.push('duration:[5 TO 30]');
+    if (filters.duration === 'long') parts.push('duration:[30 TO *]');
 
-    if (filters.duration === 'medium') {
-      parts.push('duration:[5 TO 30]');
-    }
-
-    if (filters.duration === 'long') {
-      parts.push('duration:[30 TO *]');
+    // Focus-aware duration constraints when no explicit duration filter
+    if (filters.duration === 'any') {
+      if (focus === 'melodic') parts.push('duration:[0.5 TO *]'); // avoid sub-frame hits
+      if (focus === 'bpm') parts.push('duration:[1 TO 60]');      // prefer loop lengths
     }
 
     return parts.join(' ');
