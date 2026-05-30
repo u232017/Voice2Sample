@@ -4,10 +4,10 @@ import argparse
 import numpy as np
 from sklearn.neighbors import NearestNeighbors
 
+# Support importing as a package (relative import) and running as a script (absolute)
 try:
     from .modelo_ml import inicializar_modelo, extraer_embedding  # type: ignore
 except Exception:
-    # Fallback when executed as a script or package-relative imports fail
     from modelo_ml import inicializar_modelo, extraer_embedding
 
 
@@ -68,7 +68,7 @@ def buscar_similares(ruta_audio_usuario, rutas_dataset, embeddings_matriz, k=5):
 
 def main():
     parser = argparse.ArgumentParser(description='Buscar top-k similares usando embeddings JSON')
-    parser.add_argument('--embeddings', '-e', default=os.path.join('..', '..', 'Dataset', 'embeddings_output.json'),
+    parser.add_argument('--embeddings', '-e', default=os.path.join('Dataset', 'embeddings_output.json'),
                         help='Ruta al JSON de embeddings (por defecto: Dataset/embeddings_output.json)')
     parser.add_argument('--audio', '-a', default='mi_imitacion.wav', help='Ruta al audio de imitación (por defecto: mi_imitacion.wav)')
     # Forzar siempre top-5 (no se puede cambiar desde la línea de comandos)
@@ -83,10 +83,17 @@ def main():
     if not os.path.exists(ruta_json):
         raise FileNotFoundError(f'No se encontró el JSON de embeddings: {ruta_json}')
 
-    if not os.path.exists(ruta_audio):
-        raise FileNotFoundError(f'No se encontró el archivo de audio de entrada: {ruta_audio}')
-
+    # Cargar embeddings antes para poder usar un audio del dataset como fallback
     rutas_dataset, embeddings_matriz = cargar_embeddings_json(ruta_json)
+
+    # Si el audio proporcionado no existe, usar el primero del dataset como fallback
+    if not os.path.exists(ruta_audio):
+        fallback = rutas_dataset[0] if len(rutas_dataset) > 0 else None
+        if fallback and os.path.exists(fallback):
+            print(f"Advertencia: archivo de audio '{ruta_audio}' no encontrado. Usando fallback: {fallback}")
+            ruta_audio = fallback
+        else:
+            raise FileNotFoundError(f'No se encontró el archivo de audio de entrada: {ruta_audio}')
 
     resultados = buscar_similares(ruta_audio, rutas_dataset, embeddings_matriz, k=K_FIXED)
 
