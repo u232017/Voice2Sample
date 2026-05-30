@@ -126,6 +126,11 @@ async function prepareBackendAudio(audio: RecordedAudio, trim?: AudioTrimSelecti
 
 class RecommendationAPI {
   private async hydrateMissingVisualizations(sounds: FreesoundSound[]): Promise<FreesoundSound[]> {
+    // If no Freesound API key, skip silently — backend sounds just won't have waveform images
+    if (!freesoundAPI.hasApiKey()) {
+      return sounds;
+    }
+
     const soundsMissingVisualization = sounds.filter((sound) => !freesoundAPI.getVisualizationUrl(sound));
     if (!soundsMissingVisualization.length) {
       return sounds;

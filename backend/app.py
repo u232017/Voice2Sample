@@ -10,6 +10,8 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
+import sys
+
 from .dataset_recommender import (
     clean_name_from_path,
     duration_seconds,
@@ -18,6 +20,19 @@ from .dataset_recommender import (
     tags_from_metadata,
     trim_audio_file,
 )
+
+# BuscadorSimilitud uses the pre-trained KNN joblibs
+MODELS_DIR = Path(__file__).resolve().parents[1] / "audio_processing" / "Processing" / "models"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "audio_processing" / "Processing"))
+try:
+    from inference import BuscadorSimilitud
+    _buscador = BuscadorSimilitud(models_dir=str(MODELS_DIR))
+    _USE_KNN = True
+    print("[Voice2Sample] KNN joblib models loaded from", MODELS_DIR)
+except Exception as _e:
+    _USE_KNN = False
+    _buscador = None
+    print("[Voice2Sample] KNN models not available, falling back to euclidean distance:", _e)
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATASET_DIR = ROOT_DIR / "Dataset"
@@ -112,11 +127,44 @@ def _dataset_sound_payload(item: Any, similarity: float | None = None, distance:
     }
 
 
+# Map frontend focus names to inference.py mode names
+_FOCUS_TO_MODO = {
+    "general":  "general",
+    "melodic":  "melodia",
+    "bpm":      "ritmo",
+    "timbre":   "timbre",
+    "energy":   "general",   # no dedicated energy model, use general
+    "essentia": "essentia",
+}
+
+
 def _dataset_recommendations(audio_path: Path, limit: int, focus: str = "general") -> list[dict[str, Any]]:
     items = _get_dataset()
     if not items:
-        raise RuntimeError("Dataset/audio_prueba does not contain supported audio files")
+        raise RuntimeError("Dataset does not contain supported audio files")
 
+    # Use pre-trained KNN joblibs when available
+    if _USE_KNN and _buscador is not None:
+        modo = _FOCUS_TO_MODO.get(focus, "general")
+        try:
+            knn_results = _buscador.buscar(str(audio_path), modo=modo, top_k=limit)
+            # knn_results: [{rank, nombre, distancia, similitud}, ...]
+            # Map nombre (audio ID) back to dataset items
+            items_by_id = {item.audio_id: item for item in items}
+            payloads = []
+            for r in knn_results:
+                item = items_by_id.get(r["nombre"])
+                if item is not None:
+                    payloads.append(
+                        _dataset_sound_payload(item, r["similitud"], r["distancia"])
+                    )
+            if payloads:
+                return payloads
+            print(f"[Voice2Sample] KNN returned no matching items for mode={modo}, falling back")
+        except Exception as exc:
+            print(f"[Voice2Sample] KNN error ({modo}): {exc}, falling back to euclidean distance")
+
+    # Fallback: original euclidean distance on raw features
     ranked = rank_similar_items(audio_path, items, limit, focus)
     return [_dataset_sound_payload(item, similarity, distance) for item, distance, similarity in ranked]
 
@@ -179,4 +227,3 @@ async def recommendations(
         "error": error,
         "results": results,
     }
-

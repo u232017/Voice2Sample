@@ -352,32 +352,43 @@ def _standardize(dataset_matrix: np.ndarray, query_vector: np.ndarray) -> tuple[
 
 def _get_feature_focus_indices(focus: str) -> list[int]:
     """Get feature indices to use based on similarity focus.
-    
+
     Feature indices (from extract_audio_features):
-    0: log(duration)
-    1-5: amplitude and attack (energy)
-    6-8: RMS stats
-    9-11: ZCR stats (rhythm)
-    12-14: Centroid stats (melodic)
-    15-17: Bandwidth stats (timbre)
-    18-20: Rolloff stats (melodic)
-    21-23: Flux stats (rhythm)
-    24-31: Band energies (timbre/energy)
+    0:     log(duration)
+    1-5:   amplitude / attack / silence (energy envelope)
+    6-8:   RMS stats         (energy)
+    9-11:  ZCR stats         (noisiness proxy)
+    12-14: Centroid stats    (spectral brightness / rough pitch)
+    15-17: Bandwidth stats   (harmonic richness / timbre width)
+    18-20: Rolloff stats     (spectral extent / tonal content)
+    21-23: Flux stats        (onset energy / rhythm)
+    24-31: Band energies     (spectral shape)
     """
     if focus == "melodic":
-        # Pitch and melodic contour: centroid, rolloff
-        return [12, 13, 14, 18, 19, 20]
+        # Tonal content: centroid + rolloff give rough pitch region;
+        # bandwidth captures harmonic richness; low/mid band energies
+        # (bands 0-4) encode the fundamental-frequency region.
+        return [12, 13, 14, 18, 19, 20, 15, 16, 17, 24, 25, 26, 27, 28]
     elif focus == "bpm":
-        # Rhythm and tempo: RMS, ZCR, flux
-        return [6, 7, 8, 9, 10, 11, 21, 22, 23]
+        # Rhythmic energy: flux is the strongest onset indicator.
+        # RMS captures loudness envelope; band energies 5-7 capture
+        # kick/snare frequency range. ZCR removed — poor tempo proxy.
+        return [21, 22, 23, 6, 7, 8, 29, 30, 31]
     elif focus == "timbre":
-        # Spectral characteristics: bandwidth, rolloff, band energies
-        return [15, 16, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 30, 31]
+        # Spectral shape: bandwidth, rolloff, all band energies, ZCR.
+        return [15, 16, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 30, 31, 9, 10, 11]
     elif focus == "energy":
-        # Energy content: amplitude, RMS, band energies
-        return [1, 2, 6, 7, 8, 24, 25, 26, 27, 28, 29, 30, 31]
-    else:  # "general" or default
-        # Use all features
+        return [1, 2, 3, 4, 5, 6, 7, 8]
+    elif focus == "essentia_general":
+        # Perceptual combination: rhythm + melody + timbre.
+        # Excludes pure energy features so results differ from CLAP.
+        return [21, 22, 23,          # flux (rhythm / onsets)
+                12, 13, 14,          # centroid (pitch region)
+                18, 19, 20,          # rolloff (tonal extent)
+                15, 16, 17,          # bandwidth (harmonic richness)
+                9,  10, 11,          # ZCR (noisiness / timbre)
+                24, 25, 26, 27, 28, 29, 30, 31]  # all 8 spectral bands
+    else:  # "general" / CLAP -- use all 32 features
         return list(range(32))
 
 
@@ -472,4 +483,3 @@ def tags_from_metadata(metadata: dict[str, Any], fallback_name: str) -> list[str
 
     words = re.split(r"[\s_\-.]+", fallback_name.lower())
     return [word for word in words if len(word) > 2 and not word.isdigit()][:5] or ["dataset"]
-
