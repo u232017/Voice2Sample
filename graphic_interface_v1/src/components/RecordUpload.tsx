@@ -22,7 +22,6 @@ const similarityOptions: Array<{ value: SimilarityFocus; label: string }> = [
   { value: 'melodic', label: 'Melodic' },
   { value: 'bpm', label: 'BPM' },
   { value: 'timbre', label: 'Timbre' },
-  { value: 'energy', label: 'Energy' },
   { value: 'general', label: 'General' },
 ];
 
