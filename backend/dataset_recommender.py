@@ -471,6 +471,156 @@ def rank_similar_items(query_audio: Path, items: list[DatasetItem], limit: int, 
 
     return ranked
 
+def _project_to_map_coordinates(feature_rows: np.ndarray) -> np.ndarray:
+    """
+    Project the input audio and its nearest neighbours into two dimensions.
+
+    PCA is computed with NumPy SVD, so no additional dependency is required.
+    Returned coordinates are normalized to the [0.08, 0.92] range so points
+    do not appear stuck to the visual borders of the map.
+    """
+    feature_rows = np.asarray(feature_rows, dtype=np.float32)
+
+    if feature_rows.ndim != 2 or feature_rows.shape[0] == 0:
+        return np.empty((0, 2), dtype=np.float32)
+
+    centered = feature_rows - np.mean(feature_rows, axis=0, keepdims=True)
+
+    if np.allclose(centered, 0.0):
+        return np.full((feature_rows.shape[0], 2), 0.5, dtype=np.float32)
+
+    try:
+        _, _, right_vectors = np.linalg.svd(centered, full_matrices=False)
+        component_count = min(2, right_vectors.shape[0])
+        projected = centered @ right_vectors[:component_count].T
+    except np.linalg.LinAlgError:
+        projected = np.zeros((feature_rows.shape[0], 2), dtype=np.float32)
+
+    if projected.shape[1] == 1:
+        projected = np.column_stack(
+            [
+                projected[:, 0],
+                np.zeros(feature_rows.shape[0], dtype=np.float32),
+            ]
+        )
+
+    coordinates = np.zeros((feature_rows.shape[0], 2), dtype=np.float32)
+
+    for axis in range(2):
+        minimum = float(np.min(projected[:, axis]))
+        maximum = float(np.max(projected[:, axis]))
+        axis_range = maximum - minimum
+
+        if axis_range < 1e-9:
+            coordinates[:, axis] = 0.5
+        else:
+            normalized = (projected[:, axis] - minimum) / axis_range
+            coordinates[:, axis] = 0.08 + normalized * 0.84
+
+    return coordinates
+
+
+def build_map_results(
+    query_audio: Path,
+    items: list[DatasetItem],
+    limit: int = 50,
+    focus: str = "general",
+) -> tuple[
+    dict[str, float],
+    list[tuple[DatasetItem, float, float, float, float]],
+]:
+    """
+    Return the real nearest dataset sounds and their 2D map coordinates.
+
+    Neighbours are selected using the same ranking logic as the existing
+    recommendation system. Their visual position is computed afterwards
+    using a PCA projection of the acoustic features associated with the
+    selected similarity focus.
+
+    Return format:
+        input_point:
+            {"x": float, "y": float}
+
+        results:
+            [
+                (dataset_item, distance, similarity, x, y),
+                ...
+            ]
+    """
+    if not items:
+        return {"x": 0.5, "y": 0.5}, []
+
+    safe_limit = min(max(int(limit), 1), 50)
+
+    ranked = rank_similar_items(
+        query_audio=query_audio,
+        items=items,
+        limit=safe_limit,
+        focus=focus,
+    )
+
+    if not ranked:
+        return {"x": 0.5, "y": 0.5}, []
+
+    focus_indices = _get_feature_focus_indices(focus)
+
+    dataset_matrix = np.asarray(
+        [item.features for item in items],
+        dtype=np.float32,
+    )[:, focus_indices]
+
+    query_vector = np.asarray(
+        extract_audio_features(query_audio),
+        dtype=np.float32,
+    )[focus_indices]
+
+    dataset_scaled, query_scaled = _standardize(
+        dataset_matrix,
+        query_vector,
+    )
+
+    item_position_by_path = {
+        item.path: index for index, item in enumerate(items)
+    }
+
+    ranked_rows = np.asarray(
+        [
+            dataset_scaled[item_position_by_path[item.path]]
+            for item, _, _ in ranked
+        ],
+        dtype=np.float32,
+    )
+
+    map_rows = np.vstack(
+        [
+            query_scaled.reshape(1, -1),
+            ranked_rows,
+        ]
+    )
+
+    coordinates = _project_to_map_coordinates(map_rows)
+
+    input_point = {
+        "x": round(float(coordinates[0, 0]), 5),
+        "y": round(float(coordinates[0, 1]), 5),
+    }
+
+    results: list[
+        tuple[DatasetItem, float, float, float, float]
+    ] = []
+
+    for index, (item, distance, similarity) in enumerate(ranked, start=1):
+        results.append(
+            (
+                item,
+                distance,
+                similarity,
+                round(float(coordinates[index, 0]), 5),
+                round(float(coordinates[index, 1]), 5),
+            )
+        )
+
+    return input_point, results
 
 def clean_name_from_path(path: Path) -> str:
     return path.stem.replace("-", " ").replace("_", " ").strip().title()
