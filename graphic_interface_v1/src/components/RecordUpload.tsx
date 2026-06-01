@@ -20,11 +20,11 @@ import { defaultSearchFilters, useAudio } from '../context/AudioContext';
 import { useFreesound } from '../hooks/useFreesound';
 import {
   AudioAnalysisResult,
+  CombinedSoundMapResponse,
   FreesoundSearchFilters,
   RecommendationModel,
   RecordedAudio,
   SimilarityFocus,
-  SoundMapResponse,
 } from '../services/types';
 import { audioService } from '../services/audio';
 import { audioAnalysisService } from '../services/audioAnalysisService';
@@ -36,7 +36,6 @@ const similarityOptions: Array<{
 }> = [
   { value: 'general', label: 'General' },
   { value: 'melodic', label: 'Melodic' },
-  { value: 'energy', label: 'Energy' },
   { value: 'bpm', label: 'BPM' },
   { value: 'timbre', label: 'Timbre' },
 ];
@@ -76,7 +75,7 @@ export function RecordUpload() {
   const [frontendAnalysis, setFrontendAnalysis] =
     useState<AudioAnalysisResult | null>(null);
   const [mapResults, setMapResults] =
-    useState<SoundMapResponse | null>(null);
+    useState<CombinedSoundMapResponse | null>(null);
   const [isMapLoading, setIsMapLoading] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
 
@@ -345,9 +344,7 @@ export function RecordUpload() {
     }
   };
 
-  const loadRealSoundMap = async (
-    focus: SimilarityFocus = similarityFocus
-  ) => {
+  const loadRealSoundMap = async () => {
     if (
       !currentAudio ||
       !trimSelection ||
@@ -364,10 +361,9 @@ export function RecordUpload() {
     setMapError(null);
 
     try {
-      const data = await recommendationAPI.getMapResults(
+      const data = await recommendationAPI.getCombinedMapResults(
         currentAudio,
         trimSelection,
-        focus,
         50
       );
 
@@ -394,7 +390,7 @@ export function RecordUpload() {
         setMapError(
           status
             ? `Map request failed (HTTP ${status}). Check the Python backend terminal.`
-            : 'The real dataset map could not be loaded.'
+            : 'The combined similarity map could not be loaded.'
         );
       }
     } finally {
@@ -403,76 +399,6 @@ export function RecordUpload() {
         requestId === mapRequestIdRef.current
       ) {
         setIsMapLoading(false);
-      }
-    }
-  };
-
-  const changeMapFocus = async (focus: SimilarityFocus) => {
-    if (
-      !currentAudio ||
-      !trimSelection ||
-      recommendationModel !== 'essentia' ||
-      isMapLoading ||
-      isRecommendationLoading
-    ) {
-      return;
-    }
-
-    const requestId = mapRequestIdRef.current + 1;
-    const request = buildSearchRequest(focus);
-
-    mapRequestIdRef.current = requestId;
-    setSimilarityFocus(focus);
-    setMapError(null);
-    setIsMapLoading(true);
-    setIsSearchTransition(true);
-    setSearchRequest(request);
-    setTrimSelection(trimSelection);
-
-    try {
-      const [, updatedMap] = await Promise.all([
-        searchExamples(request, currentAudio, trimSelection),
-        recommendationAPI.getMapResults(
-          currentAudio,
-          trimSelection,
-          focus,
-          50
-        ),
-      ]);
-
-      if (
-        isMountedRef.current &&
-        requestId === mapRequestIdRef.current
-      ) {
-        setMapResults(updatedMap);
-      }
-    } catch (requestError) {
-      console.error('Comparison criterion update failed:', requestError);
-
-      if (
-        isMountedRef.current &&
-        requestId === mapRequestIdRef.current
-      ) {
-        const message =
-          requestError instanceof Error ? requestError.message : '';
-
-        const status = message.startsWith('BACKEND_MAP_HTTP_')
-          ? message.replace('BACKEND_MAP_HTTP_', '')
-          : null;
-
-        setMapError(
-          status
-            ? `Map request failed (HTTP ${status}). Check the Python backend terminal.`
-            : 'The comparison criterion could not be updated.'
-        );
-      }
-    } finally {
-      if (
-        isMountedRef.current &&
-        requestId === mapRequestIdRef.current
-      ) {
-        setIsMapLoading(false);
-        setIsSearchTransition(false);
       }
     }
   };
@@ -746,15 +672,15 @@ export function RecordUpload() {
                   <div>
                     <strong>Explore nearby results</strong>
                     <p>
-                      Visualize the 50 closest real dataset sounds. Higher match
-                      percentages are placed closer to your input.
+                      Visualize 200 real matches: 50 by General, 50 by Melodic,
+                      50 by BPM and 50 by Timbre.
                     </p>
                   </div>
 
                   <button
                     type="button"
                     className="secondary-action sound-map-trigger"
-                    onClick={() => loadRealSoundMap()}
+                    onClick={loadRealSoundMap}
                     disabled={isMapLoading}
                   >
                     <Search className="h-4 w-4" />
@@ -763,7 +689,7 @@ export function RecordUpload() {
                       ? 'Building map...'
                       : mapResults
                         ? 'Refresh map'
-                        : 'Explore 50 sounds'}
+                        : 'Explore similarity map'}
                   </button>
                 </div>
               )}
@@ -788,9 +714,7 @@ export function RecordUpload() {
       {mapResults && recommendationModel === 'essentia' && (
         <SoundMap
           data={mapResults}
-          activeFocus={similarityFocus}
-          isLoading={isMapLoading || isRecommendationLoading}
-          onFocusChange={changeMapFocus}
+          isLoading={isMapLoading}
           onClose={discardMap}
         />
       )}

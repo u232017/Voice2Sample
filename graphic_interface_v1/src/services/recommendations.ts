@@ -1,5 +1,6 @@
 import {
   AudioTrimSelection,
+  CombinedSoundMapResponse,
   FreesoundSearchRequest,
   FreesoundSound,
   RecordedAudio,
@@ -12,6 +13,7 @@ import { freesoundAPI } from './freesound';
 const RAW_BACKEND_API_BASE =
   import.meta.env.VITE_BACKEND_API_BASE ||
   (import.meta.env.DEV ? '/api' : 'http://127.0.0.1:8000/api');
+
 const BACKEND_API_BASE = RAW_BACKEND_API_BASE.replace(/\/$/, '');
 
 interface BackendRecommendationResponse {
@@ -33,7 +35,10 @@ interface BackendMapResponse {
 }
 
 function absolutizeBackendUrl(url?: string): string | undefined {
-  if (!url || /^https?:\/\//i.test(url)) return url;
+  if (!url || /^https?:\/\//i.test(url)) {
+    return url;
+  }
+
   return `${BACKEND_API_BASE}${url.startsWith('/api') ? url.slice(4) : url}`;
 }
 
@@ -96,15 +101,19 @@ function encodeAudioBufferToWav(
 ): Blob {
   const sampleRate = audioBuffer.sampleRate;
   const channelCount = audioBuffer.numberOfChannels;
+
   const safeStart = trim
     ? Math.max(0, Math.min(trim.start, audioBuffer.duration))
     : 0;
+
   const safeEnd = trim
     ? Math.max(safeStart, Math.min(trim.end, audioBuffer.duration))
     : audioBuffer.duration;
+
   const startSample = Math.floor(safeStart * sampleRate);
   const endSample = Math.max(startSample + 1, Math.floor(safeEnd * sampleRate));
   const frameCount = Math.min(audioBuffer.length, endSample) - startSample;
+
   const bytesPerSample = 2;
   const blockAlign = channelCount * bytesPerSample;
   const buffer = new ArrayBuffer(44 + frameCount * blockAlign);
@@ -174,13 +183,10 @@ class RecommendationAPI {
   private async hydrateMissingVisualizations(
     sounds: FreesoundSound[]
   ): Promise<FreesoundSound[]> {
-    if (!freesoundAPI.hasApiKey()) {
-      return sounds;
-    }
-
     const soundsMissingVisualization = sounds.filter(
       (sound) => !freesoundAPI.getVisualizationUrl(sound)
     );
+
     if (!soundsMissingVisualization.length) {
       return sounds;
     }
@@ -287,6 +293,63 @@ class RecommendationAPI {
     return {
       ...data,
       results: data.results.map((sound) => normalizeBackendSound(sound)),
+    };
+  }
+
+  async getCombinedMapResults(
+    audio: RecordedAudio,
+    trim: AudioTrimSelection,
+    limitPerFocus = 50
+  ): Promise<CombinedSoundMapResponse> {
+    const focuses: SimilarityFocus[] = [
+      'general',
+      'melodic',
+      'bpm',
+      'timbre',
+    ];
+
+    const focusLabels: Record<SimilarityFocus, string> = {
+      general: 'General',
+      melodic: 'Melodic',
+      bpm: 'BPM',
+      timbre: 'Timbre',
+    };
+
+    const responses = await Promise.all(
+      focuses.map((focus) =>
+        this.getMapResults(audio, trim, focus, limitPerFocus)
+      )
+    );
+
+    const groups = responses.reduce(
+      (accumulator, response) => {
+        accumulator[response.focus] = response;
+        return accumulator;
+      },
+      {} as Record<SimilarityFocus, SoundMapResponse>
+    );
+
+    const results = responses.flatMap((response) =>
+      response.results.map((sound, index) => ({
+        ...sound,
+        focus: response.focus,
+        focusLabel: focusLabels[response.focus],
+        rank: index + 1,
+        groupCount: response.count,
+        mapKey: `${response.focus}-${sound.id}-${index}`,
+      }))
+    );
+
+    return {
+      engine: 'dataset-audio-descriptors',
+      projection: 'combined-pca',
+      count: results.length,
+      input: {
+        x: 0.5,
+        y: 0.5,
+      },
+      groups,
+      results,
     };
   }
 }

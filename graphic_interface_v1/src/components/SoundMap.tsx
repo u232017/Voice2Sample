@@ -2,22 +2,20 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { AudioLines, Map, Pause, Play, X } from 'lucide-react';
 import { audioService } from '../services/audio';
 import {
+  CombinedSoundMapPoint,
+  CombinedSoundMapResponse,
   SimilarityFocus,
-  SoundMapPoint,
-  SoundMapResponse,
+  SoundMapFilter,
 } from '../services/types';
 
 interface SoundMapProps {
-  data: SoundMapResponse;
-  activeFocus: SimilarityFocus;
+  data: CombinedSoundMapResponse;
   isLoading: boolean;
-  onFocusChange: (focus: SimilarityFocus) => void;
   onClose: () => void;
 }
 
 interface PositionedSound {
-  sound: SoundMapPoint;
-  rank: number;
+  sound: CombinedSoundMapPoint;
   x: number;
   y: number;
   colour: string;
@@ -25,110 +23,83 @@ interface PositionedSound {
   opacity: number;
 }
 
-const focusOptions: Array<{
-  value: SimilarityFocus;
+interface FocusSimilarityStats {
+  best: number;
+  worst: number;
+  spread: number;
+}
+
+const filterOptions: Array<{
+  value: SoundMapFilter;
   label: string;
   description: string;
 }> = [
   {
+    value: 'all',
+    label: 'All',
+    description: '200 combined results',
+  },
+  {
     value: 'general',
     label: 'General',
-    description: 'all acoustic features',
+    description: '50 global acoustic matches',
   },
   {
     value: 'melodic',
     label: 'Melodic',
-    description: 'current melodic comparison criterion',
-  },
-  {
-    value: 'energy',
-    label: 'Energy',
-    description: 'energy and intensity similarity',
+    description: '50 melodic matches',
   },
   {
     value: 'bpm',
     label: 'BPM',
-    description: 'rhythmic and tempo similarity',
+    description: '50 rhythm and tempo matches',
   },
   {
     value: 'timbre',
     label: 'Timbre',
-    description: 'spectral colour similarity',
+    description: '50 spectral colour matches',
   },
 ];
 
 const focusLabels: Record<SimilarityFocus, string> = {
   general: 'General',
   melodic: 'Melodic',
-  energy: 'Energy',
   bpm: 'BPM',
   timbre: 'Timbre',
 };
 
-const pointPalettes: Record<SimilarityFocus, string[]> = {
-  general: [
-    '#45ddff',
-    '#ff48c8',
-    '#a86cff',
-    '#ffcc3d',
-    '#43ef98',
-    '#ff674d',
-    '#22d8c1',
-    '#ff8c32',
-    '#4f88ff',
-    '#f95cff',
-  ],
-  melodic: [
-    '#49e7ff',
-    '#5e94ff',
-    '#b168ff',
-    '#ff43c8',
-    '#32e0d0',
-    '#ffd34d',
-    '#7c5cff',
-    '#35bfff',
-  ],
-  energy: [
-    '#dfff42',
-    '#49ef91',
-    '#ffc83d',
-    '#ff8037',
-    '#ff4e9c',
-    '#22dbb5',
-    '#f3ff60',
-    '#ff6049',
-  ],
-  bpm: [
-    '#ff4d49',
-    '#ff8838',
-    '#ffc43f',
-    '#ff43a6',
-    '#ef53ff',
-    '#ff6545',
-    '#ffe45e',
-    '#ff3564',
-  ],
-  timbre: [
-    '#b064ff',
-    '#41dfff',
-    '#ff4ec9',
-    '#45efc4',
-    '#5c83ff',
-    '#ffd145',
-    '#ee58ff',
-    '#26cbd8',
-  ],
+const focusColours: Record<SimilarityFocus, string> = {
+  general: '#00e7ff',
+  melodic: '#ff2bd6',
+  bpm: '#ff3030',
+  timbre: '#55ff38',
 };
 
-const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
-const MIN_VISUAL_RADIUS = 6;
-const MAX_VISUAL_RADIUS = 46;
+const focusSoftColours: Record<SimilarityFocus, string> = {
+  general: 'rgba(0, 231, 255, 0.36)',
+  melodic: 'rgba(255, 43, 214, 0.36)',
+  bpm: 'rgba(255, 48, 48, 0.36)',
+  timbre: 'rgba(85, 255, 56, 0.36)',
+};
 
-const getPreviewUrl = (sound: SoundMapPoint) =>
+const focusOrder: SimilarityFocus[] = [
+  'general',
+  'melodic',
+  'bpm',
+  'timbre',
+];
+
+const MIN_VISUAL_RADIUS = 7;
+const MAX_VISUAL_RADIUS = 45;
+
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
+
+const getPreviewUrl = (sound: CombinedSoundMapPoint) =>
   sound.previews?.['preview-hq-mp3'] ||
   sound.previews?.['preview-lq-mp3'];
 
-const getSimilarityValue = (sound: SoundMapPoint) =>
+const getSimilarityValue = (sound: CombinedSoundMapPoint) =>
   typeof sound.similarity === 'number' && Number.isFinite(sound.similarity)
     ? Math.max(0, Math.min(1, sound.similarity))
     : 0;
@@ -149,126 +120,178 @@ const formatBpm = (value?: number | null) => {
   return `${Math.round(value)} BPM`;
 };
 
-const pseudoRandomUnit = (seed: number) => {
-  const value = Math.sin(seed * 91.73 + 18.37) * 43758.5453123;
+const clampMapPosition = (value: number) => {
+  if (!Number.isFinite(value)) {
+    return 50;
+  }
+
+  return Math.max(4, Math.min(96, value));
+};
+
+const pseudoRandomUnit = (seed: string) => {
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash << 5) - hash + seed.charCodeAt(index);
+    hash |= 0;
+  }
+
+  const value = Math.sin(hash * 12.9898) * 43758.5453123;
 
   return value - Math.floor(value);
 };
 
-const pointColour = (
-  focus: SimilarityFocus,
-  sound: SoundMapPoint,
-  rank: number
-) => {
-  const palette = pointPalettes[focus];
-  const idSeed = typeof sound.id === 'number' ? sound.id : rank;
-  const index = Math.floor(
-    pseudoRandomUnit(idSeed + rank * 11.7) * palette.length
-  );
+const getFilterLabel = (filter: SoundMapFilter) => {
+  if (filter === 'all') {
+    return 'All';
+  }
 
-  return palette[Math.min(index, palette.length - 1)];
+  return focusLabels[filter];
 };
 
-export function SoundMap({
-  data,
-  activeFocus,
-  isLoading,
-  onFocusChange,
-  onClose,
-}: SoundMapProps) {
-  const orderedResults = useMemo(() => {
-    return data.results
-      .map((sound, originalIndex) => ({
-        sound,
-        originalIndex,
-      }))
-      .sort((first, second) => {
-        const scoreDifference =
-          getSimilarityValue(second.sound) - getSimilarityValue(first.sound);
+const createFocusStats = (
+  sounds: CombinedSoundMapPoint[]
+): Record<SimilarityFocus, FocusSimilarityStats> => {
+  return focusOrder.reduce((accumulator, focus) => {
+    const focusSounds = sounds.filter((sound) => sound.focus === focus);
+    const similarities = focusSounds.map(getSimilarityValue);
 
-        if (Math.abs(scoreDifference) > 0.0000001) {
-          return scoreDifference;
-        }
+    const best = similarities.length ? Math.max(...similarities) : 1;
+    const worst = similarities.length ? Math.min(...similarities) : 0;
 
-        return first.originalIndex - second.originalIndex;
-      })
-      .map(({ sound }) => sound);
-  }, [data.results]);
+    accumulator[focus] = {
+      best,
+      worst,
+      spread: Math.max(best - worst, 0.000001),
+    };
 
-  const positionedSounds = useMemo<PositionedSound[]>(() => {
-    if (!orderedResults.length) {
-      return [];
-    }
+    return accumulator;
+  }, {} as Record<SimilarityFocus, FocusSimilarityStats>);
+};
 
-    const bestSimilarity = getSimilarityValue(orderedResults[0]);
-    const worstSimilarity = getSimilarityValue(
-      orderedResults[orderedResults.length - 1]
-    );
+const getBackendDirectionAngle = (sound: CombinedSoundMapPoint) => {
+  const baseX = Number.isFinite(sound.x) ? sound.x * 100 : 50;
+  const baseY = Number.isFinite(sound.y) ? sound.y * 100 : 50;
+  const deltaX = baseX - 50;
+  const deltaY = baseY - 50;
+  const length = Math.hypot(deltaX, deltaY);
 
-    /*
-      Radius is fully continuous: it is computed from each raw similarity
-      value returned by the backend, not from categories or distance bands.
+  if (length > 0.5) {
+    return Math.atan2(deltaY, deltaX);
+  }
 
-      We expand the similarity range of the 50 visible sounds to the available
-      drawing area so that even small differences can be perceived.
-    */
-    const visibleSimilaritySpread = Math.max(
-      bestSimilarity - worstSimilarity,
-      0.001
-    );
+  return pseudoRandomUnit(`${sound.mapKey}-fallback-angle`) * Math.PI * 2;
+};
 
-    const availableRadius = MAX_VISUAL_RADIUS - MIN_VISUAL_RADIUS;
+const getSimilarityRadius = (
+  sound: CombinedSoundMapPoint,
+  stats: FocusSimilarityStats
+) => {
+  const similarity = getSimilarityValue(sound);
 
-    return orderedResults.map((sound, index) => {
-      const similarity = getSimilarityValue(sound);
-      const differenceFromBest = bestSimilarity - similarity;
+  const normalizedBySimilarity =
+    (similarity - stats.worst) / stats.spread;
 
-      const radius =
-        MIN_VISUAL_RADIUS +
-        (differenceFromBest / visibleSimilaritySpread) * availableRadius;
+  const normalizedByRank =
+    1 - (sound.rank - 1) / Math.max(sound.groupCount - 1, 1);
 
-      /*
-        Angle only distributes points around the input to make the view read
-        as a cloud. It does not modify similarity: distance to the centre is
-        controlled only by the backend percentage.
-      */
-      const seed =
-        typeof sound.id === 'number' ? sound.id : index * 37 + 19;
-      const angularNoise = (pseudoRandomUnit(seed) - 0.5) * 0.9;
-      const angle = -Math.PI / 2 + index * GOLDEN_ANGLE + angularNoise;
-
-      const x = 50 + Math.cos(angle) * radius * 1.02;
-      const y = 50 + Math.sin(angle) * radius * 0.9;
-
-      const closeness =
-        1 - differenceFromBest / visibleSimilaritySpread;
-
-      return {
-        sound,
-        rank: index + 1,
-        x,
-        y,
-        colour: pointColour(activeFocus, sound, index + 1),
-        pointSize:
-          index < 4
-            ? 17 - index
-            : 6 + Math.max(0, Math.min(1, closeness)) * 5,
-        opacity:
-          0.62 + Math.max(0, Math.min(1, closeness)) * 0.32,
-      };
-    });
-  }, [activeFocus, orderedResults]);
-
-  const [selectedPoint, setSelectedPoint] = useState<SoundMapPoint | null>(
-    orderedResults[0] ?? null
+  const normalized = clamp(
+    Number.isFinite(normalizedBySimilarity)
+      ? normalizedBySimilarity
+      : normalizedByRank,
+    0,
+    1
   );
+
+  return (
+    MIN_VISUAL_RADIUS +
+    (1 - normalized) * (MAX_VISUAL_RADIUS - MIN_VISUAL_RADIUS)
+  );
+};
+
+export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
+  const [activeFilter, setActiveFilter] = useState<SoundMapFilter>('all');
+  const [selectedPoint, setSelectedPoint] =
+    useState<CombinedSoundMapPoint | null>(data.results[0] ?? null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const focusStats = useMemo(
+    () => createFocusStats(data.results),
+    [data.results]
+  );
+
+  const visibleResults = useMemo(() => {
+    const filtered =
+      activeFilter === 'all'
+        ? data.results
+        : data.results.filter((sound) => sound.focus === activeFilter);
+
+    return [...filtered].sort((first, second) => {
+      if (first.focus !== second.focus) {
+        return focusOrder.indexOf(first.focus) - focusOrder.indexOf(second.focus);
+      }
+
+      return first.rank - second.rank;
+    });
+  }, [activeFilter, data.results]);
+
+  const positionedSounds = useMemo<PositionedSound[]>(() => {
+    if (!visibleResults.length) {
+      return [];
+    }
+
+    return visibleResults.map((sound) => {
+      const stats = focusStats[sound.focus];
+      const radius = getSimilarityRadius(sound, stats);
+
+      /*
+        The backend coordinates are used only to preserve the Audio Atlas style
+        direction of the cloud. The actual distance from the input is controlled
+        by the similarity percentage inside each comparison mode.
+      */
+      const angle =
+        getBackendDirectionAngle(sound) +
+        (pseudoRandomUnit(`${sound.mapKey}-angle`) - 0.5) * 0.18;
+
+      const normalizedCloseness = clamp(
+        1 -
+          (radius - MIN_VISUAL_RADIUS) /
+            Math.max(MAX_VISUAL_RADIUS - MIN_VISUAL_RADIUS, 0.000001),
+        0,
+        1
+      );
+
+      return {
+        sound,
+        x: clampMapPosition(50 + Math.cos(angle) * radius),
+        y: clampMapPosition(50 + Math.sin(angle) * radius),
+        colour: focusColours[sound.focus],
+        pointSize:
+          sound.rank <= 4
+            ? 21 - Math.min(sound.rank, 3) * 1.4
+            : 8.5 + normalizedCloseness * 6.5,
+        opacity: 0.72 + normalizedCloseness * 0.24,
+      };
+    });
+  }, [focusStats, visibleResults]);
+
   useEffect(() => {
-    setSelectedPoint(orderedResults[0] ?? null);
-    setIsPlaying(false);
-  }, [orderedResults]);
+    if (!visibleResults.length) {
+      setSelectedPoint(null);
+      setIsPlaying(false);
+      return;
+    }
+
+    const currentSelectionStillVisible =
+      selectedPoint &&
+      visibleResults.some((sound) => sound.mapKey === selectedPoint.mapKey);
+
+    if (!currentSelectionStillVisible) {
+      setSelectedPoint(visibleResults[0]);
+      setIsPlaying(false);
+    }
+  }, [selectedPoint, visibleResults]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -283,10 +306,10 @@ export function SoundMap({
   }, [selectedPoint]);
 
   const selectedPosition = selectedPoint
-    ? positionedSounds.find((point) => point.sound.id === selectedPoint.id)
+    ? positionedSounds.find(
+        (point) => point.sound.mapKey === selectedPoint.mapKey
+      )
     : null;
-
-  const selectedRank = selectedPosition?.rank ?? null;
 
   const selectedPreviewUrl = selectedPoint
     ? getPreviewUrl(selectedPoint)
@@ -295,8 +318,8 @@ export function SoundMap({
   const selectedTags = selectedPoint?.tags?.slice(0, 4) ?? [];
 
   const activeDescription =
-    focusOptions.find((option) => option.value === activeFocus)?.description ||
-    'acoustic similarity';
+    filterOptions.find((option) => option.value === activeFilter)
+      ?.description || 'combined results';
 
   const toggleSelectedPreview = async () => {
     const audio = audioRef.current;
@@ -316,7 +339,7 @@ export function SoundMap({
 
   return (
     <section
-      className={`sound-map-card map-focus-${activeFocus}`}
+      className={`sound-map-card map-filter-${activeFilter}`}
       aria-label="Audio similarity map"
     >
       <header className="sound-map-header">
@@ -325,15 +348,16 @@ export function SoundMap({
           <h2>Audio Similarity Map</h2>
 
           <p className="sound-map-description">
-            Each coloured point is a real dataset sound. Distance is continuous:
-            the higher its acoustic match percentage, the closer it appears to
-            your input.
+            This map combines 200 real matches: 50 by General, 50 by Melodic,
+            50 by BPM and 50 by Timbre. Colours identify the comparison mode,
+            and each point is placed closer to your input when its match
+            percentage is higher within that mode.
           </p>
         </div>
 
         <div className="sound-map-header-actions">
           <span className="sound-map-pill real">
-            {data.count} real sounds
+            {data.count} real matches
           </span>
 
           <button
@@ -349,23 +373,23 @@ export function SoundMap({
 
       <div className="sound-map-focus-panel">
         <div>
-          <p>Compare nearest sounds by</p>
+          <p>Show results by</p>
           <span>
-            Current comparison: {focusLabels[activeFocus]} - {activeDescription}.
+            Current view: {getFilterLabel(activeFilter)} - {activeDescription}.
           </span>
         </div>
 
         <div
           className="sound-map-focus-switch"
           role="group"
-          aria-label="Map comparison criterion"
+          aria-label="Map result filter"
         >
-          {focusOptions.map((option) => (
+          {filterOptions.map((option) => (
             <button
               key={option.value}
               type="button"
-              className={activeFocus === option.value ? 'active' : ''}
-              onClick={() => onFocusChange(option.value)}
+              className={activeFilter === option.value ? 'active' : ''}
+              onClick={() => setActiveFilter(option.value)}
               disabled={isLoading}
             >
               {option.label}
@@ -378,7 +402,7 @@ export function SoundMap({
         <div
           className="sound-map-stage atlas-cloud"
           role="img"
-          aria-label={`Map of ${data.count} real sounds ordered by ${focusLabels[activeFocus]} similarity`}
+          aria-label={`Map showing ${visibleResults.length} sounds for ${getFilterLabel(activeFilter)}`}
         >
           <div className="atlas-cloud-grid" />
           <div className="atlas-cloud-wash wash-one" />
@@ -386,59 +410,61 @@ export function SoundMap({
           <div className="atlas-cloud-wash wash-three" />
 
           <div className="atlas-map-note">
-            Distance from input = acoustic match percentage
+            {visibleResults.length} visible points
           </div>
 
           <div className="sound-map-input-ring">
             <span>Your input</span>
           </div>
 
-          {positionedSounds.map(
-            ({ sound, rank, x, y, colour, pointSize, opacity }) => {
-              const style = {
-                left: `${x}%`,
-                top: `${y}%`,
-                width: `${pointSize}px`,
-                height: `${pointSize}px`,
-                opacity,
-                backgroundColor: colour,
-                color: colour,
-              } as CSSProperties;
+          {positionedSounds.map(({ sound, x, y, colour, pointSize, opacity }) => {
+            const style = {
+              left: `${x}%`,
+              top: `${y}%`,
+              width: `${pointSize}px`,
+              height: `${pointSize}px`,
+              opacity,
+              backgroundColor: colour,
+              color: colour,
+              '--point-soft-colour': focusSoftColours[sound.focus],
+            } as CSSProperties;
 
-              return (
-                <button
-                  key={`${sound.id}-${rank}`}
-                  type="button"
-                  className={`sound-map-point atlas-point ${
-                    selectedPoint?.id === sound.id ? 'selected' : ''
-                  } ${rank <= 4 ? 'top-result' : ''}`}
-                  style={style}
-                  onClick={() => setSelectedPoint(sound)}
-                  aria-label={`${sound.name}, rank ${rank}, acoustic match ${formatSimilarity(
-                    sound.similarity
-                  )}`}
-                  title={`${sound.name} - #${rank} - ${formatSimilarity(
-                    sound.similarity
-                  )} match`}
-                >
-                  {rank <= 4 && (
-                    <b className="sound-map-rank-marker">#{rank}</b>
-                  )}
+            return (
+              <button
+                key={sound.mapKey}
+                type="button"
+                className={`sound-map-point atlas-point ${
+                  selectedPoint?.mapKey === sound.mapKey ? 'selected' : ''
+                } ${sound.rank <= 4 ? 'top-result' : ''}`}
+                style={style}
+                onClick={() => setSelectedPoint(sound)}
+                aria-label={`${sound.name}, ${sound.focusLabel}, rank ${sound.rank}, acoustic match ${formatSimilarity(
+                  sound.similarity
+                )}`}
+                title={`${sound.name} - ${sound.focusLabel} #${sound.rank} - ${formatSimilarity(
+                  sound.similarity
+                )} match`}
+              >
+                {sound.rank <= 4 && (
+                  <b className="sound-map-rank-marker">
+                    {sound.focusLabel[0]}#{sound.rank}
+                  </b>
+                )}
 
-                  <span className="sound-map-tooltip">
-                    <strong>{sound.name}</strong>
-                    <small>
-                      #{rank} - {formatSimilarity(sound.similarity)} match
-                    </small>
-                  </span>
-                </button>
-              );
-            }
-          )}
+                <span className="sound-map-tooltip">
+                  <strong>{sound.name}</strong>
+                  <small>
+                    {sound.focusLabel} #{sound.rank} -{' '}
+                    {formatSimilarity(sound.similarity)} match
+                  </small>
+                </span>
+              </button>
+            );
+          })}
 
           {isLoading && (
             <div className="sound-map-loading-overlay">
-              Updating {focusLabels[activeFocus]} neighbours...
+              Building combined similarity map...
             </div>
           )}
 
@@ -449,13 +475,23 @@ export function SoundMap({
             </span>
 
             <span>
-              <i className="legend-top" />
-              Top 4 matches
+              <i className="legend-general" />
+              General
             </span>
 
             <span>
-              <i className="legend-spectrum" />
-              Colour separates sounds visually
+              <i className="legend-melodic" />
+              Melodic
+            </span>
+
+            <span>
+              <i className="legend-bpm" />
+              BPM
+            </span>
+
+            <span>
+              <i className="legend-timbre" />
+              Timbre
             </span>
           </div>
         </div>
@@ -476,12 +512,15 @@ export function SoundMap({
                 <span
                   className="selected-colour-chip"
                   style={{
-                    backgroundColor: selectedPosition?.colour || '#45ddff',
+                    backgroundColor:
+                      selectedPosition?.colour || focusColours[selectedPoint.focus],
+                    color:
+                      selectedPosition?.colour || focusColours[selectedPoint.focus],
                   }}
                 />
 
                 <span className="selected-criterion-pill">
-                  Compared by {focusLabels[activeFocus]}
+                  Compared by {selectedPoint.focusLabel}
                 </span>
               </div>
 
@@ -496,9 +535,21 @@ export function SoundMap({
                 <div className="highlight-stat">
                   <span>Rank</span>
                   <strong>
-                    #{selectedRank} of {data.count}
+                    #{selectedPoint.rank} of {selectedPoint.groupCount}
                   </strong>
                 </div>
+
+                <div>
+                  <span>Visible mode</span>
+                  <strong>{getFilterLabel(activeFilter)}</strong>
+                </div>
+
+                {formatBpm(selectedPoint.bpm) && (
+                  <div>
+                    <span>BPM</span>
+                    <strong>{formatBpm(selectedPoint.bpm)}</strong>
+                  </div>
+                )}
 
                 <div>
                   <span>Duration</span>
@@ -508,13 +559,6 @@ export function SoundMap({
                     )}
                   </strong>
                 </div>
-
-                {formatBpm(selectedPoint.bpm) && (
-                  <div>
-                    <span>BPM</span>
-                    <strong>{formatBpm(selectedPoint.bpm)}</strong>
-                  </div>
-                )}
               </div>
 
               {selectedTags.length > 0 && (
@@ -526,10 +570,11 @@ export function SoundMap({
               )}
 
               <p className="sound-map-score-note">
-                This is the similarity value returned by the current backend.
-                The map uses the raw score continuously, so even small
-                differences place points at different distances from your
-                input.
+                A point represents one ranking entry, not only one audio file.
+                The same sample can appear several times when it is close to
+                the input according to different comparison criteria. Within
+                each criterion, higher percentages are always placed closer to
+                your input.
               </p>
 
               <button

@@ -1,338 +1,773 @@
 /**
  * essentiaWorker.ts
  *
- * Web Worker that loads Essentia WASM off the main thread.
- * The main thread sends a { samples: Float32Array, sampleRate: number }
- * message and receives back { values: BaseValues } or { error: string }.
- *
- * Place this file at:
- *   src/services/essentiaWorker.ts
- *
- * Vite will bundle it automatically when imported with
- *   new Worker(new URL('./essentiaWorker.ts', import.meta.url), { type: 'module' })
+ * Web Worker used by the audio analysis card.
+ * It only returns values calculated with Essentia.js.
+ * If a descriptor cannot be calculated by Essentia.js, its value is returned
+ * as null. No manual approximation fallback is generated here.
  */
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+const clamp = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value));
 
-const ESSENTIA_SOURCE = { source: 'essentia.js' as const };
-const APPROX_SOURCE = (note: string) => ({ source: 'approximation' as const, note });
+type DescriptorProvenance = {
+  source: 'essentia.js';
+  note?: string;
+};
+
+type WorkerDescriptorSources = {
+  melody: {
+    estimatedPitch: DescriptorProvenance;
+    pitchConfidence: DescriptorProvenance;
+  };
+  rhythm: {
+    bpm: DescriptorProvenance;
+    bpmConfidence: DescriptorProvenance;
+    onsetRate: DescriptorProvenance;
+  };
+  timbre: {
+    spectralCentroid: DescriptorProvenance;
+    spectralRolloff: DescriptorProvenance;
+    spectralFlatness: DescriptorProvenance;
+    zeroCrossingRate: DescriptorProvenance;
+  };
+  energy: {
+    rms: DescriptorProvenance;
+    energy: DescriptorProvenance;
+    dynamicComplexity: DescriptorProvenance;
+  };
+};
+
+type WorkerBaseValues = {
+  rms: number | null;
+  energy: number | null;
+  dynamicComplexity: number | null;
+  peakAmplitude: number;
+  dynamicRange: number;
+  zeroCrossingRate: number | null;
+  spectralCentroid: number | null;
+  spectralRolloff: number | null;
+  spectralFlatness: number | null;
+  bpm: number | null;
+  bpmConfidence: number | null;
+  onsetRate: number | null;
+  percussiveScore: number;
+  estimatedPitch: number | null;
+  pitchConfidence: number | null;
+  tonalScore: number;
+  sources: WorkerDescriptorSources;
+  missing: string[];
+};
 
 type UnknownResult = Record<string, unknown>;
 
-// ─── Fallback arithmetic (no WASM) ───────────────────────────────────────────
+type EssentiaInstance = {
+  arrayToVector: (input: Float32Array) => unknown;
+  vectorToArray?: (input: unknown) => Float32Array | number[];
 
-function extractFallbackValues(samples: Float32Array, sampleRate: number) {
-  const rms = Math.sqrt(samples.reduce((s, v) => s + v * v, 0) / (samples.length || 1));
-  const energy = samples.reduce((s, v) => s + v * v, 0) / (samples.length || 1);
-  const peakAmplitude = samples.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+  RMS?: (input: unknown) => UnknownResult;
+  Energy?: (input: unknown) => UnknownResult;
+  DynamicComplexity?: (
+    input: unknown,
+    frameSize?: number,
+    sampleRate?: number
+  ) => UnknownResult;
+  ZeroCrossingRate?: (
+    input: unknown,
+    threshold?: number
+  ) => UnknownResult;
+  SpectralCentroidTime?: (
+    input: unknown,
+    sampleRate?: number
+  ) => UnknownResult;
 
-  // ZCR
-  let zc = 0;
-  for (let i = 1; i < samples.length; i++) {
-    if ((samples[i] >= 0) !== (samples[i - 1] >= 0)) zc++;
+  Windowing?: (
+    input: unknown,
+    normalized?: boolean,
+    size?: number,
+    type?: string,
+    zeroPadding?: number,
+    zeroPhase?: boolean
+  ) => UnknownResult;
+  Spectrum?: (
+    frame: unknown,
+    size?: number
+  ) => UnknownResult;
+  RollOff?: (
+    spectrum: unknown,
+    cutoff?: number,
+    sampleRate?: number
+  ) => UnknownResult;
+  Flatness?: (spectrum: unknown) => UnknownResult;
+
+  Resample?: (
+    input: unknown,
+    inputSampleRate?: number,
+    outputSampleRate?: number,
+    quality?: number
+  ) => UnknownResult;
+  ResampleFFT?: (
+    input: unknown,
+    inputSize?: number,
+    outputSize?: number
+  ) => UnknownResult;
+
+  RhythmExtractor?: (
+    input: unknown,
+    frameHop?: number,
+    frameSize?: number,
+    hopSize?: number,
+    lastBeatInterval?: number,
+    maxTempo?: number,
+    minTempo?: number,
+    numberFrames?: number,
+    sampleRate?: number,
+    tempoHints?: unknown[],
+    tolerance?: number,
+    useBands?: boolean,
+    useOnset?: boolean
+  ) => UnknownResult;
+  RhythmExtractor2013?: (
+    input: unknown,
+    maxTempo?: number,
+    method?: string,
+    minTempo?: number
+  ) => UnknownResult;
+  OnsetRate?: (input: unknown) => UnknownResult;
+
+  PredominantPitchMelodia?: (
+    input: unknown,
+    binResolution?: number,
+    filterIterations?: number,
+    frameSize?: number,
+    guessUnvoiced?: boolean,
+    harmonicWeight?: number,
+    hopSize?: number,
+    magnitudeCompression?: number,
+    magnitudeThreshold?: number,
+    maxFrequency?: number,
+    minDuration?: number,
+    minFrequency?: number,
+    numberHarmonics?: number,
+    peakDistributionThreshold?: number,
+    peakFrameThreshold?: number,
+    pitchContinuity?: number,
+    referenceFrequency?: number,
+    sampleRate?: number,
+    timeContinuity?: number,
+    voiceVibrato?: boolean,
+    voicingTolerance?: number
+  ) => UnknownResult;
+};
+
+type EssentiaConstructor = new (
+  wasmModule: unknown,
+  isDebug?: boolean
+) => EssentiaInstance;
+
+const ESSENTIA_SOURCE: DescriptorProvenance = {
+  source: 'essentia.js',
+};
+
+function readNumber(
+  result: UnknownResult | undefined,
+  keys: string[]
+): number | null {
+  if (!result) {
+    return null;
   }
-  const zeroCrossingRate = samples.length > 1 ? zc / (samples.length - 1) : 0;
 
-  // Spectral centroid (single DFT frame)
-  const fSize = Math.min(2048, samples.length);
-  const frame = samples.slice(0, fSize);
-  const spectrum = new Float32Array(fSize / 2 + 1);
-  const freqs = new Float32Array(spectrum.length);
-  for (let k = 0; k < spectrum.length; k++) {
-    let re = 0, im = 0;
-    for (let n = 0; n < fSize; n++) {
-      const angle = (2 * Math.PI * k * n) / fSize;
-      re += frame[n] * Math.cos(angle);
-      im -= frame[n] * Math.sin(angle);
-    }
-    spectrum[k] = Math.sqrt(re * re + im * im);
-    freqs[k] = (k * sampleRate) / fSize;
-  }
-  const specSum = spectrum.reduce((s, v) => s + v, 1e-9);
-  const spectralCentroid = spectrum.reduce((s, v, i) => s + v * freqs[i], 0) / specSum;
+  for (const key of keys) {
+    const value = result[key];
 
-  // BPM (envelope autocorrelation)
-  const hopSz = 512;
-  const frameSz = 1024;
-  const envelope: number[] = [];
-  for (let start = 0; start < samples.length - frameSz; start += hopSz) {
-    const seg = samples.slice(start, start + frameSz);
-    envelope.push(Math.sqrt(seg.reduce((s, v) => s + v * v, 0) / frameSz));
-  }
-  let bpm: number | null = null;
-  let bpmConfidence = 0;
-  if (envelope.length >= 12) {
-    const fluxRate = sampleRate / hopSz;
-    const minLag = Math.max(1, Math.round((60 / 180) * fluxRate));
-    const maxLag = Math.min(envelope.length - 1, Math.round((60 / 60) * fluxRate));
-    const flux = envelope.map((v, i) => i > 0 ? Math.max(0, v - envelope[i - 1]) : 0);
-    let bestLag = 0, bestScore = 0, totalScore = 0;
-    for (let lag = minLag; lag <= maxLag; lag++) {
-      let score = 0;
-      for (let i = lag; i < flux.length; i++) score += flux[i] * flux[i - lag];
-      totalScore += score;
-      if (score > bestScore) { bestScore = score; bestLag = lag; }
-    }
-    if (bestLag > 0 && bestScore > 0) {
-      bpm = clamp((60 * fluxRate) / bestLag, 60, 180);
-      bpmConfidence = clamp(bestScore / Math.max(totalScore, 1e-8), 0, 1);
+    if (
+      typeof value === 'number' &&
+      Number.isFinite(value)
+    ) {
+      return value;
     }
   }
 
-  // Onset rate / percussive score
-  const duration = samples.length / sampleRate;
-  const envArr = envelope;
-  const avg = envArr.reduce((s, v) => s + v, 0) / (envArr.length || 1);
-  const onsets = envArr.filter((v, i) => i > 0 && v - envArr[i - 1] > avg * 0.7).length;
-  const onsetRate = onsets / Math.max(duration, 0.001);
-  const percussiveScore = clamp(onsetRate / 4, 0, 1);
+  return null;
+}
 
-  // Pitch (autocorrelation)
-  const pitchLen = Math.min(samples.length, Math.round(sampleRate * 0.7));
-  let estimatedPitch: number | null = null;
-  let pitchConfidence = 0;
-  if (pitchLen > sampleRate * 0.05) {
-    const seg = samples.slice(0, pitchLen);
-    const zeroCorrLag = seg.reduce((s, v) => s + v * v, 0);
-    const minLagP = Math.max(1, Math.round(sampleRate / 1000));
-    const maxLagP = Math.min(Math.round(sampleRate / 80), pitchLen - 1);
-    let bestLagP = 0, bestCorr = 0;
-    if (zeroCorrLag > 1e-8) {
-      for (let lag = minLagP; lag <= maxLagP; lag++) {
-        let c = 0;
-        for (let i = 0; i < seg.length - lag; i++) c += seg[i] * seg[i + lag];
-        c /= zeroCorrLag;
-        if (c > bestCorr) { bestCorr = c; bestLagP = lag; }
-      }
-    }
-    if (bestLagP > 0) {
-      estimatedPitch = sampleRate / bestLagP;
-      pitchConfidence = clamp(bestCorr, 0, 1);
-    }
+function readVector(
+  value: unknown,
+  essentia: EssentiaInstance
+): number[] {
+  if (value instanceof Float32Array) {
+    return Array.from(value);
   }
 
-  const tonalScore = clamp(pitchConfidence * 0.72 + (1 - zeroCrossingRate * 18) * 0.28, 0, 1);
+  if (Array.isArray(value)) {
+    return value.filter(
+      (item): item is number =>
+        typeof item === 'number' &&
+        Number.isFinite(item)
+    );
+  }
 
-  const approxSrc = APPROX_SOURCE('approximation fallback');
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return [value];
+  }
+
+  if (value && essentia.vectorToArray) {
+    return Array.from(
+      essentia.vectorToArray(value)
+    ).filter(
+      (item): item is number =>
+        typeof item === 'number' &&
+        Number.isFinite(item)
+    );
+  }
+
+  return [];
+}
+
+function extractAmplitudeStats(samples: Float32Array): {
+  peakAmplitude: number;
+  dynamicRange: number;
+} {
+  let peakAmplitude = 0;
+  let minAmplitude = 1;
+  let maxAmplitude = -1;
+
+  for (let index = 0; index < samples.length; index += 1) {
+    const sample = samples[index];
+
+    peakAmplitude = Math.max(peakAmplitude, Math.abs(sample));
+    minAmplitude = Math.min(minAmplitude, sample);
+    maxAmplitude = Math.max(maxAmplitude, sample);
+  }
+
   return {
-    rms, energy, dynamicComplexity: 0, peakAmplitude,
-    dynamicRange: peakAmplitude,
-    zeroCrossingRate, spectralCentroid,
-    spectralRolloff: spectralCentroid * 1.6,
-    spectralFlatness: 0.1,
-    bpm, bpmConfidence, onsetRate, percussiveScore,
-    estimatedPitch, pitchConfidence, tonalScore,
-    sources: {
-      energy: { rms: approxSrc, energy: approxSrc, dynamicComplexity: approxSrc },
-      timbre: {
-        spectralCentroid: approxSrc, spectralRolloff: approxSrc,
-        zeroCrossingRate: approxSrc, spectralFlatness: approxSrc,
-      },
-      rhythm: { bpm: approxSrc, bpmConfidence: approxSrc, onsetRate: approxSrc },
-      melody: { estimatedPitch: approxSrc, pitchConfidence: approxSrc },
+    peakAmplitude,
+    dynamicRange: maxAmplitude - minAmplitude,
+  };
+}
+
+function sources(): WorkerDescriptorSources {
+  return {
+    melody: {
+      estimatedPitch: ESSENTIA_SOURCE,
+      pitchConfidence: ESSENTIA_SOURCE,
+    },
+    rhythm: {
+      bpm: ESSENTIA_SOURCE,
+      bpmConfidence: ESSENTIA_SOURCE,
+      onsetRate: ESSENTIA_SOURCE,
+    },
+    timbre: {
+      spectralCentroid: ESSENTIA_SOURCE,
+      spectralRolloff: ESSENTIA_SOURCE,
+      spectralFlatness: ESSENTIA_SOURCE,
+      zeroCrossingRate: ESSENTIA_SOURCE,
+    },
+    energy: {
+      rms: ESSENTIA_SOURCE,
+      energy: ESSENTIA_SOURCE,
+      dynamicComplexity: ESSENTIA_SOURCE,
     },
   };
 }
 
-// ─── Helpers to read Essentia results ────────────────────────────────────────
-
-function readNumber(result: UnknownResult | undefined, keys: string[]): number | null {
-  if (!result) return null;
-  for (const key of keys) {
-    const v = result[key];
-    if (typeof v === 'number' && Number.isFinite(v)) return v;
-  }
-  return null;
-}
-
-function readVector(raw: unknown, essentia: any): number[] {
-  if (!raw) return [];
-  try {
-    const arr = essentia.vectorToArray?.(raw);
-    if (arr) return Array.from(arr as ArrayLike<number>);
-  } catch (_) {}
-  if (Array.isArray(raw)) return raw.filter((v): v is number => typeof v === 'number');
-  return [];
-}
-
-// ─── Main extraction with WASM ────────────────────────────────────────────────
-
-async function extractWithEssentia(samples: Float32Array, sampleRate: number) {
-  const values = extractFallbackValues(samples, sampleRate);
-
-  let essentia: any;
-  try {
-    const [{ EssentiaWASM }, { default: EssentiaLib }] = await Promise.all([
-      import('essentia.js/dist/essentia-wasm.es.js'),
-      import('essentia.js/dist/essentia.js-core.es.js'),
-    ]);
-    essentia = new (EssentiaLib as any)(EssentiaWASM, false);
-  } catch (e) {
-    console.warn('[essentiaWorker] WASM load failed, using fallback values', e);
-    return values;
+function extractSpectralDescriptors(
+  essentia: EssentiaInstance,
+  samples: Float32Array,
+  sampleRate: number
+): {
+  rolloff: number | null;
+  flatness: number | null;
+} {
+  if (!essentia.Windowing || !essentia.Spectrum) {
+    return {
+      rolloff: null,
+      flatness: null,
+    };
   }
 
+  const frameSize = 2048;
+  const hopSize = 1024;
+  let rolloffSum = 0;
+  let rolloffCount = 0;
+  let flatnessSum = 0;
+  let flatnessCount = 0;
+
+  for (
+    let start = 0;
+    start + frameSize <= samples.length;
+    start += hopSize
+  ) {
+    const frame = samples.slice(start, start + frameSize);
+    const frameVector = essentia.arrayToVector(frame);
+
+    const windowed = essentia.Windowing(
+      frameVector,
+      false,
+      frameSize,
+      'hann',
+      0,
+      false
+    );
+
+    const frameData =
+      windowed.frame ||
+      windowed.signal ||
+      windowed.windowedFrame;
+
+    if (!frameData) {
+      continue;
+    }
+
+    const spectrum = essentia.Spectrum(frameData, frameSize);
+    const spectrumData =
+      spectrum.spectrum ||
+      spectrum.frame ||
+      spectrum.signal;
+
+    if (!spectrumData) {
+      continue;
+    }
+
+    const rolloff = readNumber(
+      essentia.RollOff?.(spectrumData, 0.85, sampleRate),
+      ['rollOff', 'rolloff', 'spectralRolloff']
+    );
+
+    if (rolloff !== null) {
+      rolloffSum += rolloff;
+      rolloffCount += 1;
+    }
+
+    const flatness = readNumber(
+      essentia.Flatness?.(spectrumData),
+      ['flatness']
+    );
+
+    if (flatness !== null) {
+      flatnessSum += flatness;
+      flatnessCount += 1;
+    }
+  }
+
+  return {
+    rolloff: rolloffCount ? rolloffSum / rolloffCount : null,
+    flatness: flatnessCount ? flatnessSum / flatnessCount : null,
+  };
+}
+
+function resampleTo44100(
+  essentia: EssentiaInstance,
+  samples: Float32Array,
+  sampleRate: number
+): unknown | null {
+  if (sampleRate === 44100) {
+    return essentia.arrayToVector(samples);
+  }
+
+  const sourceVector = essentia.arrayToVector(samples);
+
+  try {
+    const signal = essentia.Resample?.(
+      sourceVector,
+      sampleRate,
+      44100,
+      0
+    ).signal;
+
+    if (signal) {
+      return signal;
+    }
+  } catch (error) {
+    console.warn('Essentia.js Resample failed in worker.', error);
+  }
+
+  try {
+    if (!essentia.ResampleFFT) {
+      return null;
+    }
+
+    const inputSize =
+      samples.length % 2 === 0
+        ? samples.length
+        : samples.length - 1;
+
+    if (inputSize < 2) {
+      return null;
+    }
+
+    let outputSize = Math.round(
+      inputSize * 44100 / sampleRate
+    );
+
+    if (outputSize % 2 !== 0) {
+      outputSize += 1;
+    }
+
+    const input = essentia.arrayToVector(
+      samples.slice(0, inputSize)
+    );
+
+    return essentia.ResampleFFT(
+      input,
+      inputSize,
+      outputSize
+    ).output || null;
+  } catch (error) {
+    console.warn('Essentia.js ResampleFFT failed in worker.', error);
+    return null;
+  }
+}
+
+function extractMelodyDescriptors(
+  essentia: EssentiaInstance,
+  samples: Float32Array,
+  sampleRate: number
+): {
+  pitch: number | null;
+  confidence: number | null;
+} {
+  if (!essentia.PredominantPitchMelodia) {
+    return {
+      pitch: null,
+      confidence: null,
+    };
+  }
+
+  try {
+    const vector =
+      sampleRate === 44100
+        ? essentia.arrayToVector(samples)
+        : resampleTo44100(essentia, samples, sampleRate);
+
+    if (!vector) {
+      return {
+        pitch: null,
+        confidence: null,
+      };
+    }
+
+    const result = essentia.PredominantPitchMelodia(
+      vector,
+      10,
+      3,
+      2048,
+      false,
+      0.8,
+      128,
+      1,
+      40,
+      20000,
+      0.1,
+      80,
+      20,
+      0.9,
+      0.9,
+      27.5625,
+      440,
+      44100,
+      27.5625,
+      false,
+      0.2
+    );
+
+    const pitchValues = readVector(
+      result.pitch || result.pitches,
+      essentia
+    );
+
+    const confidenceValues = readVector(
+      result.pitchConfidence ||
+        result.pitchConfidences ||
+        result.confidence,
+      essentia
+    );
+
+    if (!pitchValues.length) {
+      return {
+        pitch: null,
+        confidence: null,
+      };
+    }
+
+    let weightedPitch = 0;
+    let confidenceSum = 0;
+    let confidenceTotal = 0;
+
+    pitchValues.forEach((pitch, index) => {
+      if (pitch <= 0 || !Number.isFinite(pitch)) {
+        return;
+      }
+
+      const confidence =
+        confidenceValues[index] ??
+        confidenceValues[0] ??
+        1;
+
+      const safeConfidence = clamp(confidence, 0, 1);
+
+      weightedPitch += pitch * safeConfidence;
+      confidenceSum += safeConfidence;
+      confidenceTotal += safeConfidence;
+    });
+
+    if (confidenceSum <= 0) {
+      return {
+        pitch: null,
+        confidence: confidenceValues.length
+          ? clamp(
+              confidenceValues.reduce((sum, value) => sum + value, 0) /
+                confidenceValues.length,
+              0,
+              1
+            )
+          : null,
+      };
+    }
+
+    return {
+      pitch: weightedPitch / confidenceSum,
+      confidence: clamp(
+        confidenceTotal / Math.max(pitchValues.length, 1),
+        0,
+        1
+      ),
+    };
+  } catch (error) {
+    console.warn('Essentia.js could not calculate melody in worker.', error);
+
+    return {
+      pitch: null,
+      confidence: null,
+    };
+  }
+}
+
+function extractRhythmDescriptors(
+  essentia: EssentiaInstance,
+  vector: unknown,
+  sampleRate: number
+): {
+  bpm: number | null;
+  confidence: number | null;
+  onsetRate: number | null;
+} {
+  let bpm: number | null = null;
+  let confidence: number | null = null;
+  let onsetRate: number | null = null;
+
+  try {
+    const rhythm = essentia.RhythmExtractor?.(
+      vector,
+      1024,
+      1024,
+      256,
+      0.1,
+      208,
+      40,
+      1024,
+      sampleRate,
+      [],
+      0.24,
+      true,
+      true
+    );
+
+    bpm = readNumber(
+      rhythm,
+      ['bpm']
+    );
+  } catch (error) {
+    console.warn('Essentia.js could not calculate BPM in worker.', error);
+  }
+
+  try {
+    const rhythm2013 = essentia.RhythmExtractor2013?.(
+      vector,
+      208,
+      'multifeature',
+      40
+    );
+
+    const extractedConfidence = readNumber(
+      rhythm2013,
+      ['confidence']
+    );
+
+    if (extractedConfidence !== null) {
+      confidence = clamp(extractedConfidence, 0, 1);
+    }
+
+    const extractedBpm = readNumber(
+      rhythm2013,
+      ['bpm']
+    );
+
+    if (!bpm && extractedBpm !== null && extractedBpm > 0) {
+      bpm = extractedBpm;
+    }
+  } catch (error) {
+    console.warn('Essentia.js could not calculate rhythm confidence in worker.', error);
+  }
+
+  try {
+    onsetRate = readNumber(
+      essentia.OnsetRate?.(vector),
+      ['onsetRate']
+    );
+  } catch (error) {
+    console.warn('Essentia.js could not calculate onset rate in worker.', error);
+  }
+
+  return {
+    bpm: bpm !== null && bpm > 0 ? bpm : null,
+    confidence,
+    onsetRate,
+  };
+}
+
+async function loadEssentia(): Promise<EssentiaInstance> {
+  const [{ EssentiaWASM }, { default: Essentia }] = await Promise.all([
+    import('essentia.js/dist/essentia-wasm.es.js'),
+    import('essentia.js/dist/essentia.js-core.es.js'),
+  ]);
+
+  const EssentiaClass = Essentia as EssentiaConstructor;
+
+  return new EssentiaClass(EssentiaWASM, false);
+}
+
+async function extractWithEssentia(
+  samples: Float32Array,
+  sampleRate: number
+): Promise<WorkerBaseValues> {
+  const essentia = await loadEssentia();
   const vector = essentia.arrayToVector(samples);
+  const missing: string[] = [];
 
-  // RMS
-  try {
-    const v = readNumber(essentia.RMS?.(vector), ['rms', 'RMS']);
-    if (v !== null) { values.rms = v; values.sources.energy.rms = ESSENTIA_SOURCE; }
-  } catch (_) {}
-
-  // Energy
-  try {
-    const v = readNumber(essentia.Energy?.(vector), ['energy']);
-    if (v !== null) { values.energy = v; values.sources.energy.energy = ESSENTIA_SOURCE; }
-  } catch (_) {}
-
-  // DynamicComplexity
-  try {
-    const v = readNumber(essentia.DynamicComplexity?.(vector, 0.2, sampleRate), ['dynamicComplexity']);
-    if (v !== null) { values.dynamicComplexity = v; values.sources.energy.dynamicComplexity = ESSENTIA_SOURCE; }
-  } catch (_) {}
-
-  // ZCR
-  try {
-    const v = readNumber(essentia.ZeroCrossingRate?.(vector, 0.0001), ['zeroCrossingRate', 'zerocrossingrate']);
-    if (v !== null) { values.zeroCrossingRate = v; values.sources.timbre.zeroCrossingRate = ESSENTIA_SOURCE; }
-  } catch (_) {}
-
-  // SpectralCentroid
-  try {
-    const v = readNumber(essentia.SpectralCentroidTime?.(vector, sampleRate), ['centroid', 'spectralCentroid', 'spectral_centroid']);
-    if (v !== null) { values.spectralCentroid = v; values.sources.timbre.spectralCentroid = ESSENTIA_SOURCE; }
-  } catch (_) {}
-
-  // Spectral rolloff + flatness (frame-by-frame)
-  try {
-    if (essentia.Windowing && essentia.Spectrum) {
-      const frameSize = 2048, hopSize = 1024;
-      let rolloffSum = 0, flatnessSum = 0, rolloffCount = 0, flatnessCount = 0;
-      for (let start = 0; start < samples.length; start += hopSize) {
-        const frame = new Float32Array(frameSize);
-        frame.set(samples.slice(start, Math.min(start + frameSize, samples.length)));
-        const fv = essentia.arrayToVector(frame);
-        const windowed = (essentia.Windowing(fv, true, frameSize, 'hann', 0, true) as UnknownResult).frame;
-        if (!windowed) continue;
-        const spectrum = (essentia.Spectrum(windowed, frameSize) as UnknownResult).spectrum;
-        if (!spectrum) continue;
-        if (essentia.RollOff) {
-          const v = readNumber(essentia.RollOff(spectrum, 0.85, sampleRate) as UnknownResult, ['rollOff', 'rolloff']);
-          if (v !== null) { rolloffSum += v; rolloffCount++; }
-        }
-        if (essentia.Flatness) {
-          const v = readNumber(essentia.Flatness(spectrum) as UnknownResult, ['flatness']);
-          if (v !== null) { flatnessSum += v; flatnessCount++; }
-        }
-      }
-      if (rolloffCount) { values.spectralRolloff = rolloffSum / rolloffCount; values.sources.timbre.spectralRolloff = ESSENTIA_SOURCE; }
-      if (flatnessCount) { values.spectralFlatness = flatnessSum / flatnessCount; values.sources.timbre.spectralFlatness = ESSENTIA_SOURCE; }
-    }
-  } catch (_) {}
-
-  // Pitch (PredominantPitchMelodia)
-  try {
-    if (essentia.PredominantPitchMelodia) {
-      const result = essentia.PredominantPitchMelodia(
-        vector, 10, 3, 2048, false, 0.8, 128, 1, 40,
-        Math.min(20000, sampleRate / 2 - 1), 100, 80, 20,
-        0.9, 0.9, 27.5625, 55, sampleRate, 100, false, 0.2
-      ) as UnknownResult;
-      const pitches = readVector(result.pitch, essentia);
-      const confs = readVector(result.pitchConfidence, essentia);
-      const voiced = pitches
-        .map((p, i) => ({ pitch: p, conf: confs[i] ?? 0 }))
-        .filter(({ pitch, conf }) => pitch > 0 && Number.isFinite(pitch) && conf > 0);
-      if (voiced.length) {
-        const wSum = voiced.reduce((s, v) => s + v.conf, 0);
-        values.estimatedPitch = voiced.reduce((s, v) => s + v.pitch * v.conf, 0) / wSum;
-        values.pitchConfidence = clamp(voiced.reduce((s, v) => s + v.conf, 0) / voiced.length, 0, 1);
-        values.sources.melody.estimatedPitch = ESSENTIA_SOURCE;
-        values.sources.melody.pitchConfidence = ESSENTIA_SOURCE;
-      }
-    }
-  } catch (_) {}
-
-  // BPM (RhythmExtractor)
-  try {
-    if (essentia.RhythmExtractor) {
-      const result = essentia.RhythmExtractor(
-        vector, 1024, 1024, 256, 0.1, 208, 40, 1024, sampleRate, [], 0.24, true, true
-      ) as UnknownResult;
-      const bpm = readNumber(result, ['bpm']);
-      if (bpm !== null && bpm > 0) { values.bpm = bpm; values.sources.rhythm.bpm = ESSENTIA_SOURCE; }
-    }
-  } catch (_) {}
-
-  // Resample to 44100 for rhythm confidence + onset rate
-  let vector44100: unknown = null;
-  try {
-    if (sampleRate === 44100) {
-      vector44100 = vector;
-    } else if (essentia.Resample) {
-      const sig = (essentia.Resample(vector, sampleRate, 44100, 0) as UnknownResult).signal;
-      if (sig) vector44100 = sig;
-    }
-    if (!vector44100 && essentia.ResampleFFT) {
-      const inSz = samples.length % 2 === 0 ? samples.length : samples.length - 1;
-      let outSz = Math.round(inSz * 44100 / sampleRate);
-      if (outSz % 2 !== 0) outSz++;
-      if (inSz >= 2) {
-        const inp = essentia.arrayToVector(samples.slice(0, inSz));
-        const out = (essentia.ResampleFFT(inp, inSz, outSz) as UnknownResult).output;
-        if (out) vector44100 = out;
-      }
-    }
-  } catch (_) {}
-
-  if (vector44100) {
-    // RhythmExtractor2013 (confidence)
-    try {
-      if (essentia.RhythmExtractor2013) {
-        const result = essentia.RhythmExtractor2013(vector44100, 208, 'multifeature', 40) as UnknownResult;
-        const conf = readNumber(result, ['confidence']);
-        if (conf !== null) {
-          values.bpmConfidence = conf;
-          values.sources.rhythm.bpmConfidence = ESSENTIA_SOURCE;
-          if (values.sources.rhythm.bpm.source !== 'essentia.js') {
-            const bpm2 = readNumber(result, ['bpm']);
-            if (bpm2 !== null && bpm2 > 0) { values.bpm = bpm2; values.sources.rhythm.bpm = ESSENTIA_SOURCE; }
-          }
-        }
-      }
-    } catch (_) {}
-
-    // OnsetRate
-    try {
-      if (essentia.OnsetRate) {
-        const v = readNumber(essentia.OnsetRate(vector44100) as UnknownResult, ['onsetRate']);
-        if (v !== null) {
-          values.onsetRate = v;
-          values.percussiveScore = clamp(v / 4, 0, 1);
-          values.sources.rhythm.onsetRate = ESSENTIA_SOURCE;
-        }
-      }
-    } catch (_) {}
-  }
-
-  // Tonal score
-  values.tonalScore = clamp(
-    values.pitchConfidence * 0.72 + (1 - values.zeroCrossingRate * 18) * 0.28,
-    0, 1
+  const rms = readNumber(
+    essentia.RMS?.(vector),
+    ['rms', 'RMS']
   );
 
-  return values;
+  if (rms === null) missing.push('RMS');
+
+  const energy = readNumber(
+    essentia.Energy?.(vector),
+    ['energy']
+  );
+
+  if (energy === null) missing.push('energy');
+
+  const dynamicComplexity = readNumber(
+    essentia.DynamicComplexity?.(vector, 0.2, sampleRate),
+    ['dynamicComplexity']
+  );
+
+  if (dynamicComplexity === null) missing.push('dynamic complexity');
+
+  const zeroCrossingRate = readNumber(
+    essentia.ZeroCrossingRate?.(vector, 0.0001),
+    ['zeroCrossingRate', 'zerocrossingrate']
+  );
+
+  if (zeroCrossingRate === null) missing.push('zero-crossing rate');
+
+  const spectralCentroid = readNumber(
+    essentia.SpectralCentroidTime?.(vector, sampleRate),
+    ['centroid', 'spectralCentroid', 'spectral_centroid']
+  );
+
+  if (spectralCentroid === null) missing.push('spectral centroid');
+
+  const spectral = extractSpectralDescriptors(
+    essentia,
+    samples,
+    sampleRate
+  );
+
+  if (spectral.rolloff === null) missing.push('spectral rolloff');
+  if (spectral.flatness === null) missing.push('spectral flatness');
+
+  const melody = extractMelodyDescriptors(
+    essentia,
+    samples,
+    sampleRate
+  );
+
+  if (melody.pitch === null) missing.push('predominant pitch');
+  if (melody.confidence === null) missing.push('pitch confidence');
+
+  const rhythm = extractRhythmDescriptors(
+    essentia,
+    vector,
+    sampleRate
+  );
+
+  if (rhythm.bpm === null) missing.push('BPM');
+  if (rhythm.confidence === null) missing.push('rhythm confidence');
+  if (rhythm.onsetRate === null) missing.push('onset rate');
+
+  const amplitude = extractAmplitudeStats(samples);
+  const safeZcr = zeroCrossingRate ?? 0;
+  const safePitchConfidence = melody.confidence ?? 0;
+  const tonalScore = clamp(
+    safePitchConfidence * 0.72 +
+      (1 - safeZcr * 18) * 0.28,
+    0,
+    1
+  );
+
+  const safeOnsetRate = rhythm.onsetRate ?? 0;
+  const percussiveScore = clamp(
+    safeOnsetRate / 6,
+    0,
+    1
+  );
+
+  return {
+    rms,
+    energy,
+    dynamicComplexity,
+    peakAmplitude: amplitude.peakAmplitude,
+    dynamicRange: amplitude.dynamicRange,
+    zeroCrossingRate,
+    spectralCentroid,
+    spectralRolloff: spectral.rolloff,
+    spectralFlatness: spectral.flatness,
+    bpm: rhythm.bpm,
+    bpmConfidence: rhythm.confidence,
+    onsetRate: rhythm.onsetRate,
+    percussiveScore,
+    estimatedPitch: melody.pitch,
+    pitchConfidence: melody.confidence,
+    tonalScore,
+    sources: sources(),
+    missing,
+  };
 }
 
-// ─── Worker message handler ───────────────────────────────────────────────────
-
-self.onmessage = async (event: MessageEvent<{ samples: Float32Array; sampleRate: number }>) => {
-  const { samples, sampleRate } = event.data;
+self.onmessage = async (
+  event: MessageEvent<{
+    samples: Float32Array;
+    sampleRate: number;
+  }>
+) => {
   try {
-    const values = await extractWithEssentia(samples, sampleRate);
-    self.postMessage({ values });
+    const values = await extractWithEssentia(
+      event.data.samples,
+      event.data.sampleRate
+    );
+
+    self.postMessage({
+      values,
+    });
   } catch (error) {
-    self.postMessage({ error: String(error) });
+    self.postMessage({
+      error:
+        error instanceof Error
+          ? error.message
+          : String(error),
+    });
   }
 };

@@ -95,8 +95,8 @@ export type SearchLicense = 'any' | 'creative_commons' | 'commercial_friendly';
 
 export type RecommendationModel = 'essentia' | 'clap';
 export type SimilarityFocus = 'general' | 'melodic' | 'bpm' | 'timbre';
-export type AudioAnalysisEngine = 'essentia.js' | 'mixed-analysis' | 'approximation';
-export type DescriptorSource = 'essentia.js' | 'approximation';
+export type AudioAnalysisEngine = 'essentia.js';
+export type DescriptorSource = 'essentia.js';
 
 export interface DescriptorProvenance {
   source: DescriptorSource;
@@ -117,44 +117,40 @@ export interface FreesoundSearchFilters {
 }
 
 export interface EssentiaTimbreDescriptors {
-  spectralCentroid: number;
-  spectralRolloff: number;
-  zeroCrossingRate: number;
-  spectralFlatness: number;
+  spectralCentroid: number | null;
+  spectralRolloff: number | null;
+  zeroCrossingRate: number | null;
+  spectralFlatness: number | null;
 
-  // Internal interpretations used only to build the current Freesound text query.
   brightnessLabel: 'dark' | 'balanced' | 'bright';
   timbreLabel: 'clean' | 'noisy' | 'bright' | 'dark' | 'textured';
 }
 
 export interface EssentiaRhythmDescriptors {
   bpm: number | null;
-  bpmConfidence: number;
-  onsetRate: number;
+  bpmConfidence: number | null;
+  onsetRate: number | null;
   percussiveScore: number;
 
-  // Internal interpretation used only to guide the current Freesound query.
   rhythmLabel: 'one-shot' | 'percussive' | 'loop-like' | 'sustained';
 }
 
 export interface EssentiaMelodyDescriptors {
   estimatedPitch: number | null;
-  pitchConfidence: number;
+  pitchConfidence: number | null;
   tonalScore: number;
 
-  // Internal interpretations used only to guide the current Freesound query.
   melodicLabel: 'melodic' | 'tonal' | 'textured' | 'noisy';
   pitchRangeLabel: string;
 }
 
 export interface EssentiaEnergyDescriptors {
-  rms: number;
-  energy: number;
-  dynamicComplexity: number;
+  rms: number | null;
+  energy: number | null;
+  dynamicComplexity: number | null;
   peakAmplitude: number;
   dynamicRange: number;
 
-  // Internal interpretation used only to guide the current Freesound query.
   energyLabel: 'quiet' | 'balanced' | 'loud';
 }
 
@@ -200,7 +196,7 @@ export interface AudioAnalysisResult {
   query: string;
   notes: string[];
   engine: AudioAnalysisEngine;
-  hasApproximations: boolean;
+  hasApproximations: false;
 }
 
 export interface EssentiaSearchPayload {
@@ -245,6 +241,28 @@ export interface SoundMapResponse {
     y: number;
   };
   results: SoundMapPoint[];
+}
+
+export type SoundMapFilter = 'all' | SimilarityFocus;
+
+export interface CombinedSoundMapPoint extends SoundMapPoint {
+  focus: SimilarityFocus;
+  focusLabel: string;
+  rank: number;
+  groupCount: number;
+  mapKey: string;
+}
+
+export interface CombinedSoundMapResponse {
+  engine: string;
+  projection: 'combined-pca' | string;
+  count: number;
+  input: {
+    x: number;
+    y: number;
+  };
+  groups: Record<SimilarityFocus, SoundMapResponse>;
+  results: CombinedSoundMapPoint[];
 }
 
 export interface SearchResult {
