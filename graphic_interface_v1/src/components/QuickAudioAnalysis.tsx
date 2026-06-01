@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
-  AlertTriangle,
   AudioLines,
   Drum,
   Music2,
@@ -11,7 +10,6 @@ import { audioAnalysisService } from '../services/audioAnalysisService';
 import {
   AudioAnalysisResult,
   AudioTrimSelection,
-  DescriptorProvenance,
   RecordedAudio,
   SimilarityFocus,
 } from '../services/types';
@@ -27,7 +25,6 @@ interface QuickAudioAnalysisProps {
 interface MetricRowProps {
   label: string;
   value: string;
-  provenance: DescriptorProvenance;
 }
 
 const formatFrequency = (value: number | null) => {
@@ -50,16 +47,16 @@ const formatBpm = (value: number | null) => {
   return `${Math.round(value)} BPM`;
 };
 
-const formatDecimal = (value: number, decimals = 3) => {
-  if (!Number.isFinite(value)) {
+const formatDecimal = (value: number | null, decimals = 3) => {
+  if (value === null || !Number.isFinite(value)) {
     return '--';
   }
 
   return value.toFixed(decimals);
 };
 
-const formatPercentage = (value: number) => {
-  if (!Number.isFinite(value)) {
+const formatPercentage = (value: number | null) => {
+  if (value === null || !Number.isFinite(value)) {
     return '--';
   }
 
@@ -69,7 +66,6 @@ const formatPercentage = (value: number) => {
 function MetricRow({
   label,
   value,
-  provenance,
 }: MetricRowProps) {
   return (
     <div className="analysis-metric-row">
@@ -78,16 +74,8 @@ function MetricRow({
         <strong>{value}</strong>
       </div>
 
-      <small
-        className={`descriptor-source ${
-          provenance.source === 'essentia.js'
-            ? 'essentia'
-            : 'approximation'
-        }`}
-      >
-        {provenance.source === 'essentia.js'
-          ? 'Essentia.js'
-          : 'Approximation'}
+      <small className="descriptor-source essentia">
+        Essentia.js
       </small>
     </div>
   );
@@ -106,17 +94,8 @@ export function QuickAudioAnalysis({
   const [error, setError] =
     useState<string | null>(null);
 
-  /*
-    This identifier prevents an analysis of an old trim selection
-    from being displayed after the user has already changed the cut.
-  */
   const analysisRequestIdRef = useRef(0);
 
-  /*
-    When the user uploads another audio or changes the selected region,
-    the previous analysis is no longer valid. It is cleared immediately,
-    but no new Essentia.js analysis is launched automatically.
-  */
   useEffect(() => {
     analysisRequestIdRef.current += 1;
     setAnalysis(null);
@@ -161,7 +140,7 @@ export function QuickAudioAnalysis({
       setAnalysis(null);
       onAnalysisChange(null);
       setError(
-        'The selected audio segment could not be analyzed.'
+        'Essentia.js could not analyze the selected audio segment.'
       );
     } finally {
       if (requestId === analysisRequestIdRef.current) {
@@ -175,7 +154,6 @@ export function QuickAudioAnalysis({
   }
 
   const descriptors = analysis?.descriptors;
-  const sources = analysis?.sources;
 
   return (
     <div className="quick-analysis-card">
@@ -188,20 +166,12 @@ export function QuickAudioAnalysis({
           className={`analysis-engine-pill ${
             analysis?.engine === 'essentia.js'
               ? 'essentia'
-              : analysis?.engine === 'mixed-analysis'
-                ? 'mixed'
-                : analysis?.engine === 'approximation'
-                  ? 'approximation'
-                  : ''
+              : ''
           }`}
         >
           {analysis?.engine === 'essentia.js'
             ? 'Essentia.js'
-            : analysis?.engine === 'mixed-analysis'
-              ? 'Mixed analysis'
-              : analysis?.engine === 'approximation'
-                ? 'Approximation'
-                : 'Not analyzed'}
+            : 'Not analyzed'}
         </span>
       </div>
 
@@ -236,7 +206,7 @@ export function QuickAudioAnalysis({
       {isAnalyzing && (
         <div className="quick-analysis-loading">
           <Sparkles className="h-4 w-4" />
-          Analyzing the selected segment...
+          Analyzing the selected segment with Essentia.js...
         </div>
       )}
 
@@ -246,21 +216,8 @@ export function QuickAudioAnalysis({
         </p>
       )}
 
-      {descriptors && sources && (
+      {descriptors && (
         <>
-          {analysis.hasApproximations && (
-            <div className="analysis-approximation-notice">
-              <AlertTriangle className="h-4 w-4" />
-
-              <p>
-                Values marked <strong>Approximation</strong> are
-                fallback estimates shown when Essentia.js cannot
-                return a reliable value for that descriptor in the
-                selected audio segment.
-              </p>
-            </div>
-          )}
-
           <div className="quick-analysis-grid precise-grid">
             <section className={focus === 'melodic' ? 'active' : ''}>
               <div className="descriptor-group-title">
@@ -273,7 +230,6 @@ export function QuickAudioAnalysis({
                 value={formatFrequency(
                   descriptors.melody.estimatedPitch
                 )}
-                provenance={sources.melody.estimatedPitch}
               />
 
               <MetricRow
@@ -281,7 +237,6 @@ export function QuickAudioAnalysis({
                 value={formatPercentage(
                   descriptors.melody.pitchConfidence
                 )}
-                provenance={sources.melody.pitchConfidence}
               />
             </section>
 
@@ -294,7 +249,6 @@ export function QuickAudioAnalysis({
               <MetricRow
                 label="BPM"
                 value={formatBpm(descriptors.rhythm.bpm)}
-                provenance={sources.rhythm.bpm}
               />
 
               <MetricRow
@@ -302,7 +256,6 @@ export function QuickAudioAnalysis({
                 value={formatPercentage(
                   descriptors.rhythm.bpmConfidence
                 )}
-                provenance={sources.rhythm.bpmConfidence}
               />
 
               <MetricRow
@@ -311,7 +264,6 @@ export function QuickAudioAnalysis({
                   descriptors.rhythm.onsetRate,
                   2
                 )}/s`}
-                provenance={sources.rhythm.onsetRate}
               />
             </section>
 
@@ -326,7 +278,6 @@ export function QuickAudioAnalysis({
                 value={formatFrequency(
                   descriptors.timbre.spectralCentroid
                 )}
-                provenance={sources.timbre.spectralCentroid}
               />
 
               <MetricRow
@@ -334,7 +285,6 @@ export function QuickAudioAnalysis({
                 value={formatFrequency(
                   descriptors.timbre.spectralRolloff
                 )}
-                provenance={sources.timbre.spectralRolloff}
               />
 
               <MetricRow
@@ -342,7 +292,6 @@ export function QuickAudioAnalysis({
                 value={formatDecimal(
                   descriptors.timbre.spectralFlatness
                 )}
-                provenance={sources.timbre.spectralFlatness}
               />
 
               <MetricRow
@@ -350,11 +299,10 @@ export function QuickAudioAnalysis({
                 value={formatDecimal(
                   descriptors.timbre.zeroCrossingRate
                 )}
-                provenance={sources.timbre.zeroCrossingRate}
               />
             </section>
 
-            <section className={focus === 'energy' ? 'active' : ''}>
+            <section>
               <div className="descriptor-group-title">
                 <Activity className="h-4 w-4" />
                 <span>Energy</span>
@@ -363,7 +311,6 @@ export function QuickAudioAnalysis({
               <MetricRow
                 label="RMS"
                 value={formatDecimal(descriptors.energy.rms)}
-                provenance={sources.energy.rms}
               />
 
               <MetricRow
@@ -372,7 +319,6 @@ export function QuickAudioAnalysis({
                   descriptors.energy.energy,
                   2
                 )}
-                provenance={sources.energy.energy}
               />
 
               <MetricRow
@@ -381,7 +327,6 @@ export function QuickAudioAnalysis({
                   descriptors.energy.dynamicComplexity,
                   2
                 )}
-                provenance={sources.energy.dynamicComplexity}
               />
             </section>
           </div>
@@ -404,13 +349,12 @@ export function QuickAudioAnalysis({
           </div>
 
           <div className="essentia-ready-box">
-            <strong>Essentia search ready</strong>
+            <strong>Essentia analysis ready</strong>
 
             <p>
-              Metrics tagged <b>Essentia.js</b> are calculated using
-              Essentia algorithms. Values tagged{' '}
-              <b>Approximation</b> are fallback estimates used only
-              when a reliable Essentia value is unavailable. Current
+              The displayed metrics come only from Essentia.js. If Essentia.js
+              does not return a reliable value for a descriptor, that field is
+              left empty instead of using a manual approximation. Current
               priority: <b>{focus}</b> similarity.
             </p>
           </div>
