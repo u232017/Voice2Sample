@@ -1,6 +1,7 @@
 .venv2/
 .venv-1/
 .venv/
+venv/
 __pycache__/
 Dataset/audio_temp/
 Dataset/audio_processed/
@@ -10,3 +11,5 @@ backend/tmp/
 backend/cache/
 audio_analysis/descriptors
 audio_analysis/reports
+audio_processing/Processing/descriptors
+audio_processing/Processing/models

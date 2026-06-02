@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import logging
 import shutil
 import uuid
 from pathlib import Path
@@ -18,6 +19,9 @@ from .dataset_recommender import (
     tags_from_metadata,
     trim_audio_file,
 )
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATASET_DIR = ROOT_DIR / "Dataset"
@@ -51,8 +55,14 @@ _dataset_items: list[Any] | None = None
 
 def _load_dataset() -> list[Any]:
     global _dataset_items
-    _dataset_items = load_dataset_items(DATASET_AUDIO_DIR, DATASET_METADATA_PATH, DATASET_FEATURE_CACHE)
-    return _dataset_items
+    try:
+        _dataset_items = load_dataset_items(DATASET_AUDIO_DIR, DATASET_METADATA_PATH, DATASET_FEATURE_CACHE)
+        logger.info(f"Dataset loaded successfully. Items: {len(_dataset_items)}")
+        return _dataset_items
+    except Exception as e:
+        logger.error(f"Error loading dataset: {e}", exc_info=True)
+        _dataset_items = []
+        return []
 
 
 def _get_dataset() -> list[Any]:
@@ -166,11 +176,18 @@ async def recommendations(
         analysis_path = trim_audio_file(input_path, input_path.with_suffix(".trimmed.wav"), trim_start, trim_end)
 
         try:
+            logger.info(f"Getting dataset with {len(_get_dataset())} items")
             results = _dataset_recommendations(analysis_path, limit, focus)
             engine = "dataset-audio-descriptors"
             error = None
         except Exception as exc:
+            logger.error(f"Dataset recommendation failed: {exc}", exc_info=True)
             raise HTTPException(status_code=500, detail=f"Dataset recommendation failed: {exc}") from exc
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error(f"Recommendations endpoint error: {exc}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error processing recommendations: {exc}") from exc
     finally:
         shutil.rmtree(temp_dir, ignore_errors=True)
 

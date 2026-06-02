@@ -136,21 +136,9 @@ He escogido estos descriptores porque representan bien cada aspecto del audio y,
 
 ---
 
-### 🥁 Rítmicos
+### 🥁 Rítmicos (bpm)
 - **bpm**: velocidad global calculada por `rhythm.bpm`  
   👉 Describe la base rítmica de la pista.  
-
-- **beats**: recuento de beats detectados (`rhythm.beats_count`)  
-  👉 Indica la densidad rítmica del audio.  
-
-- **beat_confidence**: loudness promedio de beats (`rhythm.beats_loudness.mean`)  
-  👉 Usa la energía de los pulsos para estimar la fiabilidad del ritmo.  
-
-- **onset_rate**: tasa de transitorios (`rhythm.onset_rate`)  
-  👉 Mide cuántos ataques o eventos por segundo aparecen.  
-
-- **danceability**: medida de bailabilidad (`rhythm.danceability`)  
-  👉 Refleja qué tan fluido y regular es el ritmo para bailar.  
 
 - **bpm_hist_first_peak_bpm / bpm_hist_first_peak_weight**: primer pico del histograma de BPM  
   👉 Indica el tempo dominante y su importancia.  

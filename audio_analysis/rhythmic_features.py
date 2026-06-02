@@ -39,15 +39,8 @@ def extract_rhythmic_descriptors(audio_file):
         # ============================
 
         bpm = song.get("rhythm.bpm", 0.0)
-
-        beats_count = song.get("rhythm.beats_count", 0)
-
-        beat_conf = song.get("rhythm.beats_loudness.mean", None)
-
-        onset_rate = song.get("rhythm.onset_rate", None)
-
-        danceability = song.get("rhythm.danceability", None)
-
+        
+        
         # NUEVOS BPM HISTOGRAM
         bpm_hist_first_peak_bpm = song.get("rhythm.bpm_histogram_first_peak_bpm", 0.0)
         bpm_hist_first_peak_weight = song.get("rhythm.bpm_histogram_first_peak_weight", 0.0)
@@ -61,11 +54,6 @@ def extract_rhythmic_descriptors(audio_file):
         # ============================
         result = {
             "bpm": bpm,
-            "beats": beats_count,
-            "beat_confidence": beat_conf,
-            "onset_rate": onset_rate,
-            "danceability": danceability,
-
             # histogram BPM
             "bpm_hist_first_peak_bpm": bpm_hist_first_peak_bpm,
             "bpm_hist_first_peak_weight": bpm_hist_first_peak_weight,
