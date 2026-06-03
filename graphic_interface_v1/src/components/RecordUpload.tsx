@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
+  AudioLines,
+  ChevronDown,
+  ChevronRight,
   FileAudio,
-  Info,
   Mic,
+  Radar,
   RotateCcw,
   Search,
   Square,
@@ -33,11 +36,21 @@ import { recommendationAPI } from '../services/recommendations';
 const similarityOptions: Array<{
   value: SimilarityFocus;
   label: string;
+  short: string;
 }> = [
-  { value: 'general', label: 'General' },
-  { value: 'melodic', label: 'Melodic' },
-  { value: 'bpm', label: 'BPM' },
-  { value: 'timbre', label: 'Timbre' },
+  { value: 'general', label: 'General', short: 'Balanced' },
+  { value: 'melodic', label: 'Melodic', short: 'Pitch-led' },
+  { value: 'bpm', label: 'BPM', short: 'Tempo-led' },
+  { value: 'timbre', label: 'Timbre', short: 'Texture-led' },
+];
+
+const recommendationModels: Array<{
+  value: RecommendationModel;
+  title: string;
+  summary: string;
+}> = [
+  { value: 'essentia', title: 'Essentia', summary: 'Descriptor-based matching' },
+  { value: 'clap', title: 'CLAP', summary: 'Global audio embedding' },
 ];
 
 export function RecordUpload() {
@@ -78,6 +91,7 @@ export function RecordUpload() {
     useState<CombinedSoundMapResponse | null>(null);
   const [isMapLoading, setIsMapLoading] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
 
   const audioUrl = useMemo(() => {
     if (!currentAudio) {
@@ -93,20 +107,32 @@ export function RecordUpload() {
     ? trimStart < trimEnd && trimEnd <= duration
     : false;
 
-  const selectedDuration = isValidTrim ? trimEnd - trimStart : duration;
-
-  const isTrimmed =
-    currentAudio &&
-    isValidTrim &&
-    Math.abs(selectedDuration - duration) > 0.05;
-
   const isRecommendationLoading = isSearchTransition || isLoading;
+  const hasResults = results.length > 0;
+  const isResultsView =
+    isRecommendationLoading ||
+    hasResults ||
+    Boolean(error);
 
   const status = recorder.isRecording
     ? 'recording'
     : currentAudio
       ? 'audio ready'
       : 'no audio';
+
+  const activeFocusOption = similarityOptions.find(
+    (option) => option.value === similarityFocus
+  );
+
+  const activeModeLabel =
+    recommendationModel === 'essentia'
+      ? `Essentia / ${activeFocusOption?.label || 'General'}`
+      : 'CLAP / Global';
+
+  const activeModeHint =
+    recommendationModel === 'essentia'
+      ? `${activeFocusOption?.short || 'Balanced'} similarity active`
+      : 'Embedding search active';
 
   const trimSelection = useMemo(() => {
     if (!currentAudio || !isValidTrim) {
@@ -118,16 +144,6 @@ export function RecordUpload() {
       end: trimEnd,
     };
   }, [currentAudio, isValidTrim, trimStart, trimEnd]);
-
-  const userSoundTitle = recorder.isRecording
-    ? `Recording... ${audioService.formatDuration(recorder.duration)}`
-    : currentAudio
-      ? isTrimmed
-        ? `Selected clip · ${audioService.formatPreciseDuration(
-            selectedDuration
-          )}`
-        : `Sample duration ${audioService.formatPreciseDuration(duration)}`
-      : 'Record or upload';
 
   const discardMap = useCallback(() => {
     mapRequestIdRef.current += 1;
@@ -326,6 +342,7 @@ export function RecordUpload() {
 
     discardMap();
     setIsSearchTransition(true);
+    setIsModeMenuOpen(false);
     setSearchRequest(request);
     setTrimSelection(trimSelection);
 
@@ -404,311 +421,347 @@ export function RecordUpload() {
   };
 
   return (
-    <section className="app-page dashboard-page">
-      <div className="dashboard-shell">
-        <section className="dashboard-panel user-sound-panel">
-          <div className="panel-heading">
-            <div>
-              <p>Your sound</p>
-              <h1>{userSoundTitle}</h1>
+    <section className="app-page studio-page">
+      <div className="studio-shell">
+        <div className="studio-grid">
+          <section className="dashboard-panel capture-panel clean-panel">
+            <div className="panel-heading panel-heading-spread">
+              <div>
+                <p>Audio entry</p>
+                <h2>Source audio</h2>
+              </div>
+
+              <span
+                className={`status-pill ${
+                  recorder.isRecording ? 'recording' : currentAudio ? 'ready' : ''
+                }`}
+              >
+                {status}
+              </span>
             </div>
 
-            <span
-              className={`status-pill ${
-                recorder.isRecording
-                  ? 'recording'
-                  : currentAudio
-                    ? 'ready'
-                    : ''
-              }`}
-            >
-              {status}
-            </span>
-          </div>
+            <div className="capture-toolbar">
+              <div className="quick-actions">
+                <button
+                  className={recorder.isRecording ? 'danger-action' : 'primary-action'}
+                  onClick={handleRecord}
+                >
+                  {recorder.isRecording ? <Square className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  {recorder.isRecording ? 'Stop' : 'Record'}
+                </button>
 
-          <div className="quick-actions">
-            <button
-              className={
-                recorder.isRecording
-                  ? 'danger-action'
-                  : 'primary-action'
-              }
-              onClick={handleRecord}
-            >
-              {recorder.isRecording ? (
-                <Square className="h-5 w-5" />
-              ) : (
-                <Mic className="h-5 w-5" />
-              )}
+                <button
+                  className="secondary-action"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-5 w-5" />
+                  Upload
+                </button>
 
-              {recorder.isRecording ? 'Stop' : 'Record'}
-            </button>
+                {currentAudio && (
+                  <button className="ghost-action" onClick={resetAudio}>
+                    <RotateCcw className="h-5 w-5" />
+                    Reset
+                  </button>
+                )}
+              </div>
 
-            <button
-              className="secondary-action"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload className="h-5 w-5" />
-              Upload
-            </button>
-
-            {currentAudio && (
-              <button className="ghost-action" onClick={resetAudio}>
-                <RotateCcw className="h-5 w-5" />
-                Reset
-              </button>
-            )}
+              <div className="capture-status-row">
+                <div className="clean-stat-card">
+                  <span>Clip</span>
+                  <strong>{currentAudio?.name || 'No file loaded'}</strong>
+                </div>
+                <div className="clean-stat-card">
+                  <span>Trim</span>
+                  <strong>
+                    {currentAudio && isValidTrim
+                      ? `${audioService.formatPreciseDuration(trimStart)} - ${audioService.formatPreciseDuration(trimEnd)}`
+                      : '--'}
+                  </strong>
+                </div>
+                <div className="clean-stat-card">
+                  <span>Analysis</span>
+                  <strong>{frontendAnalysis ? 'Ready' : 'Pending'}</strong>
+                </div>
+              </div>
+            </div>
 
             <input
               ref={fileInputRef}
               type="file"
               accept="audio/*"
               className="hidden"
-              onChange={(event) =>
-                handleFileSelected(event.target.files?.[0])
-              }
+              onChange={(event) => handleFileSelected(event.target.files?.[0])}
             />
-          </div>
 
-          {(recorder.error || fileUpload.error) && (
-            <div className="status-message error compact-error">
-              <AlertCircle className="h-5 w-5" />
-              <p>{recorder.error || fileUpload.error}</p>
-            </div>
-          )}
-
-          <div className="user-wave-card">
-            {audioUrl ? (
-              <>
-                <AudioWaveform
-                  audioUrl={audioUrl}
-                  duration={duration}
-                  selectedStart={trimStart}
-                  selectedEnd={trimEnd}
-                  onRegionChange={applyTrim}
-                />
-
-                <QuickAudioAnalysis
-                  audio={currentAudio}
-                  trimSelection={trimSelection}
-                  focus={similarityFocus}
-                  onAnalysisChange={handleAnalysisChange}
-                />
-              </>
-            ) : (
-              <div className="record-meter compact-meter">
-                <div>
-                  <p className="font-mono text-3xl font-bold text-white">
-                    {recorder.isRecording
-                      ? audioService.formatDuration(recorder.duration)
-                      : '00:00'}
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-400">
-                    {recorder.isRecording
-                      ? 'Recording from microphone'
-                      : 'Waiting for audio'}
-                  </p>
-                </div>
-
-                <div className="empty-sound-note">
-                  <FileAudio className="h-5 w-5" />
-                  Add audio to generate a waveform.
-                </div>
-              </div>
-            )}
-          </div>
-        </section>
-
-        <section className="dashboard-panel freesound-panel">
-          <div className="panel-heading">
-            <div>
-              <p>Freesound recommendations</p>
-
-              <h2>
-                {results.length ? '4 real sounds' : 'Ready when you are'}
-              </h2>
-            </div>
-
-            <span className="tiny-note">
-              {recommendationModel === 'essentia'
-                ? `Acoustic backend · ${similarityFocus}`
-                : 'CLAP backend mode'}
-            </span>
-          </div>
-
-          <div className="model-selector-card">
-            <div className="model-card-head">
-              <div>
-                <p>Recommendation model</p>
-                <span>Choose how the input sound will be compared.</span>
-              </div>
-            </div>
-
-            <div className="model-toggle-row">
-              <button
-                className={
-                  recommendationModel === 'essentia' ? 'active' : ''
-                }
-                onClick={() => selectRecommendationModel('essentia')}
-              >
-                Essentia
-              </button>
-
-              <button
-                className={
-                  recommendationModel === 'clap' ? 'active' : ''
-                }
-                onClick={() => selectRecommendationModel('clap')}
-              >
-                CLAP
-              </button>
-            </div>
-
-            <div className="model-info-row">
-              <span>
-                <Info className="h-4 w-4" />
-
-                {recommendationModel === 'essentia'
-                  ? 'The current backend compares acoustic features from your selected audio segment with real dataset sounds.'
-                  : 'CLAP is prepared as a backend search mode based on complete audio embeddings.'}
-              </span>
-            </div>
-          </div>
-
-          {recommendationModel === 'essentia' && (
-            <div className="similarity-card">
-              <div className="model-card-head">
-                <div>
-                  <p>Similarity results by</p>
-                  <span>
-                    Choose how the real dataset sounds should be compared.
-                  </span>
-                </div>
-              </div>
-
-              <div className="similarity-grid">
-                {similarityOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    className={
-                      similarityFocus === option.value ? 'active' : ''
-                    }
-                    onClick={() => selectSimilarityFocus(option.value)}
-                  >
-                    <span>{option.label}</span>
-
-                    {option.value === 'bpm' && (
-                      <span
-                        className="similarity-info-anchor"
-                        aria-hidden="true"
-                      >
-                        <span className="similarity-info-dot">i</span>
-
-                        <span className="similarity-info-tooltip">
-                          BPM results include close tempo matches and compatible
-                          half-time relationships when available.
-                        </span>
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <button
-            className="primary-action search-main-button"
-            onClick={runSearch}
-            disabled={
-              !currentAudio ||
-              !isValidTrim ||
-              isRecommendationLoading
-            }
-          >
-            <Search className="h-5 w-5" />
-
-            {isRecommendationLoading
-              ? 'Searching...'
-              : recommendationModel === 'essentia'
-                ? `Search by ${
-                    similarityOptions.find(
-                      (option) => option.value === similarityFocus
-                    )?.label
-                  }`
-                : 'Search with CLAP'}
-          </button>
-
-          {isRecommendationLoading && <LoadingRecommendations />}
-
-          {error && !isRecommendationLoading && (
-            <div className="status-message error compact-error">
-              <AlertCircle className="h-5 w-5" />
-              <p>{error}</p>
-            </div>
-          )}
-
-          {!currentAudio && !isRecommendationLoading && (
-            <div className="recommendation-empty">
-              <FileAudio className="h-7 w-7" />
-              <p>Record or upload a sound to get recommendations.</p>
-            </div>
-          )}
-
-          {currentAudio &&
-            !isRecommendationLoading &&
-            !error &&
-            results.length === 0 && (
-              <div className="recommendation-empty">
-                <Search className="h-7 w-7" />
-                <p>Start the search when your sample is ready.</p>
+            {(recorder.error || fileUpload.error) && (
+              <div className="status-message error compact-error">
+                <AlertCircle className="h-5 w-5" />
+                <p>{recorder.error || fileUpload.error}</p>
               </div>
             )}
 
-          {!isRecommendationLoading && results.length > 0 && (
-            <>
-              {recommendationModel === 'essentia' && (
-                <div className="sound-map-trigger-card">
-                  <div>
-                    <strong>Explore nearby results</strong>
+            <div className="workbench-panel clean-workbench">
+              {audioUrl ? (
+                <>
+                  <AudioWaveform
+                    audioUrl={audioUrl}
+                    duration={duration}
+                    selectedStart={trimStart}
+                    selectedEnd={trimEnd}
+                    onRegionChange={applyTrim}
+                  />
+
+                  <QuickAudioAnalysis
+                    audio={currentAudio}
+                    trimSelection={trimSelection}
+                    focus={similarityFocus}
+                    onAnalysisChange={handleAnalysisChange}
+                  />
+                </>
+              ) : (
+                <div className="capture-empty-state compact">
+                  <div className="capture-empty-copy">
+                    <AudioLines className="h-6 w-6" />
+                    <strong>
+                      {recorder.isRecording
+                        ? audioService.formatDuration(recorder.duration)
+                        : 'No waveform yet'}
+                    </strong>
                     <p>
-                      Visualize 200 real matches: 50 by General, 50 by Melodic,
-                      50 by BPM and 50 by Timbre.
+                      {recorder.isRecording
+                        ? 'Recording from microphone'
+                        : 'Record or upload audio to begin.'}
                     </p>
                   </div>
-
-                  <button
-                    type="button"
-                    className="secondary-action sound-map-trigger"
-                    onClick={loadRealSoundMap}
-                    disabled={isMapLoading}
-                  >
-                    <Search className="h-4 w-4" />
-
-                    {isMapLoading
-                      ? 'Building map...'
-                      : mapResults
-                        ? 'Refresh map'
-                        : 'Explore similarity map'}
-                  </button>
                 </div>
               )}
-
-              <div className="recommendation-list">
-                {results.slice(0, 4).map((sound) => (
-                  <SoundCard key={sound.id} sound={sound} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {mapError && (
-            <div className="status-message error compact-error sound-map-error">
-              <AlertCircle className="h-5 w-5" />
-              <p>{mapError}</p>
             </div>
-          )}
-        </section>
+          </section>
+
+          <section
+            className={`dashboard-panel discovery-panel clean-panel ${
+              hasResults ? 'results-active' : ''
+            }`}
+          >
+            {!hasResults && (
+              <div className="panel-heading panel-heading-spread">
+                <div>
+                  <p>Discovery engine</p>
+                  <h2>Recommendations</h2>
+                </div>
+
+                <span className="tiny-note">{activeModeLabel}</span>
+              </div>
+            )}
+
+            {!isResultsView && (
+              <>
+                <div className="engine-switch">
+                  {recommendationModels.map((model) => (
+                    <button
+                      key={model.value}
+                      type="button"
+                      className={`engine-switch-button ${
+                        recommendationModel === model.value ? 'active' : ''
+                      }`}
+                      onClick={() => selectRecommendationModel(model.value)}
+                    >
+                      <strong>{model.title}</strong>
+                      <span>{model.summary}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {recommendationModel === 'essentia' && (
+                  <div className="focus-switch">
+                    {similarityOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`focus-switch-button ${
+                          similarityFocus === option.value ? 'active' : ''
+                        }`}
+                        onClick={() => selectSimilarityFocus(option.value)}
+                      >
+                        <strong>{option.label}</strong>
+                        <span>{option.short}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className={`discovery-action-row ${isResultsView ? 'results-mode' : ''}`}>
+              <button
+                type="button"
+                className={`discovery-mode-chip ${isModeMenuOpen ? 'open' : ''} ${
+                  isResultsView ? 'interactive' : ''
+                }`}
+                onClick={() => {
+                  if (isResultsView) {
+                    setIsModeMenuOpen((open) => !open);
+                  }
+                }}
+                disabled={!isResultsView}
+                aria-expanded={isResultsView ? isModeMenuOpen : undefined}
+                aria-label={
+                  isResultsView
+                    ? 'Open active mode settings'
+                    : 'Current active mode'
+                }
+              >
+                <span>Active mode</span>
+                <strong>{activeModeLabel}</strong>
+                <small>{activeModeHint}</small>
+                <ChevronDown className="h-4 w-4" />
+              </button>
+
+              <button
+                className="primary-action search-main-button"
+                onClick={runSearch}
+                disabled={!currentAudio || !isValidTrim || isRecommendationLoading}
+              >
+                <Search className="h-5 w-5" />
+                {isRecommendationLoading
+                  ? 'Searching Freesound...'
+                  : isResultsView
+                    ? 'Refresh results'
+                    : recommendationModel === 'essentia'
+                      ? `Search by ${
+                          similarityOptions.find((option) => option.value === similarityFocus)?.label
+                        }`
+                      : 'Search with CLAP'}
+              </button>
+            </div>
+
+            {isResultsView && isModeMenuOpen && (
+              <div className="results-mode-menu">
+                <div className="results-mode-menu-group">
+                  <span>Model</span>
+                  <div className="results-mode-menu-options model-options">
+                    {recommendationModels.map((model) => (
+                      <button
+                        key={model.value}
+                        type="button"
+                        className={`results-mode-option ${
+                          recommendationModel === model.value ? 'active' : ''
+                        }`}
+                        onClick={() => selectRecommendationModel(model.value)}
+                      >
+                        <strong>{model.title}</strong>
+                        <small>{model.summary}</small>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {recommendationModel === 'essentia' && (
+                  <div className="results-mode-menu-group">
+                    <span>Focus</span>
+                    <div className="results-mode-menu-options focus-options">
+                      {similarityOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`results-mode-option ${
+                            similarityFocus === option.value ? 'active' : ''
+                          }`}
+                          onClick={() => selectSimilarityFocus(option.value)}
+                        >
+                          <strong>{option.label}</strong>
+                          <small>{option.short}</small>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isRecommendationLoading && <LoadingRecommendations />}
+
+            {error && !isRecommendationLoading && (
+              <div className="status-message error compact-error">
+                <AlertCircle className="h-5 w-5" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            {!currentAudio && !isRecommendationLoading && (
+              <div className="recommendation-empty">
+                <FileAudio className="h-7 w-7" />
+                <p>Record or upload a sound to unlock recommendations.</p>
+              </div>
+            )}
+
+            {currentAudio && !isRecommendationLoading && !error && results.length === 0 && (
+              <div className="recommendation-empty">
+                <Search className="h-7 w-7" />
+                <p>Run the search when your clip is ready.</p>
+              </div>
+            )}
+
+            {!isRecommendationLoading && results.length > 0 && (
+              <>
+                <div className="results-rack-header workstation-results-header">
+                  <div className="results-title-cluster">
+                    <div>
+                      <span>Recommended samples</span>
+                      <strong>Closest matches</strong>
+                    </div>
+                    <small className="results-count-badge">
+                      {results.length} result{results.length === 1 ? '' : 's'}
+                    </small>
+                  </div>
+
+                  <div className="results-header-actions">
+                    <div className="results-context-pill">
+                      <span>{activeModeLabel}</span>
+                      <ChevronDown className="h-4 w-4" />
+                    </div>
+
+                    {recommendationModel === 'essentia' && (
+                      <button
+                        type="button"
+                        className="sound-map-trigger-card premium-map-trigger"
+                        onClick={loadRealSoundMap}
+                        disabled={isMapLoading}
+                      >
+                        <div className="map-trigger-orb">
+                          <Radar className="h-5 w-5" />
+                        </div>
+
+                        <div className="map-trigger-copy">
+                          <strong>{isMapLoading ? 'Building similarity map' : 'Open similarity map'}</strong>
+                          <p>Explore sonic relationships</p>
+                        </div>
+
+                        <span className="map-trigger-arrow">
+                          <ChevronRight className="h-5 w-5" />
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="recommendation-list">
+                  {results.slice(0, 4).map((sound) => (
+                    <SoundCard key={sound.id} sound={sound} />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {mapError && (
+              <div className="status-message error compact-error sound-map-error">
+                <AlertCircle className="h-5 w-5" />
+                <p>{mapError}</p>
+              </div>
+            )}
+          </section>
+        </div>
       </div>
 
       {mapResults && recommendationModel === 'essentia' && (

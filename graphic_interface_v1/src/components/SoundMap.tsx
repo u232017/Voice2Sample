@@ -69,17 +69,17 @@ const focusLabels: Record<SimilarityFocus, string> = {
 };
 
 const focusColours: Record<SimilarityFocus, string> = {
-  general: '#00e7ff',
-  melodic: '#ff2bd6',
-  bpm: '#ff3030',
-  timbre: '#55ff38',
+  general: '#4cff88',
+  melodic: '#39dcff',
+  bpm: '#ff9f1c',
+  timbre: '#ff63c5',
 };
 
 const focusSoftColours: Record<SimilarityFocus, string> = {
-  general: 'rgba(0, 231, 255, 0.36)',
-  melodic: 'rgba(255, 43, 214, 0.36)',
-  bpm: 'rgba(255, 48, 48, 0.36)',
-  timbre: 'rgba(85, 255, 56, 0.36)',
+  general: 'rgba(76, 255, 136, 0.36)',
+  melodic: 'rgba(57, 220, 255, 0.32)',
+  bpm: 'rgba(255, 159, 28, 0.34)',
+  timbre: 'rgba(255, 99, 197, 0.32)',
 };
 
 const focusOrder: SimilarityFocus[] = [
@@ -215,6 +215,7 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
     useState<CombinedSoundMapPoint | null>(data.results[0] ?? null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const autoPlayOnSelectRef = useRef(false);
 
   const focusStats = useMemo(
     () => createFocusStats(data.results),
@@ -305,6 +306,40 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
     setIsPlaying(false);
   }, [selectedPoint]);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    const previewUrl = selectedPoint
+      ? getPreviewUrl(selectedPoint)
+      : undefined;
+
+    if (!audio) {
+      autoPlayOnSelectRef.current = false;
+      return;
+    }
+
+    if (!previewUrl) {
+      audio.pause();
+      audio.removeAttribute('src');
+      audio.load();
+      setIsPlaying(false);
+      autoPlayOnSelectRef.current = false;
+      return;
+    }
+
+    if (audio.src !== previewUrl) {
+      audio.src = previewUrl;
+      audio.currentTime = 0;
+      setIsPlaying(false);
+    }
+
+    if (autoPlayOnSelectRef.current) {
+      autoPlayOnSelectRef.current = false;
+      void audio.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+    }
+  }, [selectedPoint]);
+
   const selectedPosition = selectedPoint
     ? positionedSounds.find(
         (point) => point.sound.mapKey === selectedPoint.mapKey
@@ -328,6 +363,11 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
       return;
     }
 
+     if (audio.src !== selectedPreviewUrl) {
+      audio.src = selectedPreviewUrl;
+      audio.currentTime = 0;
+    }
+
     if (audio.paused) {
       await audio.play();
       setIsPlaying(true);
@@ -335,6 +375,28 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
       audio.pause();
       setIsPlaying(false);
     }
+  };
+
+  const handlePointSelect = (sound: CombinedSoundMapPoint) => {
+    const samePoint = selectedPoint?.mapKey === sound.mapKey;
+    const previewUrl = getPreviewUrl(sound);
+
+    if (samePoint && previewUrl && audioRef.current) {
+      const audio = audioRef.current;
+
+      if (audio.src !== previewUrl) {
+        audio.src = previewUrl;
+      }
+
+      audio.currentTime = 0;
+      void audio.play()
+        .then(() => setIsPlaying(true))
+        .catch(() => setIsPlaying(false));
+      return;
+    }
+
+    autoPlayOnSelectRef.current = true;
+    setSelectedPoint(sound);
   };
 
   return (
@@ -437,7 +499,7 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
                   selectedPoint?.mapKey === sound.mapKey ? 'selected' : ''
                 } ${sound.rank <= 4 ? 'top-result' : ''}`}
                 style={style}
-                onClick={() => setSelectedPoint(sound)}
+                onClick={() => handlePointSelect(sound)}
                 aria-label={`${sound.name}, ${sound.focusLabel}, rank ${sound.rank}, acoustic match ${formatSimilarity(
                   sound.similarity
                 )}`}
@@ -596,15 +658,12 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
                 {selectedPoint.license || 'License not provided'}
               </p>
 
-              {selectedPreviewUrl && (
-                <audio
-                  ref={audioRef}
-                  src={selectedPreviewUrl}
-                  preload="none"
-                  onPause={() => setIsPlaying(false)}
-                  onEnded={() => setIsPlaying(false)}
-                />
-              )}
+              <audio
+                ref={audioRef}
+                preload="none"
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => setIsPlaying(false)}
+              />
             </>
           ) : (
             <div className="sound-map-no-selection">

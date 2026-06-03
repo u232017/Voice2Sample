@@ -42,24 +42,24 @@ Vite serves the app locally, normally at `http://localhost:5173/`.
 3. Trim and preview  
    Decode the audio in the browser, draw a waveform, select a region, and play the full audio or selected segment.
 
-4. Recommendations  
-   Analyze the browser audio with the frontend fallback descriptors and search Freesound for related sounds.
+4. Descriptor analysis  
+   Analyze the selected audio segment with Essentia.js descriptors when the user starts analysis.
 
-5. Refine search  
-   UI filters are preserved for category, mood, duration, sort, and license.
+5. Recommendations  
+   Choose Essentia or CLAP mode, search the backend/Freesound flow, and preview real sound results.
 
 ## Freesound Integration
 
 The active recommendation flow uses `src/services/recommendations.ts`, `src/services/audioAnalysisService.ts`, and `src/services/freesound.ts`.
 
-- Audio analysis runs in the browser through Web Audio.
-- The generated query is sent to Freesound's `/search/` endpoint.
+- Audio analysis runs in the browser through Web Audio and Essentia.js.
+- Requests stay routed through the existing recommendation and Freesound services.
 - Results are limited to 4 sounds.
 - Preview audio and visualizations come directly from Freesound response metadata.
 
 ## Descriptor Status
 
-`src/services/audioAnalysisService.ts` extracts a small fallback descriptor summary from the uploaded or recorded audio. It is intentionally lightweight so the frontend works without Python services.
+`src/services/audioAnalysisService.ts` extracts descriptor values from the uploaded or recorded audio and keeps the frontend flow independent from Python-only descriptor scripts.
 
 The Python descriptor and machine learning folders remain in the repository for experiments, but they are not required to run this interface.
 
@@ -71,17 +71,16 @@ graphic_interface_v1/
     App.tsx
     main.tsx
     components/
-      AudioUploadInput.tsx
       AudioWaveform.tsx
       BrandLogo.tsx
       ErrorBoundary.tsx
       FallingNotesBackground.tsx
       Layout.tsx
       LoadingRecommendations.tsx
-      LoadingSpinner.tsx
+      QuickAudioAnalysis.tsx
       RecordUpload.tsx
-      Results.tsx
       SoundCard.tsx
+      SoundMap.tsx
       WelcomeScreen.tsx
     context/
       AudioContext.tsx
@@ -93,12 +92,16 @@ graphic_interface_v1/
     services/
       audio.ts
       audioAnalysisService.ts
+      essentiaWorker.ts
       freesound.ts
       recommendations.ts
       types.ts
     styles/
+      frontend-redesign.css
       fonts.css
       index.css
+      quick-audio-analysis.css
+      sound-map.css
       tailwind.css
       theme.css
   .env.example

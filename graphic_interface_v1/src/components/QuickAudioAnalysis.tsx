@@ -27,6 +27,13 @@ interface MetricRowProps {
   value: string;
 }
 
+const focusLabels: Record<SimilarityFocus, string> = {
+  general: 'General',
+  melodic: 'Melodic',
+  bpm: 'BPM',
+  timbre: 'Timbre',
+};
+
 const formatFrequency = (value: number | null) => {
   if (value === null || !Number.isFinite(value)) {
     return '--';
@@ -193,13 +200,7 @@ export function QuickAudioAnalysis({
       {!analysis && !isAnalyzing && !error && (
         <div className="essentia-ready-box">
           <strong>Analysis not started</strong>
-
-          <p>
-            Adjust the audio selection first and press{' '}
-            <b>Analyze selected segment</b> when you are ready.
-            Essentia.js will not run automatically while you are
-            trimming the waveform.
-          </p>
+          <p>Press analyze when the trim is ready.</p>
         </div>
       )}
 
@@ -348,15 +349,14 @@ export function QuickAudioAnalysis({
             </span>
           </div>
 
-          <div className="essentia-ready-box">
-            <strong>Essentia analysis ready</strong>
-
+          <div className="analysis-focus-summary">
+            <strong>Current recommendation context</strong>
             <p>
-              The displayed metrics come only from Essentia.js. If Essentia.js
-              does not return a reliable value for a descriptor, that field is
-              left empty instead of using a manual approximation. Current
-              priority: <b>{focus}</b> similarity.
+              Essentia / <b>{focusLabels[focus]}</b>
             </p>
+            <span>
+              The descriptor values above are the live metrics driving this search mode.
+            </span>
           </div>
         </>
       )}
