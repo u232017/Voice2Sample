@@ -4,6 +4,8 @@ export function LoadingRecommendations() {
   return (
     <div className="recommendation-loading-card" role="status" aria-live="polite">
       <div className="loading-orbit" aria-hidden="true">
+        <div className="loading-orbit-ring ring-one" />
+        <div className="loading-orbit-ring ring-two" />
         <div className="loading-eq">
           {Array.from({ length: 12 }).map((_, index) => (
             <span key={index} style={{ animationDelay: `${index * 0.08}s` }} />

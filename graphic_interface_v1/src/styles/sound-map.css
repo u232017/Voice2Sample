@@ -5,10 +5,10 @@
   gap: 0.9rem;
   margin-top: 0.85rem;
   border-radius: 17px;
-  border: 1px solid rgba(0, 231, 255, 0.26);
+  border: 1px solid rgba(76, 255, 136, 0.22);
   background:
-    radial-gradient(circle at 92% 12%, rgba(0, 231, 255, 0.12), transparent 45%),
-    rgba(5, 10, 11, 0.7);
+    radial-gradient(circle at 92% 12%, rgba(76, 255, 136, 0.12), transparent 45%),
+    rgba(10, 14, 10, 0.78);
   padding: 0.82rem;
 }
 
@@ -40,8 +40,9 @@
 }
 
 .sound-map-card {
-  --focus-accent: #00e7ff;
-  --focus-accent-soft: rgba(0, 231, 255, 0.24);
+  --focus-accent: #4cff88;
+  --focus-accent-soft: rgba(76, 255, 136, 0.24);
+  --focus-accent-secondary: #dfff86;
   max-width: 1540px;
   margin: 0 auto;
   padding: 0 1.15rem 1.15rem;
@@ -49,28 +50,33 @@
 }
 
 .sound-map-card.map-filter-all {
-  --focus-accent: #00e7ff;
-  --focus-accent-soft: rgba(0, 231, 255, 0.24);
+  --focus-accent: #4cff88;
+  --focus-accent-soft: rgba(76, 255, 136, 0.24);
+  --focus-accent-secondary: #ffbb54;
 }
 
 .sound-map-card.map-filter-general {
-  --focus-accent: #00e7ff;
-  --focus-accent-soft: rgba(0, 231, 255, 0.24);
+  --focus-accent: #4cff88;
+  --focus-accent-soft: rgba(76, 255, 136, 0.24);
+  --focus-accent-secondary: #dfff86;
 }
 
 .sound-map-card.map-filter-melodic {
-  --focus-accent: #ff2bd6;
-  --focus-accent-soft: rgba(255, 43, 214, 0.24);
+  --focus-accent: #39dcff;
+  --focus-accent-soft: rgba(57, 220, 255, 0.24);
+  --focus-accent-secondary: #9af7ff;
 }
 
 .sound-map-card.map-filter-bpm {
-  --focus-accent: #ff3030;
-  --focus-accent-soft: rgba(255, 48, 48, 0.24);
+  --focus-accent: #ff9f1c;
+  --focus-accent-soft: rgba(255, 159, 28, 0.24);
+  --focus-accent-secondary: #ffd16d;
 }
 
 .sound-map-card.map-filter-timbre {
-  --focus-accent: #55ff38;
-  --focus-accent-soft: rgba(85, 255, 56, 0.24);
+  --focus-accent: #ff63c5;
+  --focus-accent-soft: rgba(255, 99, 197, 0.24);
+  --focus-accent-secondary: #ffb0ea;
 }
 
 .sound-map-card::before {
@@ -89,23 +95,23 @@
 .sound-map-header,
 .sound-map-focus-panel,
 .sound-map-layout {
-  border-left: 1px solid rgba(217, 163, 49, 0.18);
-  border-right: 1px solid rgba(217, 163, 49, 0.18);
-  background: rgba(8, 13, 14, 0.92);
+  border-left: 1px solid rgba(76, 255, 136, 0.12);
+  border-right: 1px solid rgba(76, 255, 136, 0.12);
+  background: rgba(9, 13, 9, 0.92);
 }
 
 .sound-map-header {
   display: flex;
   justify-content: space-between;
   gap: 1.2rem;
-  border-top: 1px solid rgba(217, 163, 49, 0.18);
+  border-top: 1px solid rgba(76, 255, 136, 0.12);
   border-top-left-radius: 22px;
   border-top-right-radius: 22px;
   padding: 1.25rem 1.25rem 1rem;
   background:
     radial-gradient(circle at 12% 12%, var(--focus-accent-soft), transparent 22rem),
-    radial-gradient(circle at 88% 0%, rgba(255, 43, 214, 0.09), transparent 18rem),
-    rgba(8, 13, 14, 0.92);
+    radial-gradient(circle at 88% 0%, color-mix(in srgb, var(--focus-accent) 30%, #ff9f1c), transparent 18rem),
+    rgba(9, 13, 9, 0.92);
 }
 
 .sound-map-kicker {
@@ -159,8 +165,12 @@
 
 .sound-map-pill.real {
   border-color: var(--focus-accent-soft);
-  background: rgba(0, 231, 255, 0.08);
-  color: #e6fcff;
+  background: linear-gradient(
+    135deg,
+    var(--focus-accent-soft),
+    rgba(255, 255, 255, 0.04)
+  );
+  color: #f4fff9;
 }
 
 .sound-map-close {
@@ -236,11 +246,14 @@
 
 .sound-map-focus-switch button.active {
   border-color: var(--focus-accent);
-  background:
-    linear-gradient(110deg, rgba(255, 231, 156, 0.98), rgba(162, 211, 63, 0.98));
-  color: #11170d;
+  background: linear-gradient(
+    118deg,
+    var(--focus-accent-secondary),
+    var(--focus-accent)
+  );
+  color: #07110b;
   box-shadow:
-    0 8px 23px rgba(206, 187, 65, 0.2),
+    0 8px 23px var(--focus-accent-soft),
     0 0 0 1px var(--focus-accent-soft);
 }
 
@@ -265,10 +278,10 @@
   min-height: 660px;
   overflow: hidden;
   border-radius: 22px;
-  border: 1px solid rgba(0, 231, 255, 0.18);
+  border: 1px solid rgba(76, 255, 136, 0.18);
   background:
-    radial-gradient(circle at center, rgba(38, 70, 96, 0.2), transparent 40%),
-    linear-gradient(180deg, #07101b 0%, #050a12 100%);
+    radial-gradient(circle at center, rgba(22, 61, 36, 0.2), transparent 40%),
+    linear-gradient(180deg, #071008 0%, #050705 100%);
   box-shadow:
     inset 0 0 70px rgba(0, 0, 0, 0.46),
     inset 0 0 130px rgba(29, 85, 128, 0.09);
@@ -298,7 +311,7 @@
   top: 22%;
   width: 270px;
   height: 250px;
-  background: #00e7ff;
+  background: #4cff88;
 }
 
 .atlas-cloud-wash.wash-two {
@@ -306,7 +319,7 @@
   bottom: 16%;
   width: 290px;
   height: 260px;
-  background: #ff2bd6;
+  background: #ff9f1c;
 }
 
 .atlas-cloud-wash.wash-three {
@@ -314,7 +327,7 @@
   top: 35%;
   width: 260px;
   height: 260px;
-  background: #55ff38;
+  background: #39dcff;
 }
 
 .atlas-map-note {
@@ -524,23 +537,23 @@
 }
 
 .legend-general {
-  background: #00e7ff;
-  color: #00e7ff;
+  background: #4cff88;
+  color: #4cff88;
 }
 
 .legend-melodic {
-  background: #ff2bd6;
-  color: #ff2bd6;
+  background: #39dcff;
+  color: #39dcff;
 }
 
 .legend-bpm {
-  background: #ff3030;
-  color: #ff3030;
+  background: #ff9f1c;
+  color: #ff9f1c;
 }
 
 .legend-timbre {
-  background: #55ff38;
-  color: #55ff38;
+  background: #ff63c5;
+  color: #ff63c5;
 }
 
 .sound-map-selected {
@@ -599,9 +612,13 @@
   display: inline-flex;
   border-radius: 999px;
   border: 1px solid var(--focus-accent-soft);
-  background: rgba(0, 231, 255, 0.07);
+  background: linear-gradient(
+    135deg,
+    var(--focus-accent-soft),
+    rgba(255, 255, 255, 0.03)
+  );
   padding: 0.34rem 0.58rem;
-  color: #c7f7ff;
+  color: #f1fff6;
   font-size: 0.68rem;
   font-weight: 850;
 }
@@ -622,7 +639,11 @@
 
 .selected-sound-stats div.highlight-stat {
   border-color: var(--focus-accent-soft);
-  background: rgba(217, 249, 157, 0.055);
+  background: linear-gradient(
+    140deg,
+    var(--focus-accent-soft),
+    rgba(255, 255, 255, 0.025)
+  );
 }
 
 .selected-sound-stats span {
@@ -654,10 +675,10 @@
 
 .selected-sound-tags span {
   border-radius: 999px;
-  border: 1px solid rgba(217, 249, 157, 0.14);
-  background: rgba(217, 249, 157, 0.06);
+  border: 1px solid var(--focus-accent-soft);
+  background: color-mix(in srgb, var(--focus-accent-soft) 72%, rgba(255, 255, 255, 0.02));
   padding: 0.28rem 0.46rem;
-  color: #d9efbe;
+  color: #effff4;
   font-size: 0.67rem;
   font-weight: 750;
 }

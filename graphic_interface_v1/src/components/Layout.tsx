@@ -1,6 +1,5 @@
 import { ExternalLink, Info, X } from 'lucide-react';
 import { ReactNode, useEffect, useRef, useState } from 'react';
-import { FallingNotesBackground } from './FallingNotesBackground';
 import { BrandLogo } from './BrandLogo';
 
 interface LayoutProps {
@@ -39,31 +38,35 @@ export function Layout({ children, onHome }: LayoutProps) {
   }, [isAboutOpen]);
 
   return (
-    <div className="app-frame min-h-screen bg-slate-950 text-white">
-      <FallingNotesBackground />
+    <div className="app-frame">
       <header className="app-header">
-        <nav className="mx-auto flex h-[58px] max-w-7xl items-center justify-between px-4 md:px-6">
+        <nav className="app-nav">
           <button onClick={onHome} className="app-brand-button" aria-label="Go home">
             <BrandLogo />
             <span className="app-brand-copy">
-              <span className="block text-lg font-black leading-5 text-amber-300">Voice to Sample</span>
-              <span className="text-xs font-medium text-lime-400/85">
-                SonicMatch sound discovery
-              </span>
+              <span>Voice to Sample</span>
+              <span>SonicMatch discovery workstation</span>
             </span>
           </button>
 
-          <div className="relative" ref={aboutPanelRef}>
-            <div className="flex items-center gap-2">
+          <div className="app-header-actions" ref={aboutPanelRef}>
+            <div className="app-header-pills" aria-hidden="true">
+              <span>Capture</span>
+              <span>Analyze</span>
+              <span>Discover</span>
+            </div>
+
+            <div className="app-icon-actions">
               <a
                 href="https://freesound.org"
                 target="_blank"
                 rel="noreferrer"
-                className="icon-button hidden sm:grid"
+                className="header-link-chip"
                 title="Freesound"
                 aria-label="Open Freesound"
               >
-                <ExternalLink className="h-5 w-5" />
+                <ExternalLink className="h-4 w-4" />
+                Freesound
               </a>
               <button
                 type="button"
@@ -99,13 +102,14 @@ export function Layout({ children, onHome }: LayoutProps) {
                 </div>
                 <p>
                   Voice to Sample is a music-focused web application created as part of an
-                  academic project. It helps music producers and sound creators find useful audio
-                  samples more easily by recording or uploading a sound and getting similar results
-                  to preview, compare, and download.
+                  academic project. It helps producers and sound designers capture a phrase,
+                  analyze its characteristics, and navigate similar Freesound material without
+                  leaving the same workspace.
                 </p>
                 <p>
-                  This interface is designed to keep sound discovery simple, visual, and creative,
-                  blending frontend design, audio analysis, and recommendation concepts.
+                  This interface is designed as a compact discovery workstation, blending audio
+                  analysis, trimming, recommendation models, and sample preview into one visual
+                  flow.
                 </p>
               </section>
             ) : null}

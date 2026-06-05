@@ -172,7 +172,7 @@ export function AudioWaveform({
 
     if (!bars.length) {
       context.fillStyle = 'rgba(217, 249, 157, 0.2)';
-      context.font = '600 13px Inter, sans-serif';
+      context.font = '600 13px Aptos, Segoe UI, sans-serif';
       context.textAlign = 'center';
       context.fillText('Generating waveform...', rect.width / 2, centerY);
     }

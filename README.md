@@ -77,4 +77,3 @@ Would you like me to also add:
 - step-by-step instructions specifically for Windows/WSL,
 - example API request snippets,
 - or a contribution and licensing section?
-

@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react';
 
-const notes = ['♪', '♫', '♬', '♩'];
+const notes = ['|', '/', '-', '\\'];
 
 const noteLayers = [
   { left: 4, delay: -1.2, duration: 14, size: 22, drift: -18, blur: 0.8, opacity: 0.22, symbol: 0 },
