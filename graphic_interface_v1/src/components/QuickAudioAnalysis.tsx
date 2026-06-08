@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Activity,
   AudioLines,
   Drum,
   Music2,
@@ -303,33 +302,6 @@ export function QuickAudioAnalysis({
               />
             </section>
 
-            <section>
-              <div className="descriptor-group-title">
-                <Activity className="h-4 w-4" />
-                <span>Energy</span>
-              </div>
-
-              <MetricRow
-                label="RMS"
-                value={formatDecimal(descriptors.energy.rms)}
-              />
-
-              <MetricRow
-                label="Energy"
-                value={formatDecimal(
-                  descriptors.energy.energy,
-                  2
-                )}
-              />
-
-              <MetricRow
-                label="Dynamic complexity"
-                value={formatDecimal(
-                  descriptors.energy.dynamicComplexity,
-                  2
-                )}
-              />
-            </section>
           </div>
 
           <div className="quick-analysis-details">

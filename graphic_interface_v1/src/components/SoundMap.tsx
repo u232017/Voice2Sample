@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { AudioLines, Map, Pause, Play, X } from 'lucide-react';
+import { ArrowLeft, AudioLines, Map, Pause, Play, X } from 'lucide-react';
 import { audioService } from '../services/audio';
 import {
   CombinedSoundMapPoint,
@@ -340,6 +340,24 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
     }
   }, [selectedPoint]);
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   const selectedPosition = selectedPoint
     ? positionedSounds.find(
         (point) => point.sound.mapKey === selectedPoint.mapKey
@@ -400,12 +418,43 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
   };
 
   return (
-    <section
-      className={`sound-map-card map-filter-${activeFilter}`}
-      aria-label="Audio similarity map"
+    <div
+      className="sound-map-modal"
+      role="presentation"
+      onClick={onClose}
     >
+      <div
+        className="sound-map-modal-topbar"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="sound-map-return-button"
+          onClick={onClose}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Return to workspace
+        </button>
+      </div>
+
+      <section
+        className={`sound-map-card sound-map-dialog map-filter-${activeFilter}`}
+        aria-label="Audio similarity map"
+        role="dialog"
+        aria-modal="true"
+        onClick={(event) => event.stopPropagation()}
+      >
       <header className="sound-map-header">
         <div>
+          <button
+            type="button"
+            className="sound-map-back-link"
+            onClick={onClose}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Return to workspace
+          </button>
+
           <p className="sound-map-kicker">Dataset exploration</p>
           <h2>Audio Similarity Map</h2>
 
@@ -674,6 +723,7 @@ export function SoundMap({ data, isLoading, onClose }: SoundMapProps) {
           )}
         </aside>
       </div>
-    </section>
+      </section>
+    </div>
   );
 }

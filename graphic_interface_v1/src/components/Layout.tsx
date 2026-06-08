@@ -44,7 +44,7 @@ export function Layout({ children, onHome }: LayoutProps) {
           <button onClick={onHome} className="app-brand-button" aria-label="Go home">
             <BrandLogo />
             <span className="app-brand-copy">
-              <span>Voice to Sample</span>
+              <span>Voice 2 Sample</span>
               <span>SonicMatch discovery workstation</span>
             </span>
           </button>
@@ -71,8 +71,8 @@ export function Layout({ children, onHome }: LayoutProps) {
               <button
                 type="button"
                 className="icon-button"
-                title="About Voice to Sample"
-                aria-label="About Voice to Sample"
+                title="About Voice 2 Sample"
+                aria-label="About Voice 2 Sample"
                 aria-expanded={isAboutOpen}
                 aria-controls="about-voice-to-sample"
                 onClick={() => setIsAboutOpen((open) => !open)}
@@ -87,10 +87,10 @@ export function Layout({ children, onHome }: LayoutProps) {
                 className="about-popover"
                 role="dialog"
                 aria-modal="false"
-                aria-label="About Voice to Sample"
+                aria-label="About Voice 2 Sample"
               >
                 <div className="about-popover-header">
-                  <h2>About Voice to Sample</h2>
+                  <h2>About Voice 2 Sample</h2>
                   <button
                     type="button"
                     className="about-close-button"
@@ -101,7 +101,7 @@ export function Layout({ children, onHome }: LayoutProps) {
                   </button>
                 </div>
                 <p>
-                  Voice to Sample is a music-focused web application created as part of an
+                  Voice 2 Sample is a music-focused web application created as part of an
                   academic project. It helps producers and sound designers capture a phrase,
                   analyze its characteristics, and navigate similar Freesound material without
                   leaving the same workspace.
