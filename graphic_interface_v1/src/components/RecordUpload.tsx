@@ -134,6 +134,10 @@ export function RecordUpload() {
       ? `${activeFocusOption?.short || 'Balanced'} similarity active`
       : 'Embedding search active';
 
+  const hasAnalysisReady =
+    Boolean(frontendAnalysis?.descriptors) &&
+    frontendAnalysis?.engine === 'essentia.js';
+
   const trimSelection = useMemo(() => {
     if (!currentAudio || !isValidTrim) {
       return null;
@@ -621,7 +625,13 @@ export function RecordUpload() {
               <button
                 className="primary-action search-main-button"
                 onClick={runSearch}
-                disabled={!currentAudio || !isValidTrim || isRecommendationLoading}
+                disabled={
+                  !currentAudio ||
+                  !isValidTrim ||
+                  !hasAnalysisReady ||
+                  isRecommendationLoading
+                }
+                title={!hasAnalysisReady ? 'Analyze audio first' : undefined}
               >
                 <Search className="h-5 w-5" />
                 {isRecommendationLoading

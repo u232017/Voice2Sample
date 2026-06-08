@@ -24,7 +24,9 @@ const floatingCards = [
     copy: 'Capture a sound or upload audio.',
     icon: Mic,
     tone: 'green',
+    iconTone: 'green',
     className: 'card-record',
+    waveTone: 'wave-orange',
   },
   {
     id: 'trim',
@@ -32,7 +34,9 @@ const floatingCards = [
     copy: 'Isolate the moment that matters.',
     icon: Scissors,
     tone: 'orange',
+    iconTone: 'green',
     className: 'card-trim',
+    waveTone: 'wave-blue',
   },
   {
     id: 'analyze',
@@ -40,7 +44,9 @@ const floatingCards = [
     copy: 'Our engine extracts what makes it unique.',
     icon: AudioLines,
     tone: 'green',
+    iconTone: 'green',
     className: 'card-analyze',
+    waveTone: 'wave-blue',
   },
   {
     id: 'match',
@@ -48,7 +54,9 @@ const floatingCards = [
     copy: 'Find the closest samples instantly.',
     icon: Search,
     tone: 'orange',
+    iconTone: 'green',
     className: 'card-match',
+    waveTone: 'wave-orange',
   },
 ];
 
@@ -119,17 +127,10 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
           <div className="reference-brand">
             <BrandLogo />
             <div>
-              <strong>Voice to Sample</strong>
+              <strong>Voice 2 Sample</strong>
               <small>Music Sample Discovery</small>
             </div>
           </div>
-
-          <nav className="reference-nav" aria-label="Primary">
-            <a href="#discover">Discover</a>
-            <a href="#how-it-works">How it works</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#docs">Docs</a>
-          </nav>
 
           <div className="reference-header-actions">
             <button className="reference-workspace-button" onClick={onStart}>
@@ -197,14 +198,14 @@ export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
 
             <AudioOrbVisualizer />
 
-            {floatingCards.map(({ id, title, copy, icon: Icon, tone, className }) => (
+            {floatingCards.map(({ id, title, copy, icon: Icon, tone, iconTone, className, waveTone }) => (
               <article key={id} className={`reference-floating-card ${className} ${tone}`}>
-                <div className="reference-card-icon">
+                <div className={`reference-card-icon ${iconTone}`}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <strong>{title}</strong>
                 <p>{copy}</p>
-                <div className="reference-card-wave">
+                <div className={`reference-card-wave ${waveTone}`}>
                   {Array.from({ length: 14 }).map((_, index) => (
                     <span key={index} />
                   ))}

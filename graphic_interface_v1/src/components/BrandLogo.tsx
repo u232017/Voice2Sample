@@ -4,7 +4,7 @@ interface BrandLogoProps {
 
 export function BrandLogo({ variant = 'compact' }: BrandLogoProps) {
   return (
-    <div className={`brand-logo ${variant}`} aria-label="Voice to Sample logo">
+    <div className={`brand-logo ${variant}`} aria-label="Voice 2 Sample logo">
       <svg viewBox="0 0 320 320" role="img">
         <defs>
           <radialGradient id="brandCore" cx="50%" cy="42%" r="62%">

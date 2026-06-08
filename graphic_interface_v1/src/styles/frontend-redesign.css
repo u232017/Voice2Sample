@@ -576,11 +576,11 @@ audio {
 }
 
 .welcome-start-button:hover,
-.primary-action:hover,
-.secondary-action:hover,
-.ghost-action:hover,
-.danger-action:hover,
-.sound-card-preview:hover,
+.primary-action:hover:not(:disabled),
+.secondary-action:hover:not(:disabled),
+.ghost-action:hover:not(:disabled),
+.danger-action:hover:not(:disabled),
+.sound-card-preview:hover:not(:disabled),
 .sound-card-link:hover {
   transform: translateY(-2px);
 }
@@ -4396,13 +4396,13 @@ audio {
 }
 
 .card-trim {
-  left: 3%;
-  bottom: 15%;
+  right: 1%;
+  top: 10%;
 }
 
 .card-analyze {
-  right: 1%;
-  top: 10%;
+  left: 3%;
+  bottom: 15%;
 }
 
 .card-match {
@@ -4419,13 +4419,15 @@ audio {
   margin-bottom: 1rem;
 }
 
-.reference-floating-card.green .reference-card-icon {
+.reference-floating-card.green .reference-card-icon,
+.reference-card-icon.green {
   border: 1px solid rgba(76, 255, 136, 0.28);
   color: var(--green-soft);
   background: rgba(76, 255, 136, 0.08);
 }
 
-.reference-floating-card.orange .reference-card-icon {
+.reference-floating-card.orange .reference-card-icon,
+.reference-card-icon.orange {
   border: 1px solid rgba(255, 159, 28, 0.28);
   color: var(--orange-soft);
   background: rgba(255, 159, 28, 0.08);
@@ -4460,8 +4462,12 @@ audio {
   animation: reference-card-pulse 1.1s ease-in-out infinite alternate;
 }
 
-.reference-floating-card.orange .reference-card-wave span {
+.reference-card-wave.wave-orange span {
   background: linear-gradient(180deg, rgba(255, 196, 107, 0.92), rgba(255, 159, 28, 0.24));
+}
+
+.reference-card-wave.wave-blue span {
+  background: linear-gradient(180deg, rgba(160, 236, 255, 0.95), rgba(57, 220, 255, 0.28));
 }
 
 .reference-card-wave span:nth-child(2n) { height: 64%; }
