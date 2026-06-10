@@ -1,12 +1,7 @@
 import { useCallback, useState } from 'react';
 import { freesoundAPI } from '../services/freesound';
 import { recommendationAPI } from '../services/recommendations';
-import {
-  AudioTrimSelection,
-  FreesoundSearchRequest,
-  FreesoundSound,
-  RecordedAudio,
-} from '../services/types';
+import { FreesoundSearchRequest, FreesoundSound, RecordedAudio, AudioTrimSelection } from '../services/types';
 
 export const useFreesound = () => {
   const [results, setResults] = useState<FreesoundSound[]>([]);
@@ -26,14 +21,26 @@ export const useFreesound = () => {
         setLastRequest(request);
 
         let sounds: FreesoundSound[];
-
+        
         if (request.model === 'clap') {
-          console.info('CLAP: sending audio to backend');
+          console.info('CLAP: sending audio to backend (all 32 features)');
           sounds = await recommendationAPI.recommend(request, audio, trim);
+
+        } else if (request.model === 'essentia' && request.focus === 'general') {
+          // Essentia General: backend KNN with perceptual feature subset
+          // (rhythm + melody + timbre, no energy) so results differ from CLAP.
+          console.info('Essentia General: sending audio to backend (perceptual KNN)');
+          const essentiaGeneralRequest = { ...request, focus: 'essentia_general' as const };
+          sounds = await recommendationAPI.recommend(essentiaGeneralRequest, audio, trim);
+        
         } else if (request.model === 'essentia') {
-          console.info(`Essentia (${request.focus || 'general'}): sending audio to backend`);
-          sounds = await recommendationAPI.recommend(request, audio, trim);
+          
+          // Other Essentia focuses: text query to Freesound
+          console.info(`Essentia (${request.focus}): Freesound text search`);
+          sounds = await freesoundAPI.search({ ...request, limit: 4 });
+
         } else {
+          // Plain Freesound text search (no model)
           console.info('Freesound: text-based search');
           sounds = await freesoundAPI.search({ ...request, limit: 4 });
         }
