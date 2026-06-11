@@ -1,5 +1,4 @@
-.venv2/
-.venv-1/
+.venv-wsl/
 .venv/
 __pycache__/
 Dataset/audio_temp/

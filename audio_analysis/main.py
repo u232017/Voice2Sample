@@ -1,6 +1,7 @@
 import os
 import json
 import shutil
+from pathlib import Path
 
 from general_features import extract_music_descriptors
 from melodic_features import extract_melodic_features
@@ -12,14 +13,23 @@ from timbre_features import extract_timbre_descriptors
 #   PROCESAR UN SOLO ARCHIVO (4 DESCRIPTORES)
 # ============================================================
 def process_audio(audio_file):
+    if not os.path.isfile(audio_file):
+        print(f"⏭ Omitido (no existe): {audio_file}")
+        return False
+
     print(f"\n▶ Procesando {audio_file}")
 
-    extract_music_descriptors(audio_file)
-    extract_melodic_features(audio_file)
-    extract_rhythmic_descriptors(audio_file)
-    extract_timbre_descriptors(audio_file)
+    try:
+        extract_music_descriptors(audio_file)
+        extract_melodic_features(audio_file)
+        extract_rhythmic_descriptors(audio_file)
+        extract_timbre_descriptors(audio_file)
+    except Exception as exc:
+        print(f"✗ Error en {audio_file}: {exc}")
+        return False
 
     print(f"✔ Terminado {audio_file}")
+    return True
 
 
 # ============================================================
@@ -65,18 +75,27 @@ def merge_music_jsons():
 #   MAIN (SECUENCIAL + MERGE FINAL + BORRADO)
 # ============================================================
 def main():
-    audio_dir = "../Dataset/audio_processed_prueba"
+    audio_dir = "../Dataset/audio_processed"
 
-    audio_files = [
+    music_dir = "descriptors/music"
+    os.makedirs(music_dir, exist_ok=True)
+
+    audio_files = sorted(
         os.path.join(audio_dir, f)
         for f in os.listdir(audio_dir)
-        if f.endswith(('.wav', '.mp3', '.aif', '.aiff'))
+        if f.endswith((".wav", ".mp3", ".aif", ".aiff"))
+        and os.path.isfile(os.path.join(audio_dir, f))
+    )
+    pending = [
+        path
+        for path in audio_files
+        if not os.path.exists(os.path.join(music_dir, f"{Path(path).stem}.json"))
     ]
 
-    print(f"🎧 Archivos encontrados: {len(audio_files)}")
+    print(f"🎧 Archivos en disco: {len(audio_files)} | Pendientes: {len(pending)}")
 
     # PROCESAMIENTO SECUENCIAL (MÁS RÁPIDO PARA ESSENTIA)
-    for audio_file in audio_files:
+    for audio_file in pending:
         process_audio(audio_file)
 
     # FUSIÓN FINAL SOLO DE MUSIC + BORRADO
