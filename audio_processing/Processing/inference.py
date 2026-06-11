@@ -182,6 +182,15 @@ class BuscadorSimilitud:
         vector_raw    = _alinear_vector(feats_dict, columnas)
         vector_scaled = scaler.transform(vector_raw)
 
+        # Salvaguarda: si las features extraídas no cubren las columnas del
+        # modelo, el vector se rellena con ceros y los vecinos son ruido.
+        # Esto ocurre cuando los extractores cambian sin reentrenar los KNN.
+        cobertura = sum(1 for c in columnas if c in feats_dict) / max(len(columnas), 1)
+        if cobertura < 0.9:
+            print(f"  ⚠  ADVERTENCIA: solo el {cobertura*100:.0f}% de las columnas del "
+                  f"modelo '{modo}' tienen feature extraída. Los resultados no serán "
+                  f"fiables — reentrena con regenerate_descriptors.py --retrain")
+
         # 4. Ajustar top_k al máximo disponible en este modelo
         k_efectivo = min(top_k, len(meta))
         if k_efectivo < top_k:

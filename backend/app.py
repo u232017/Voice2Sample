@@ -35,6 +35,29 @@ except Exception as _e:
     _buscador = None
     print("[Voice2Sample] KNN models not available, falling back to euclidean distance:", _e)
 
+# CLAP embeddings recommender — carga en background para no bloquear el arranque
+import threading
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    from clap_recommender import init_clap, clap_recommend, is_available as clap_available
+    _CLAP_LOADED = False
+
+    def _load_clap_background():
+        global _CLAP_LOADED
+        print("[Voice2Sample] CLAP: cargando modelo en background...")
+        _CLAP_LOADED = init_clap()
+        if _CLAP_LOADED:
+            print("[Voice2Sample] CLAP model loaded — real embedding search enabled")
+        else:
+            print("[Voice2Sample] CLAP embeddings loaded but model unavailable — install torch+transformers+librosa")
+
+    threading.Thread(target=_load_clap_background, daemon=True).start()
+except Exception as _clap_e:
+    _CLAP_LOADED = False
+    clap_recommend = None  # type: ignore
+    clap_available = lambda: False  # type: ignore
+    print("[Voice2Sample] CLAP recommender import failed:", _clap_e)
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATASET_DIR = ROOT_DIR / "Dataset"
 DATASET_AUDIO_DIR = DATASET_DIR / "audio_processed"
@@ -139,35 +162,103 @@ _FOCUS_TO_MODO = {
 }
 
 
-def _dataset_recommendations(audio_path: Path, limit: int, focus: str = "general") -> list[dict[str, Any]]:
+def _rescale_similarities(payloads: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Normaliza las similitudes de los resultados para que sean legibles en la UI.
+
+    El problema: `1/(1+d)` sobre distancias euclídeas en espacios de alta
+    dimensión (1 126 features del KNN de Essentia) produce valores en [0.01, 0.10]
+    que aparecen como "1 %–3 %" en la tarjeta de resultado. CLAP con similitud
+    coseno ya produce valores en [0.50, 0.99], que son correctos.
+
+    Solución: min-max sobre el conjunto de resultados, mapeado a [0.50, 1.00]:
+    la mejor coincidencia muestra ~100 % y la peor ~50 %, dando una señal de
+    calidad útil al usuario. Esta función solo se aplica a resultados KNN /
+    euclidianos — los resultados CLAP (coseno, ya en rango legible) retornan
+    antes de llegar aquí y no se modifican.
+    """
+    sims = [p["similarity"] for p in payloads if isinstance(p.get("similarity"), float)]
+    if not sims:
+        return payloads
+
+    s_min, s_max = min(sims), max(sims)
+    if s_max - s_min < 1e-6:
+        return payloads
+
+    for p in payloads:
+        if isinstance(p.get("similarity"), float):
+            # Mapeo lineal a [0.50, 1.00]
+            p["similarity"] = round(0.5 + 0.5 * (p["similarity"] - s_min) / (s_max - s_min), 4)
+    return payloads
+
+
+def _dataset_recommendations(
+    audio_path: Path,
+    limit: int,
+    focus: str = "general",    # valor frontend: "general" | "melodic" | "bpm" | "timbre"
+    model: str = "essentia",
+) -> tuple[list[dict[str, Any]], str]:
+    """
+    Devuelve (payloads, engine_usado).
+
+    `focus` se recibe en el vocabulario del frontend y se mapea UNA SOLA VEZ
+    al modo interno del KNN mediante _FOCUS_TO_MODO.  No debe convertirse antes
+    de llamar a esta función.
+    """
     items = _get_dataset()
     if not items:
         raise RuntimeError("Dataset does not contain supported audio files")
 
-    # Use pre-trained KNN joblibs when available
+    items_by_id = {item.audio_id: item for item in items}
+
+    # ── CLAP: embedding semántico contra embeddings precalculados del dataset ──
+    if model == "clap":
+        if clap_recommend is None or not clap_available():
+            # El modelo CLAP requiere torch + transformers + librosa instalados.
+            # Si no están disponibles (o el hilo de carga no ha terminado),
+            # lo indicamos explícitamente en lugar de silenciar la caída.
+            print("[Voice2Sample] CLAP solicitado pero no disponible — usando Essentia KNN")
+        else:
+            try:
+                clap_results = clap_recommend(audio_path, limit=limit)
+                if clap_results:
+                    payloads = []
+                    for r in clap_results:
+                        item = items_by_id.get(r["audio_id"])
+                        if item is not None:
+                            payloads.append(_dataset_sound_payload(item, r["similarity"], r["distance"]))
+                    if payloads:
+                        print(f"[Voice2Sample] CLAP: {len(payloads)} resultados (coseno)")
+                        return payloads, "clap"
+            except Exception as exc:
+                print(f"[Voice2Sample] CLAP error: {exc} — usando Essentia KNN")
+
+    # ── Essentia KNN sobre descriptores acústicos ──────────────────────────────
+    # _FOCUS_TO_MODO convierte el nombre frontend al modo interno del KNN.
+    # Este mapeo se hace AQUÍ y solo aquí; el endpoint pasa el focus original.
+    modo = _FOCUS_TO_MODO.get(focus, "general")
+
     if _USE_KNN and _buscador is not None:
-        modo = _FOCUS_TO_MODO.get(focus, "general")
         try:
             knn_results = _buscador.buscar(str(audio_path), modo=modo, top_k=limit)
-            # knn_results: [{rank, nombre, distancia, similitud}, ...]
-            # Map nombre (audio ID) back to dataset items
-            items_by_id = {item.audio_id: item for item in items}
             payloads = []
             for r in knn_results:
                 item = items_by_id.get(r["nombre"])
                 if item is not None:
-                    payloads.append(
-                        _dataset_sound_payload(item, r["similitud"], r["distancia"])
-                    )
+                    payloads.append(_dataset_sound_payload(item, r["similitud"], r["distancia"]))
             if payloads:
-                return payloads
-            print(f"[Voice2Sample] KNN returned no matching items for mode={modo}, falling back")
+                print(f"[Voice2Sample] Essentia KNN ({modo}): {len(payloads)} resultados")
+                return _rescale_similarities(payloads), f"essentia-knn-{modo}"
+            print(f"[Voice2Sample] KNN sin coincidencias (modo={modo}), cayendo a euclídeo")
         except Exception as exc:
-            print(f"[Voice2Sample] KNN error ({modo}): {exc}, falling back to euclidean distance")
+            print(f"[Voice2Sample] KNN error ({modo}): {exc} — cayendo a euclídeo")
 
-    # Fallback: original euclidean distance on raw features
+    # ── Fallback: distancia euclídea sobre features de 32 dimensiones ─────────
+    # rank_similar_items acepta el mismo vocabulario de focus que el frontend.
     ranked = rank_similar_items(audio_path, items, limit, focus)
-    return [_dataset_sound_payload(item, similarity, distance) for item, distance, similarity in ranked]
+    payloads = [_dataset_sound_payload(item, sim, dist) for item, dist, sim in ranked]
+    return _rescale_similarities(payloads), "essentia-euclidean"
+
 
 def _dataset_map_payload(
     audio_path: Path,
@@ -175,18 +266,15 @@ def _dataset_map_payload(
     focus: str = "general",
 ) -> dict[str, Any]:
     """
-    Build the payload returned to the frontend similarity map.
+    Construye el payload del mapa de similitud del frontend.
 
-    Each result is a real dataset sound selected by the existing backend
-    similarity system. The x/y coordinates are only the two-dimensional
-    visual projection used by the map.
+    Cada resultado es un sonido real del dataset seleccionado por el sistema
+    de similitud; las coordenadas x/y son solo la proyección PCA bidimensional
+    usada para la visualización.
     """
     items = _get_dataset()
-
     if not items:
-        raise RuntimeError(
-            "Dataset/audio_processed does not contain supported audio files"
-        )
+        raise RuntimeError("Dataset does not contain supported audio files")
 
     input_point, ranked_points = build_map_results(
         query_audio=audio_path,
@@ -196,23 +284,17 @@ def _dataset_map_payload(
     )
 
     results: list[dict[str, Any]] = []
-
     for item, distance, similarity, x, y in ranked_points:
-        payload = _dataset_sound_payload(
-            item=item,
-            similarity=similarity,
-            distance=distance,
-        )
-
+        payload = _dataset_sound_payload(item, similarity, distance)
         payload["x"] = x
         payload["y"] = y
-
         results.append(payload)
 
     return {
         "input": input_point,
-        "results": results,
+        "results": _rescale_similarities(results),
     }
+
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
@@ -241,11 +323,13 @@ async def recommendations(
     trim_start: float | None = Form(default=None),
     trim_end: float | None = Form(default=None),
     focus: str = Form(default="general"),
+    model: str = Form(default="essentia"),
     limit: int = Form(default=4),
 ) -> dict[str, Any]:
     suffix = Path(audio.filename or "input.wav").suffix or ".wav"
     limit = min(max(limit, 1), 4)
     focus = focus.lower() if focus else "general"
+    model = model.lower() if model else "essentia"
 
     temp_dir = UPLOAD_TMP_DIR / f"voice2sample_{uuid.uuid4().hex}"
     temp_dir.mkdir(parents=True, exist_ok=False)
@@ -259,8 +343,8 @@ async def recommendations(
         analysis_path = trim_audio_file(input_path, input_path.with_suffix(".trimmed.wav"), trim_start, trim_end)
 
         try:
-            results = _dataset_recommendations(analysis_path, limit, focus)
-            engine = "dataset-audio-descriptors"
+            # focus se pasa sin convertir; _dataset_recommendations hace el mapeo una sola vez
+            results, engine = _dataset_recommendations(analysis_path, limit, focus, model)
             error = None
         except Exception as exc:
             raise HTTPException(status_code=500, detail=f"Dataset recommendation failed: {exc}") from exc
@@ -273,6 +357,7 @@ async def recommendations(
         "results": results,
     }
 
+
 @app.post("/api/map-results")
 async def map_results(
     audio: UploadFile = File(...),
@@ -282,14 +367,12 @@ async def map_results(
     limit: int = Form(default=50),
 ) -> dict[str, Any]:
     """
-    Return the real nearest dataset sounds used by the interactive map.
+    Devuelve los sonidos del dataset más cercanos para el mapa interactivo.
 
-    This endpoint is separate from /api/recommendations so the normal
-    recommendation cards can keep returning only four sounds, while the
-    map can request a larger set only when the user opens it.
+    Endpoint separado de /api/recommendations para que las tarjetas sigan
+    devolviendo solo 4 sonidos mientras el mapa puede pedir hasta 50.
     """
     suffix = Path(audio.filename or "input.wav").suffix or ".wav"
-
     limit = min(max(limit, 1), 50)
     focus = focus.lower() if focus else "general"
 
@@ -310,11 +393,7 @@ async def map_results(
         )
 
         try:
-            map_payload = _dataset_map_payload(
-                audio_path=analysis_path,
-                limit=limit,
-                focus=focus,
-            )
+            map_payload = _dataset_map_payload(analysis_path, limit, focus)
         except Exception as exc:
             raise HTTPException(
                 status_code=500,
