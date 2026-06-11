@@ -1,0 +1,195 @@
+{
+  "query": "C:\\Users\\34615\\Desktop\\Voice2Sample\\Dataset\\audio_processed\\903.wav",
+  "embeddings_json": "C:\\Users\\34615\\Desktop\\Voice2Sample\\Dataset\\embeddings_output.json",
+  "freesound_query": "903",
+  "focus": "general",
+  "descriptors": {
+    "rms": 0.148659348487854,
+    "energy_label": "balanced",
+    "spectral_centroid": 3287.5185546875,
+    "brightness_label": "bright",
+    "timbre_label": "bright",
+    "spectral_flatness": 0.24045645175910874,
+    "zcr": 0.04941989731980434,
+    "bpm": 130.8139534883721,
+    "bpm_confidence": 0.03074179825056383,
+    "rhythm_label": "percussive",
+    "percussive_score": 0.0285652173724748,
+    "estimated_pitch": 1000.0,
+    "pitch_confidence": 0.7893976001508345,
+    "tonal_score": 0.5992899896167869,
+    "melodic_label": "tonal",
+    "pitch_range_label": "high",
+    "duration": 3.0921458333333334
+  },
+  "timings": {
+    "clap_sec": 9.140407085418701,
+    "freesound_sec": 5.217137336730957
+  },
+  "clap_dataset_top_k": [
+    {
+      "rank": 1,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\903.wav",
+      "archivo": "903.wav",
+      "distancia": 0.0,
+      "similitud": 100.0
+    },
+    {
+      "rank": 2,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\904.wav",
+      "archivo": "904.wav",
+      "distancia": 0.23303204774856567,
+      "similitud": 76.69679522514343
+    },
+    {
+      "rank": 3,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\4031.wav",
+      "archivo": "4031.wav",
+      "distancia": 0.2860727310180664,
+      "similitud": 71.39272689819336
+    },
+    {
+      "rank": 4,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\4030.wav",
+      "archivo": "4030.wav",
+      "distancia": 0.296832799911499,
+      "similitud": 70.3167200088501
+    },
+    {
+      "rank": 5,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\907.wav",
+      "archivo": "907.wav",
+      "distancia": 0.2996246814727783,
+      "similitud": 70.03753185272217
+    },
+    {
+      "rank": 6,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\147274.wav",
+      "archivo": "147274.wav",
+      "distancia": 0.3209315538406372,
+      "similitud": 67.90684461593628
+    },
+    {
+      "rank": 7,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\103409.wav",
+      "archivo": "103409.wav",
+      "distancia": 0.3308202624320984,
+      "similitud": 66.91797375679016
+    },
+    {
+      "rank": 8,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\906.wav",
+      "archivo": "906.wav",
+      "distancia": 0.35365331172943115,
+      "similitud": 64.63466882705688
+    },
+    {
+      "rank": 9,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\19068.wav",
+      "archivo": "19068.wav",
+      "distancia": 0.35420215129852295,
+      "similitud": 64.5797848701477
+    },
+    {
+      "rank": 10,
+      "ruta": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\4032.wav",
+      "archivo": "4032.wav",
+      "distancia": 0.3682715892791748,
+      "similitud": 63.17284107208252
+    }
+  ],
+  "freesound_ordered_dataset_matches": [
+    {
+      "freesound_rank": 1,
+      "id": 904,
+      "name": "weird_loop_2.WAV",
+      "username": "sleep",
+      "freesound_url": "https://freesound.org/people/sleep/sounds/904/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\904.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 56,
+      "id": 31657,
+      "name": "130 3.wav",
+      "username": "mollpe",
+      "freesound_url": "https://freesound.org/people/mollpe/sounds/31657/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\31657.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 79,
+      "id": 147274,
+      "name": "120bpm Loop P106.wav",
+      "username": "Strever953",
+      "freesound_url": "https://freesound.org/people/Strever953/sounds/147274/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\147274.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 82,
+      "id": 906,
+      "name": "weird_loop_5.WAV",
+      "username": "sleep",
+      "freesound_url": "https://freesound.org/people/sleep/sounds/906/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\906.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 86,
+      "id": 213654,
+      "name": "138 bpm drum loop",
+      "username": "Garzul",
+      "freesound_url": "https://freesound.org/people/Garzul/sounds/213654/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\213654.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 110,
+      "id": 907,
+      "name": "weird_loop_6.WAV",
+      "username": "sleep",
+      "freesound_url": "https://freesound.org/people/sleep/sounds/907/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\907.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 147,
+      "id": 107983,
+      "name": "Drums_loop_180BPM-02.wav",
+      "username": "colano100dio",
+      "freesound_url": "https://freesound.org/people/colano100dio/sounds/107983/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\107983.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 152,
+      "id": 107982,
+      "name": "Drums_loop_180BPM-01.wav",
+      "username": "colano100dio",
+      "freesound_url": "https://freesound.org/people/colano100dio/sounds/107982/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\107982.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 285,
+      "id": 905,
+      "name": "weird_loop_3.WAV",
+      "username": "sleep",
+      "freesound_url": "https://freesound.org/people/sleep/sounds/905/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\905.wav",
+      "exact_name_match": false
+    },
+    {
+      "freesound_rank": 289,
+      "id": 239078,
+      "name": "Drumloop Jungle Thought - 2 bar - 100 BPM (swing).WAV",
+      "username": "Bronxio",
+      "freesound_url": "https://freesound.org/people/Bronxio/sounds/239078/",
+      "dataset_path": "C:/Users/34615/Desktop/Voice2Sample/Dataset/audio_processed\\239078.wav",
+      "exact_name_match": false
+    }
+  ],
+  "used_similar_source_id": "903",
+  "freesound_error": "HTTP Error 404: Not Found"
+}
