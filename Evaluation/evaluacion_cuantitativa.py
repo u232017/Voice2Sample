@@ -1,7 +1,7 @@
 """
 evaluacion_cuantitativa.py
 ==========================
-Evaluación cuantitativa comparativa — Essentia KNN vs CLAP
+Evaluación cuantitativa comparativa — Acoustic Search (KNN) vs CLAP
 TFG «Voice2Sample»
 
 Descripción
@@ -9,7 +9,7 @@ Descripción
 Compara dos sistemas de recuperación de audio por similitud sobre el mismo
 conjunto de queries y el mismo dataset local:
 
-  1. Essentia KNN  — 1 126 descriptores acústicos (ritmo, melodía, timbre,
+  1. Acoustic Search — 1 126 descriptores acústicos (ritmo, melodía, timbre,
                      tonalidad) extraídos con Essentia y almacenados en
                      music_all.json.  Búsqueda mediante NearestNeighbors con
                      distancia euclídea en espacio StandardScaler.
@@ -31,7 +31,7 @@ Fórmulas implementadas
 
         sim_norm(i) = (s(i) − s_min) / (s_max − s_min) × 100
 
-    Resultado: sim_norm ∈ [0, 100].  Un 75 % en CLAP y un 75 % en Essentia
+    Resultado: sim_norm ∈ [0, 100].  Un 75 % en CLAP y un 75 % en Acoustic Search
     significan lo mismo: «ese resultado está en el 75 % superior de la
     distribución de similitud del modelo sobre todo el dataset».
 
@@ -70,7 +70,7 @@ Uso
 ---
     python Evaluation/evaluacion_cuantitativa.py \\
         --me-json    audio_analysis/descriptors/music_all.json \\
-        --models-dir audio_processing/Processing/models \\
+        --models-dir search_engines/acoustic_search/models \\
         --clap-json  Dataset/embeddings_output.json \\
         --top-k      5 \\
         --query-ids  100270 101894 \\
@@ -170,7 +170,7 @@ def load_me_json(path: Path) -> dict[str, dict]:
 
 def load_essentia_knn(models_dir: Path) -> tuple[object, list[str], list[str]]:
     """
-    Carga el bundle Essentia KNN del directorio de modelos.
+    Carga el bundle del KNN acústico del directorio de modelos.
 
     Devuelve (scaler, meta, columnas).
     El objeto knn no se usa en la evaluación porque calculamos las distancias
@@ -434,7 +434,7 @@ def evaluate(
         e_sims = raw[qid]["e"];  e_idx = raw[qid]["ei"]
         c_sims = raw[qid]["c"];  c_idx = raw[qid]["ci"]
 
-        ess_res  = _build_model_result("Essentia KNN", e_sims, e_idx, meta,     ess_bounds,  top_k, me_json, q_bpm)
+        ess_res  = _build_model_result("Acoustic Search", e_sims, e_idx, meta,     ess_bounds,  top_k, me_json, q_bpm)
         clap_res = _build_model_result("CLAP",         c_sims, c_idx, clap_ids, clap_bounds, top_k, me_json, q_bpm)
 
         results.append(QueryResult(
@@ -595,13 +595,13 @@ def display_leaderboard(results: list[QueryResult]) -> None:
         header_style="bold",
     )
     lb.add_column("Métrica",        style="dim",   width=26)
-    lb.add_column("Essentia KNN",   justify="center", style="green",  width=14)
+    lb.add_column("Acoustic Search",   justify="center", style="green",  width=14)
     lb.add_column("CLAP",           justify="center", style="cyan",   width=14)
     lb.add_column("Ganador",        justify="center", width=14)
 
     def _row(label: str, ev: float, cv: float, pct: bool = True) -> None:
         fmt   = (lambda x: f"{x:.1f} %" ) if pct else (lambda x: f"{x:.2f}")
-        win   = "[bold green]Essentia ★[/]" if ev >= cv else "[bold cyan]CLAP ★[/]"
+        win   = "[bold green]Acoustic ★[/]" if ev >= cv else "[bold cyan]CLAP ★[/]"
         if math.isnan(ev) or math.isnan(cv):
             win = "─"
         lb.add_row(label, fmt(ev) if not math.isnan(ev) else "N/A",
@@ -627,7 +627,7 @@ def display_leaderboard(results: list[QueryResult]) -> None:
     for r in results:
         ew  = r.essentia.weighted_score
         cw  = r.clap.weighted_score
-        win = "[bold cyan]CLAP[/]" if cw > ew else "[bold green]Essentia[/]"
+        win = "[bold cyan]CLAP[/]" if cw > ew else "[bold green]Acoustic[/]"
         pq.add_row(
             r.query_id,
             f"{r.query_bpm:.0f}" if r.query_bpm else "?",
@@ -640,7 +640,7 @@ def display_leaderboard(results: list[QueryResult]) -> None:
     lines: list[str] = []
 
     if not (math.isnan(ess_ws) or math.isnan(clap_ws)):
-        lead = "CLAP" if clap_ws >= ess_ws else "Essentia KNN"
+        lead = "CLAP" if clap_ws >= ess_ws else "Acoustic Search"
         diff = abs(clap_ws - ess_ws)
         lines.append(
             f"[bold]Búsqueda general:[/]  [bold cyan]{lead}[/] gana en Weighted Score "
@@ -648,9 +648,9 @@ def display_leaderboard(results: list[QueryResult]) -> None:
         )
 
     if not (math.isnan(ess_bpm) or math.isnan(clap_bpm)):
-        lead_b = "Essentia KNN" if ess_bpm >= clap_bpm else "CLAP"
+        lead_b = "Acoustic Search" if ess_bpm >= clap_bpm else "CLAP"
         diff_b = abs(ess_bpm - clap_bpm)
-        color_b = "green" if lead_b == "Essentia KNN" else "cyan"
+        color_b = "green" if lead_b == "Acoustic Search" else "cyan"
         lines.append(
             f"[bold]Precisión de tempo:[/]  [bold {color_b}]{lead_b}[/] gana en BPM Agreement "
             f"([bold]{max(ess_bpm,clap_bpm):.1f} %[/] vs {min(ess_bpm,clap_bpm):.1f} %,  Δ = +{diff_b:.1f} %)"
@@ -712,9 +712,9 @@ def _plain_leaderboard(results: list[QueryResult]) -> None:
     print(f"\n{'═'*W}")
     print("  LEADERBOARD GLOBAL")
     print(f"{'─'*W}")
-    print(f"  {'Métrica':<26} {'Essentia KNN':>14} {'CLAP':>14} {'Ganador':>12}")
-    print(f"  {'Weighted Score':26} {ess_ws:>13.2f}  {clap_ws:>13.2f}  {'CLAP' if clap_ws>ess_ws else 'Essentia':>12}")
-    print(f"  {'BPM Agreement ±10':26} {_pct(ess_bpm):>14} {_pct(clap_bpm):>14}  {'CLAP' if clap_bpm>ess_bpm else 'Essentia':>12}")
+    print(f"  {'Métrica':<26} {'Acoustic Search':>14} {'CLAP':>14} {'Ganador':>12}")
+    print(f"  {'Weighted Score':26} {ess_ws:>13.2f}  {clap_ws:>13.2f}  {'CLAP' if clap_ws>ess_ws else 'Acoustic':>12}")
+    print(f"  {'BPM Agreement ±10':26} {_pct(ess_bpm):>14} {_pct(clap_bpm):>14}  {'CLAP' if clap_bpm>ess_bpm else 'Acoustic':>12}")
     print(f"  {'Overlap medio':26} {ovlp:>13.1f}%")
     print(f"{'═'*W}")
 
@@ -725,7 +725,7 @@ def _plain_leaderboard(results: list[QueryResult]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Evaluación cuantitativa Essentia KNN vs CLAP — Voice2Sample TFG",
+        description="Evaluación cuantitativa Acoustic Search (KNN) vs CLAP — Voice2Sample TFG",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -763,11 +763,11 @@ def main() -> None:
     me_json = load_me_json(Path(args.me_json))
     print(f"  {len(me_json)} audios.")
 
-    print("Cargando modelos Essentia KNN  (--models-dir)...")
+    print("Cargando modelos del KNN acústico (--models-dir)...")
     scaler, meta, columnas = load_essentia_knn(Path(args.models_dir))
     print(f"  {len(meta)} audios  |  {len(columnas)} features.")
 
-    print("Construyendo matriz Essentia estandarizada...")
+    print("Construyendo matriz acústica estandarizada...")
     ess_mat = build_essentia_matrix(me_json, meta, columnas, scaler)
     print(f"  Matriz: {ess_mat.shape[0]} × {ess_mat.shape[1]}")
 

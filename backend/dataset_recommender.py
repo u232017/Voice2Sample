@@ -410,7 +410,7 @@ def _get_feature_focus_indices(focus: str) -> list[int]:
         return [15, 16, 17, 18, 19, 20, 24, 25, 26, 27, 28, 29, 30, 31, 9, 10, 11]
     elif focus == "energy":
         return [1, 2, 3, 4, 5, 6, 7, 8]
-    elif focus == "essentia_general":
+    elif focus == "acoustic_general":
         # Perceptual combination: rhythm + melody + timbre.
         # Excludes pure energy features so results differ from CLAP.
         return [21, 22, 23,          # flux (rhythm / onsets)

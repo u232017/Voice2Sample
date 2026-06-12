@@ -1,96 +1,127 @@
 # Voice2Sample
 
-Voice2Sample is a project for producers and developers that makes it easy to search and compare loops, samples, and short audio fragments by extracting acoustic descriptors, processing metadata, and using similarity models. The repository contains tools to prepare datasets, extract musical descriptors, train or run machine learning models, and a web interface to test recommendations.
+Voice2Sample es una aplicación web para productores musicales: subes o grabas un audio (una voz imitando un ritmo, un loop, un sample…) y el sistema te recomienda los sonidos más parecidos de un corpus de ~2 500 samples. Ofrece dos motores de búsqueda complementarios:
 
-**Summary of features**
-- Dataset preparation: convert audio to WAV, clean metadata, and generate CSV files ready for ML.
-- Extraction of acoustic and musical descriptors (timbre, rhythm, melodic) from `audio_analysis/` (librosa in real time; Essentia for the offline corpus descriptors).
-- Search for similar samples based on descriptors (Essentia KNN) and semantic embeddings (CLAP).
-- Backend API that serves recommendations and a frontend for visualization and interaction.
+- **Acoustic Search (KNN acústico)** — compara descriptores de ritmo, melodía y timbre. Ideal para compatibilidad técnica (tempo, rango espectral).
+- **Búsqueda semántica (CLAP)** — compara embeddings de un modelo audio-texto. Ideal para encontrar sonidos con la misma "atmósfera".
 
-**Dataset used in this repository**
-- The main collection lives in the `Dataset/` folder.
-	- `Dataset/audio_processed/`: the processed WAV corpus (48 kHz). **Not versioned in git** — download it with `Dataset/download_dataset/zenodo_downloader.py` or place your own audio there.
-	- `Dataset/Clean_csv/metadata.csv`: metadata for every sound (original Freesound name, author, license, tags, BPM).
-- The search databases derived from the corpus **are versioned**: KNN models (`audio_processing/Processing/models/`), descriptor JSONs (`audio_analysis/descriptors/`) and CLAP embeddings (`Dataset/embeddings_output.json`), so a fresh clone can run searches without retraining anything.
+## Estructura del repositorio
 
-**Repository highlights**
-- `audio_analysis/` — Descriptor extraction (used both in real time by the backend for each query and in batch by `regenerate_descriptors.py` to build `descriptors/` and retrain the models).
-- `Dataset/` — Audio conversion, JSON→CSV conversion, cleaning and validation (main pipeline in `Dataset/main.py`), plus the Zenodo downloader.
-- `audio_processing/Processing/` — KNN similarity models (`train_models.py`, `inference.py`, `models/`).
-- `audio_processing/CLAP/` — CLAP semantic search: original prototype and `regenerate_clap_embeddings.py` to rebuild the embeddings database.
-- `backend/` — FastAPI backend exposing the recommendation and similarity-map endpoints (Essentia KNN + CLAP engines).
-- `graphic_interface_v1/` — Web interface (Vite + React/TypeScript) for uploading/recording audio and displaying results.
-- `Evaluation/` — Quantitative evaluation comparing Essentia KNN vs CLAP (methodology in `Evaluation/README.md`).
+| Carpeta | Contenido |
+|---------|-----------|
+| `Dataset/` | Descarga del corpus, conversión de audio a WAV 48 kHz y limpieza de metadatos |
+| `audio_analysis/` | Extracción de descriptores (en tiempo real para cada consulta y en batch para la base de datos) |
+| `search_engines/acoustic_search/` | Motor de búsqueda acústica: entrenamiento e inferencia de los modelos KNN |
+| `search_engines/CLAP/` | Motor de búsqueda semántica: generación de la base de embeddings CLAP |
+| `backend/` | API FastAPI que sirve las recomendaciones y el mapa de similitud |
+| `frontend/` | Interfaz web (Vite + React/TypeScript) |
+| `Evaluation/` | Evaluaciones cuantitativas del sistema |
+| `reports/` | Estadísticas del análisis del dataset (se generan al regenerar descriptores) |
 
-**Quick installation and run guide**
+Cada carpeta tiene su propio README con el detalle.
 
-> Use WSL (or Linux): `essentia` is only distributed through pip for Linux, and the pinned versions in `requirements.txt` were verified on Python 3.12 under WSL.
+---
 
-1. Create and activate a Python environment:
+## Guía paso a paso: probarlo desde cero
+
+### 0. Requisitos previos
+
+- **WSL o Linux** — `essentia` solo se distribuye por pip para Linux. En Windows, instala WSL (`wsl --install`) y trabaja desde ahí. Las versiones fijadas en `requirements.txt` están verificadas con **Python 3.12** bajo WSL.
+- **Node.js 18+** y npm (para la interfaz web).
+- **ffmpeg** (para las conversiones de audio): `sudo apt install ffmpeg`.
+
+### 1. Clonar el repositorio y crear el entorno de Python
 
 ```bash
+git clone https://github.com/<usuario>/Voice2Sample.git
+cd Voice2Sample
+
 python -m venv .venv
 source .venv/bin/activate
 ```
 
-2. Install dependencies (single requirements file for the whole project):
+### 2. Instalar las dependencias
+
+Hay un único `requirements.txt` para todo el proyecto:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Download the audio corpus (only the WAVs are missing from git):
+### 3. Descargar el corpus de audio
+
+Los WAV no están versionados en git (ocupan varios GB). Se descargan de Zenodo con el script incluido:
 
 ```bash
 python Dataset/download_dataset/zenodo_downloader.py
-# the files must end up in Dataset/audio_processed/ (see Dataset/readme.md)
 ```
 
-4. Run the backend API (from the repository root):
+Los archivos deben quedar en `Dataset/audio_processed/` (ver `Dataset/readme.md` si usas tu propio audio). Todo lo demás que necesita la búsqueda **sí está versionado**: los modelos KNN (`search_engines/acoustic_search/models/`), los descriptores (`audio_analysis/descriptors/`) y los embeddings CLAP (`Dataset/embeddings_output.json`). No hace falta entrenar nada.
+
+### 4. Arrancar el backend
+
+Desde la **raíz del repositorio**, con el entorno activado:
 
 ```bash
 uvicorn backend.app:app --host 0.0.0.0 --port 8000
 ```
 
-   - The first start builds a feature cache for the corpus (a few minutes); later starts are fast.
-   - CLAP loads in the background: wait for `CLAP model loaded — real embedding search enabled` in the log before testing CLAP searches.
+Qué esperar:
+- El primer arranque construye una caché de features del corpus (unos minutos); los siguientes arranques son rápidos.
+- CLAP se carga **en segundo plano**: el backend ya responde a búsquedas de Acoustic Search, pero espera a ver `CLAP model loaded — real embedding search enabled` en el log antes de probar búsquedas CLAP.
+- Comprobación rápida: abre `http://localhost:8000/api/health`.
 
-5. Start the web interface (second terminal):
+### 5. Arrancar la interfaz web
+
+En una **segunda terminal**:
 
 ```bash
-cd graphic_interface_v1
-npm install
+cd frontend
+npm install        # solo la primera vez
 npm run dev
-# opens http://localhost:4173
 ```
 
-6. (Optional) Quantitative evaluation Essentia vs CLAP:
+Abre `http://localhost:4173` en el navegador. Importante: `npm run dev` debe ejecutarse **dentro de `frontend/`**, no desde la raíz.
+
+### 6. Probar una búsqueda
+
+1. Sube un audio o graba con el micrófono.
+2. Elige el motor (Acoustic Search o CLAP) y, en Acoustic Search, el focus (ritmo / melodía / timbre / general).
+3. Pulsa buscar. La primera búsqueda de Acoustic Search tarda más (extracción de features); repetir con el mismo audio es casi instantáneo gracias a la caché.
+
+### 7. (Opcional) Evaluaciones
+
+Las tres evaluaciones cuantitativas están documentadas en `Evaluation/README.md`. La principal, la comparativa Acoustic Search (KNN) vs CLAP:
 
 ```bash
 python Evaluation/evaluacion_cuantitativa.py \
     --me-json    audio_analysis/descriptors/music_all.json \
-    --models-dir audio_processing/Processing/models \
+    --models-dir search_engines/acoustic_search/models \
     --clap-json  Dataset/embeddings_output.json \
     --top-k 5
 ```
 
-**Rebuilding the search databases (only if the corpus changes)**
+---
 
-The query-time extractors and the database must always come from the same functions, so both rebuild scripts reuse the production extractors:
+## Regenerar las bases de datos de búsqueda (solo si cambia el corpus)
+
+Los extractores de la consulta y los de la base de datos deben ser **exactamente las mismas funciones**, así que ambos scripts de regeneración reutilizan los extractores de producción:
 
 ```bash
-# Descriptors + KNN models (resumable, writes the analysis reports to reports/)
+# Descriptores + modelos KNN (reanudable; escribe los informes en reports/)
 python audio_analysis/regenerate_descriptors.py --retrain
 
-# CLAP embeddings (resumable)
-python audio_processing/CLAP/regenerate_clap_embeddings.py
+# Embeddings CLAP (reanudable)
+python search_engines/CLAP/regenerate_clap_embeddings.py
 ```
 
-Restart the backend afterwards.
+Reinicia el backend después.
 
-**Important notes**
-- `essentia` does not provide official Windows binaries; use WSL (see `audio_analysis/README.md` and `Dataset/readme.md`).
-- The KNN `.joblib` models were trained with scikit-learn 1.9.0 (pinned in `requirements.txt`); unpickling them with another version may give inconsistent results.
-- Make sure `ffmpeg` is installed for audio conversions.
-- The backend reads the corpus from `Dataset/audio_processed/` and the metadata from `Dataset/Clean_csv/metadata.csv` (or `Dataset/metadata_filtered.csv` if present); both paths are configured at the top of `backend/app.py`.
+## Notas importantes
+
+- Los modelos KNN `.joblib` se entrenaron con scikit-learn 1.9.0 (fijado en `requirements.txt`); cargarlos con otra versión puede dar resultados inconsistentes.
+- El backend lee el corpus de `Dataset/audio_processed/` y los metadatos de `Dataset/Clean_csv/metadata.csv` (o `Dataset/metadata_filtered.csv` si existe); ambas rutas se configuran al inicio de `backend/app.py`.
+
+---
+
+Hecho por el equipo de Voice2Sample.

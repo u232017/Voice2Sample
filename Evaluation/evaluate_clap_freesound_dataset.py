@@ -78,9 +78,9 @@ def _resolve_freesound_token(default_value: str, repo_root: Path) -> str:
     if default_value.strip():
         return default_value.strip()
 
-    # Prefer the interface's .env.local (graphic_interface_v1/.env.local) if present,
+    # Prefer the interface's .env.local (frontend/.env.local) if present,
     # otherwise fall back to repository root .env
-    interface_env = repo_root / "graphic_interface_v1" / ".env.local"
+    interface_env = repo_root / "frontend" / ".env.local"
     if interface_env.exists():
         env_values = _load_env_file(interface_env)
     else:
@@ -103,7 +103,7 @@ def _load_clap_helpers():
     repo_root = _repo_root()
     if str(repo_root) not in sys.path:
         sys.path.insert(0, str(repo_root))
-    module = importlib.import_module("audio_processing.CLAP.run_search_with_json")
+    module = importlib.import_module("search_engines.CLAP.run_search_with_json")
     return module
 
 

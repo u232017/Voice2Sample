@@ -4,7 +4,7 @@ Esta carpeta contiene las evaluaciones cuantitativas del sistema de recomendaci�
 
 | Script | Qué evalúa |
 |--------|------------|
-| `evaluacion_cuantitativa.py` | Comparativa **Essentia KNN vs CLAP**: calidad de recuperación, acuerdo de BPM y complementariedad entre los dos motores |
+| `evaluacion_cuantitativa.py` | Comparativa **Acoustic Search (KNN) vs CLAP**: calidad de recuperación, acuerdo de BPM y complementariedad entre los dos motores |
 | `evaluate_essentia_query.py` | Calidad de las **queries de texto** que genera el análisis del frontend (simula `audioAnalysisService.ts`) frente a los metadatos reales del dataset |
 | `test_bpm_recommendation_behavior.py` | Comportamiento del **focus BPM** del backend: ¿los resultados respetan el tempo del query? |
 
@@ -12,12 +12,12 @@ Los `.json` de la carpeta son salidas de ejemplo de estas evaluaciones. Las fór
 
 ---
 
-## 1. Comparativa Essentia KNN vs CLAP (`evaluacion_cuantitativa.py`)
+## 1. Comparativa Acoustic Search (KNN) vs CLAP (`evaluacion_cuantitativa.py`)
 
 ### Los dos motores
 
 - **CLAP** (`laion/clap-htsat-unfused`): búsqueda semántica. Cada audio es un embedding de 512 dimensiones; la similitud entre dos audios es la **similitud coseno** entre sus vectores.
-- **Essentia KNN**: búsqueda acústica. Cada audio se describe con 1 126 descriptores (ritmo, melodía, timbre, tonalidad); la búsqueda usa distancia euclídea en espacio estandarizado, con similitud `s = 1 / (1 + distancia)`.
+- **Acoustic Search (KNN)**: búsqueda acústica. Cada audio se describe con 1 126 descriptores (ritmo, melodía, timbre, tonalidad); la búsqueda usa distancia euclídea en espacio estandarizado, con similitud `s = 1 / (1 + distancia)`.
 
 ### Metodología
 
@@ -27,7 +27,7 @@ Los `.json` de la carpeta son salidas de ejemplo de estas evaluaciones. Las fór
 
 ### Métricas
 
-**Similitud media del top-K.** Promedio de las similitudes de los K resultados. ⚠️ Los rangos naturales de los dos modelos son distintos (CLAP suele dar 0.5–0.99; Essentia 0.05–0.5), así que **nunca se comparan en bruto**: antes se aplica una normalización min-max global que lleva ambos a una escala 0–100 con el mismo significado ("este resultado está en el X % superior de la distribución de su modelo").
+**Similitud media del top-K.** Promedio de las similitudes de los K resultados. ⚠️ Los rangos naturales de los dos modelos son distintos (CLAP suele dar 0.5–0.99; Acoustic Search 0.05–0.5), así que **nunca se comparan en bruto**: antes se aplica una normalización min-max global que lleva ambos a una escala 0–100 con el mismo significado ("este resultado está en el X % superior de la distribución de su modelo").
 
 **BPM Agreement.** Porcentaje de los K resultados cuyo BPM está a ±10 BPM del BPM del query. La tolerancia de 10 BPM es el estándar práctico en producción: por debajo de esa diferencia dos samples se sincronizan sin time-stretching perceptible. Mide utilidad real: un resultado perceptualmente similar pero a un tempo incompatible no sirve en un proyecto.
 
@@ -37,14 +37,14 @@ Los `.json` de la carpeta son salidas de ejemplo de estas evaluaciones. Las fór
 
 ### Interpretación
 
-El resultado más frecuente es que **CLAP gane en Weighted Score** (recupera audios perceptualmente más próximos) y **Essentia gane en BPM Agreement** (sus descriptores rítmicos explícitos garantizan compatibilidad de tempo). Ninguno es superior en absoluto: CLAP es mejor para búsqueda por atmósfera/textura y exploración creativa; Essentia para compatibilidad técnica (tempo, rango espectral, layering). Esa complementariedad es la justificación empírica del diseño híbrido de Voice2Sample, que ofrece ambos motores al usuario.
+El resultado más frecuente es que **CLAP gane en Weighted Score** (recupera audios perceptualmente más próximos) y **Acoustic Search gane en BPM Agreement** (sus descriptores rítmicos explícitos garantizan compatibilidad de tempo). Ninguno es superior en absoluto: CLAP es mejor para búsqueda por atmósfera/textura y exploración creativa; Acoustic Search para compatibilidad técnica (tempo, rango espectral, layering). Esa complementariedad es la justificación empírica del diseño híbrido de Voice2Sample, que ofrece ambos motores al usuario.
 
 ### Uso
 
 ```bash
 python Evaluation/evaluacion_cuantitativa.py \
     --me-json    audio_analysis/descriptors/music_all.json \
-    --models-dir audio_processing/Processing/models \
+    --models-dir search_engines/acoustic_search/models \
     --clap-json  Dataset/embeddings_output.json \
     --top-k      5
 

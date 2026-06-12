@@ -52,7 +52,7 @@ python audio_analysis/regenerate_descriptors.py --retrain
 - Procesa todos los audios de `Dataset/audio_processed/` en paralelo (configurable con `--workers`).
 - Es **reanudable**: guarda checkpoints cada pocos audios; si se interrumpe, vuelve a lanzarlo y continúa.
 - Escribe los JSON en `audio_analysis/descriptors/` y los informes por audio en `reports/`.
-- Con `--retrain` llama a `audio_processing/Processing/train_models.py` al terminar para reentrenar los 4 modelos KNN.
+- Con `--retrain` llama a `search_engines/acoustic_search/train_models.py` al terminar para reentrenar los 4 modelos KNN.
 
 ### Usar los extractores directamente
 
@@ -113,7 +113,7 @@ Estos descriptores se escogieron porque:
 
 ## ⚠️ Notas Importantes
 
-- Las claves de los JSON generados (`lowlevel.mfcc.mean.0`, `pitch_mean`, `bpm`...) deben coincidir con las columnas con las que se entrenaron los modelos KNN (`audio_processing/Processing/models/columnas_*.joblib`).
+- Las claves de los JSON generados (`lowlevel.mfcc.mean.0`, `pitch_mean`, `bpm`...) deben coincidir con las columnas con las que se entrenaron los modelos KNN (`search_engines/acoustic_search/models/columnas_*.joblib`).
 - Si un audio es silencioso o inválido, los extractores devuelven `None` y lo registran en el informe.
 - Test de sanidad tras regenerar: buscar un audio del propio dataset debe devolverlo a sí mismo en el puesto 1 con distancia 0.
 
