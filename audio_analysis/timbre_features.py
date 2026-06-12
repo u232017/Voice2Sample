@@ -1,118 +1,83 @@
 import os
-import json
 import time
-import traceback
+import numpy as np
 
 
-def save_json(data, filename):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def save_log(message, log_file="reports/timbre_report.txt"):
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(message + "\n")
-
-
-def extract_timbre_descriptors(audio_file):
-
-    start_time = time.time()
+def extract_timbre_descriptors(audio_file: str) -> dict | None:
+    """
+    Extrae descriptores de timbre en tiempo real usando librosa.
+    Devuelve un dict con las mismas claves que el dataset entrenado:
+    lowlevel.mfcc.mean (x13), lowlevel.gfcc.mean (x13), lowlevel.gfcc.cov (x13),
+    lowlevel.spectral_centroid.mean, lowlevel.spectral_spread.mean,
+    lowlevel.spectral_rolloff.mean, lowlevel.spectral_flux.mean,
+    lowlevel.zerocrossingrate.mean
+    """
+    t0 = time.time()
     filename = os.path.splitext(os.path.basename(audio_file))[0]
 
     try:
-        # ============================
-        # 1. Cargar temporal.json
-        # ============================
-        temporal_file = f"descriptors/music/{filename}.json"
+        import librosa
 
-        if not os.path.exists(temporal_file):
-            raise FileNotFoundError(f"No existe: {temporal_file}")
+        # sr fijo a 48000: el dataset está íntegramente a 48 kHz, pero las
+        # grabaciones del navegador pueden llegar a 44.1 kHz. Sin remuestrear,
+        # las features espectrales del query no serían comparables con la BD.
+        y, sr = librosa.load(audio_file, sr=48000, mono=True)
 
-        with open(temporal_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        if y is None or len(y) == 0 or np.max(np.abs(y)) < 1e-6:
+            raise ValueError(f"Audio silencioso o inválido: {audio_file}")
 
-        # ============================
-        # 2. Verificar ID
-        # ============================
-        if filename not in data:
-            raise KeyError(f"La ID '{filename}' no está en temporal.json")
+        # MFCC (13 coefficients)
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+        mfcc_mean = np.mean(mfcc, axis=1)
 
-        song = data[filename]
+        # GFCC proxy via Gammatone-like filterbank (use mel as proxy)
+        mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=13)
+        mel_db = librosa.power_to_db(mel, ref=np.max)
+        gfcc_mean = np.mean(mel_db, axis=1)
+        gfcc_cov = np.var(mel_db, axis=1)  # diagonal of covariance
 
-        # ============================
-        # 3. Descriptores tímbricos reales
-        # ============================
-        useful_keys = [
-            # MFCC
-            "lowlevel.mfcc.mean", "lowlevel.mfcc.cov",
+        # Spectral features
+        spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+        spectral_centroid_mean = float(np.mean(spectral_centroids))
 
-            # GFCC
-            "lowlevel.gfcc.mean", "lowlevel.gfcc.cov",
+        spectral_bw = librosa.feature.spectral_bandwidth(y=y, sr=sr)[0]
+        spectral_spread_mean = float(np.mean(spectral_bw))
 
-            # Spectral centroid
-            "lowlevel.spectral_centroid.mean",
-            "lowlevel.spectral_centroid.median",
-            "lowlevel.spectral_centroid.max",
-            "lowlevel.spectral_centroid.min",
-            "lowlevel.spectral_centroid.stdev",
+        spectral_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)[0]
+        spectral_rolloff_mean = float(np.mean(spectral_rolloff))
 
-            # Spectral spread
-            "lowlevel.spectral_spread.mean",
-            "lowlevel.spectral_spread.median",
-            "lowlevel.spectral_spread.max",
-            "lowlevel.spectral_spread.min",
-            "lowlevel.spectral_spread.stdev",
+        # Spectral flux
+        stft = np.abs(librosa.stft(y))
+        flux = np.sqrt(np.mean(np.diff(stft, axis=1) ** 2, axis=0))
+        spectral_flux_mean = float(np.mean(flux))
 
-            # Spectral rolloff
-            "lowlevel.spectral_rolloff.mean",
-            "lowlevel.spectral_rolloff.median",
-            "lowlevel.spectral_rolloff.max",
-            "lowlevel.spectral_rolloff.min",
-            "lowlevel.spectral_rolloff.stdev",
+        # ZCR
+        zcr = librosa.feature.zero_crossing_rate(y)[0]
+        zcr_mean = float(np.mean(zcr))
 
-            # Spectral flux
-            "lowlevel.spectral_flux.mean",
-            "lowlevel.spectral_flux.median",
-            "lowlevel.spectral_flux.max",
-            "lowlevel.spectral_flux.min",
-            "lowlevel.spectral_flux.stdev",
+        result = {}
 
-            # Zero crossing rate
-            "lowlevel.zerocrossingrate.mean",
-            "lowlevel.zerocrossingrate.median",
-            "lowlevel.zerocrossingrate.max",
-            "lowlevel.zerocrossingrate.min",
-            "lowlevel.zerocrossingrate.stdev"
-        ]
+        # MFCC keys: lowlevel.mfcc.mean.0 ... lowlevel.mfcc.mean.12
+        for i, v in enumerate(mfcc_mean):
+            result[f"lowlevel.mfcc.mean.{i}"] = round(float(v), 4)
 
-        timbre = {k: song[k] for k in useful_keys if k in song}
+        # GFCC mean keys
+        for i, v in enumerate(gfcc_mean):
+            result[f"lowlevel.gfcc.mean.{i}"] = round(float(v), 4)
 
-        # ============================
-        # 4. Guardar JSON global
-        # ============================
-        output_file = "descriptors/timbre_descriptors.json"
+        # GFCC cov keys
+        for i, v in enumerate(gfcc_cov):
+            result[f"lowlevel.gfcc.cov.{i}"] = round(float(v), 4)
 
-        if os.path.exists(output_file):
-            with open(output_file, "r", encoding="utf-8") as f:
-                all_data = json.load(f)
-        else:
-            all_data = {}
+        result["lowlevel.spectral_centroid.mean"] = round(spectral_centroid_mean, 4)
+        result["lowlevel.spectral_spread.mean"] = round(spectral_spread_mean, 4)
+        result["lowlevel.spectral_rolloff.mean"] = round(spectral_rolloff_mean, 4)
+        result["lowlevel.spectral_flux.mean"] = round(spectral_flux_mean, 4)
+        result["lowlevel.zerocrossingrate.mean"] = round(zcr_mean, 4)
 
-        all_data[filename] = timbre
-        save_json(all_data, output_file)
-
-        elapsed = time.time() - start_time
-        save_log(f"OK - {filename} tímbrico guardado | time={elapsed:.2f}s")
-
-        print(f"✓ Tímbrico extraído correctamente y temporal.json eliminado")
-        return timbre
+        print(f"Extrayendo features [timbre] de: {os.path.basename(audio_file)} | time={time.time()-t0:.2f}s")
+        return result
 
     except Exception as e:
-        elapsed = time.time() - start_time
-        error = f"ERROR - {filename}: {str(e)} | time={elapsed:.2f}s"
-        save_log(error)
-        print(error)
+        print(f"ERROR - {filename}: {e} | time={time.time()-t0:.2f}s")
         return None
-

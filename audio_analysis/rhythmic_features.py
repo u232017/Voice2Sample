@@ -1,86 +1,65 @@
 import os
-import json
 import time
-import traceback
+import numpy as np
 
 
-def save_json(data, filename):
-    os.makedirs(os.path.dirname(filename), exist_ok=True)
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def save_log(message, log_file="reports/rhythmic_report.txt"):
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    with open(log_file, "a", encoding="utf-8") as f:
-        f.write(message + "\n")
-
-def extract_rhythmic_descriptors(audio_file):
-
-    start_time = time.time()
+def extract_rhythmic_descriptors(audio_file: str) -> dict | None:
+    """
+    Extrae descriptores rítmicos en tiempo real usando librosa.
+    Devuelve un dict con las mismas claves que el dataset entrenado:
+    bpm, beats, beat_confidence, onset_rate, danceability
+    """
+    t0 = time.time()
     filename = os.path.splitext(os.path.basename(audio_file))[0]
 
     try:
-        temporal_file = f"descriptors/music/{filename}.json"
+        import librosa
 
-        if not os.path.exists(temporal_file):
-            raise FileNotFoundError(f"No existe: {temporal_file}")
+        y, sr = librosa.load(audio_file, sr=22050, mono=True)
+        duration = librosa.get_duration(y=y, sr=sr)
 
-        with open(temporal_file, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        if y is None or len(y) == 0 or np.max(np.abs(y)) < 1e-6:
+            raise ValueError(f"Audio silencioso o inválido: {audio_file}")
 
-        if filename not in data:
-            raise KeyError(f"La ID '{filename}' no está en temporal.json")
+        # BPM rápido: onset_strength + tempo (mucho más rápido que beat_track)
+        hop_length = 512
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr, hop_length=hop_length)
+        tempo = librosa.feature.tempo(onset_envelope=onset_env, sr=sr, hop_length=hop_length)
+        bpm = float(tempo[0]) if hasattr(tempo, '__len__') else float(tempo)
 
-        song = data[filename]
+        # Beats aproximados desde el tempo
+        beat_interval_frames = int(round((60.0 / bpm) * sr / hop_length))
+        total_frames = len(onset_env)
+        beat_frames = np.arange(0, total_frames, beat_interval_frames)
+        beats = len(beat_frames)
+        beat_times = librosa.frames_to_time(beat_frames, sr=sr, hop_length=hop_length)
 
-        # ============================
-        # 1. Descriptores rítmicos reales
-        # ============================
-        bpm = song.get("rhythm.bpm", 0.0)
-        beats_count = song.get("rhythm.beats_count", 0)
+        # Beat confidence
+        if len(beat_times) > 1:
+            intervals = np.diff(beat_times)
+            beat_confidence = float(1.0 - (np.std(intervals) / (np.mean(intervals) + 1e-9)))
+            beat_confidence = float(np.clip(beat_confidence, 0.0, 1.0))
+        else:
+            beat_confidence = 0.5
 
-        beat_conf = song.get("rhythm.beats_loudness.mean", None)
+        # Onset rate
+        onset_frames = librosa.onset.onset_detect(onset_envelope=onset_env, sr=sr, hop_length=hop_length)
+        onset_rate = float(len(onset_frames) / max(duration, 0.001))
 
-        # NUEVOS DESCRIPTORES ÚTILES
-        onset_rate = song.get("rhythm.onset_rate", None)
-        danceability = song.get("rhythm.danceability", None)
+        # Danceability proxy
+        danceability = float(np.clip(beat_confidence * 0.7 + min(onset_rate / 10.0, 1.0) * 0.3, 0.0, 1.0))
 
-        # ============================
-        # 2. Formato final
-        # ============================
         result = {
-            "bpm": bpm,
-            "beats": beats_count,
-            "beat_confidence": beat_conf,
-            "onset_rate": onset_rate,
-            "danceability": danceability
+            "bpm": round(bpm, 4),
+            "beats": beats,
+            "beat_confidence": round(beat_confidence, 4),
+            "onset_rate": round(onset_rate, 4),
+            "danceability": round(danceability, 4),
         }
 
-        # ============================
-        # 3. Guardar JSON global
-        # ============================
-        output_file = "descriptors/rhythmic_descriptors.json"
-
-        if os.path.exists(output_file):
-            with open(output_file, "r", encoding="utf-8") as f:
-                all_data = json.load(f)
-        else:
-            all_data = {}
-
-        all_data[filename] = result
-        save_json(all_data, output_file)
-
-        elapsed = time.time() - start_time
-        save_log(f"OK - {filename} rítmico guardado | time={elapsed:.2f}s")
-
-        print(f"✓ Rítmico extraído desde temporal.json: {filename}")
+        print(f"Extrayendo features [ritmo] de: {os.path.basename(audio_file)} | time={time.time()-t0:.2f}s")
         return result
 
     except Exception as e:
-        elapsed = time.time() - start_time
-        error = f"ERROR - {filename}: {str(e)} | time={elapsed:.2f}s"
-        save_log(error)
-        save_log(traceback.format_exc())
-        print(error)
+        print(f"ERROR - {filename}: {e} | time={time.time()-t0:.2f}s")
         return None

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import math
 import re
 import wave
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -237,7 +239,36 @@ def normalize_bpm_penalty(bpm_diff: float) -> float:
     return float(np.clip(bpm_diff / BPM_PENALTY_SCALE, 0.0, 1.0))
 
 
+# Caché de features de query por hash del contenido: el frontend sube el
+# mismo audio en varias peticiones por búsqueda (recomendaciones + un mapa
+# por focus) con rutas temporales distintas, así que la clave es el contenido.
+_QUERY_FEATURE_CACHE: "OrderedDict[str, list[float]]" = OrderedDict()
+_QUERY_FEATURE_CACHE_MAX = 16
+
+
+def _file_sha1(path: Path) -> str:
+    h = hashlib.sha1()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
 def extract_audio_features(path: Path) -> list[float]:
+    cache_key = _file_sha1(path)
+    cached = _QUERY_FEATURE_CACHE.get(cache_key)
+    if cached is not None:
+        _QUERY_FEATURE_CACHE.move_to_end(cache_key)
+        return list(cached)
+
+    features = _extract_audio_features_uncached(path)
+    _QUERY_FEATURE_CACHE[cache_key] = features
+    if len(_QUERY_FEATURE_CACHE) > _QUERY_FEATURE_CACHE_MAX:
+        _QUERY_FEATURE_CACHE.popitem(last=False)
+    return list(features)
+
+
+def _extract_audio_features_uncached(path: Path) -> list[float]:
     audio, sample_rate = read_audio_mono(path)
     if audio.size == 0:
         return [0.0] * 32
@@ -628,6 +659,17 @@ def clean_name_from_path(path: Path) -> str:
 
 def tags_from_metadata(metadata: dict[str, Any], fallback_name: str) -> list[str]:
     tags = metadata.get("tags")
+
+    # En metadata.csv los tags llegan como string "['122', 'bassline', ...]"
+    if isinstance(tags, str) and tags.strip():
+        try:
+            import ast
+            parsed = ast.literal_eval(tags)
+            if isinstance(parsed, (list, tuple)):
+                tags = list(parsed)
+        except (ValueError, SyntaxError):
+            tags = [t.strip(" '\"[]") for t in tags.split(",") if t.strip(" '\"[]")]
+
     if isinstance(tags, list) and tags:
         return [str(tag) for tag in tags[:8]]
 

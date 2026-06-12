@@ -190,8 +190,12 @@ def main():
     parser = argparse.ArgumentParser(
         description="Voice2Sample — genera los 4 modelos KNN de similitud"
     )
-    parser.add_argument("--descriptors_dir", default="./descriptors",
-                        help="Carpeta con rhythmic/melodic/timbre_descriptors.json")
+    _descriptors_default = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "..", "audio_analysis", "descriptors"
+    )
+    parser.add_argument("--descriptors_dir", default=_descriptors_default,
+                        help="Carpeta con rhythmic/melodic/timbre_descriptors.json "
+                             "(default: audio_analysis/descriptors)")
     parser.add_argument("--output_dir", default="./models",
                         help="Carpeta de salida para los .joblib (default: ./models)")
     parser.add_argument("--n_neighbors", type=int, default=10,

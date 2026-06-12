@@ -1,6 +1,6 @@
 # SonicMatch Frontend
 
-SonicMatch is the React/Vite frontend for Voice2Sample. It runs entirely in the browser: the app records or uploads audio, creates a waveform preview, trims the selected region, derives a lightweight audio-search hint, and asks Freesound for real previewable sound results.
+SonicMatch is the React/Vite frontend for Voice2Sample. The app records or uploads audio, creates a waveform preview, trims the selected region, analyzes it in the browser with Essentia.js, and asks the Voice2Sample backend for similar sounds from the local dataset (Essentia KNN or CLAP engine). Freesound metadata is used to enrich the result cards (names, tags, visualizations).
 
 ## Setup
 
@@ -19,7 +19,7 @@ VITE_MAX_FILE_SIZE=52428800
 VITE_SUPPORTED_FORMATS=wav,mp3,ogg,flac,m4a
 ```
 
-There is also a `.env.example` with the same keys.
+Optionally, `VITE_BACKEND_API_BASE` can point to the backend API; by default the dev server proxies `/api` to `http://127.0.0.1:8000` (see `vite.config.ts`), so just start the backend on port 8000.
 
 ## Commands
 
@@ -29,7 +29,7 @@ npm run build
 npm run preview
 ```
 
-Vite serves the app locally, normally at `http://localhost:5173/`.
+Vite serves the app locally at `http://localhost:4173/`.
 
 ## Current Dashboard Flow
 
@@ -46,16 +46,16 @@ Vite serves the app locally, normally at `http://localhost:5173/`.
    Analyze the selected audio segment with Essentia.js descriptors when the user starts analysis.
 
 5. Recommendations  
-   Choose Essentia or CLAP mode, search the backend/Freesound flow, and preview real sound results.
+   Choose the Essentia or CLAP engine and a similarity focus (general, melodic, bpm, timbre), search the backend, and preview the resulting dataset sounds. A 2D similarity map (`SoundMap`) shows the nearest neighbours of the query.
 
-## Freesound Integration
+## Backend and Freesound Integration
 
 The active recommendation flow uses `src/services/recommendations.ts`, `src/services/audioAnalysisService.ts`, and `src/services/freesound.ts`.
 
-- Audio analysis runs in the browser through Web Audio and Essentia.js.
-- Requests stay routed through the existing recommendation and Freesound services.
-- Results are limited to 4 sounds.
-- Preview audio and visualizations come directly from Freesound response metadata.
+- Audio analysis runs in the browser through Web Audio and Essentia.js (display card only; the backend extracts its own features for the search).
+- Recommendations come from the local backend (`POST /api/recommendations`, max 4 results) and the similarity map from `POST /api/map-results` (up to 50 neighbours).
+- Preview audio is served by the backend (`GET /api/dataset-audio/{filename}`).
+- Freesound metadata (names, tags, spectrogram images) enriches the result cards when available.
 
 ## Descriptor Status
 
@@ -71,6 +71,7 @@ graphic_interface_v1/
     App.tsx
     main.tsx
     components/
+      AudioOrbVisualizer.tsx
       AudioWaveform.tsx
       BrandLogo.tsx
       ErrorBoundary.tsx

@@ -241,6 +241,10 @@ class RecommendationAPI {
       formData.append('focus', request.focus);
     }
 
+    if (request.model) {
+      formData.append('model', request.model);
+    }
+
     const response = await fetch(`${BACKEND_API_BASE}/recommendations`, {
       method: 'POST',
       body: formData,

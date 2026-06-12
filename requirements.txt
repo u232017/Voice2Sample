@@ -1,0 +1,44 @@
+# ══════════════════════════════════════════════════════════════════
+#  Voice2Sample — dependencias Python (proyecto completo)
+#
+#  Versiones verificadas en el entorno de desarrollo:
+#  Python 3.12 sobre WSL (Ubuntu). Instalación:
+#
+#      python -m venv .venv
+#      source .venv/bin/activate
+#      pip install -r requirements.txt
+#
+#  Nota: essentia solo se distribuye por pip para Linux/WSL.
+#  El frontend (graphic_interface_v1/) usa npm: cd graphic_interface_v1 && npm install
+# ══════════════════════════════════════════════════════════════════
+
+# ── API backend (FastAPI) ───────────────────────────────────────────
+fastapi==0.136.3
+uvicorn[standard]==0.49.0
+python-multipart==0.0.32
+
+# ── Núcleo científico y audio I/O ───────────────────────────────────
+numpy==1.26.4
+scipy==1.17.1
+soundfile==0.14.0
+
+# ── Modelo Essentia KNN (búsqueda por descriptores acústicos) ───────
+# Los .joblib de models/ se entrenaron con scikit-learn 1.9.0;
+# despicklearlos con otra versión puede dar resultados inconsistentes.
+scikit-learn==1.9.0
+joblib==1.5.3
+
+# ── Extracción de features en tiempo real (audio_analysis/) ─────────
+librosa==0.11.0
+
+# ── Descriptores Essentia para music_all.json (general_features.py) ─
+essentia==2.1b6.dev1389
+
+# ── Modelo CLAP (búsqueda semántica por embeddings) ─────────────────
+# transformers >= 5 exige el kwarg `audio=` en ClapProcessor y devuelve
+# el embedding en .pooler_output (gestionado en backend/clap_recommender.py)
+torch==2.12.0
+transformers==5.10.2
+
+# ── Evaluación cuantitativa (Evaluation/) ───────────────────────────
+rich==15.0.0

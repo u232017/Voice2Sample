@@ -4,76 +4,93 @@ Voice2Sample is a project for producers and developers that makes it easy to sea
 
 **Summary of features**
 - Dataset preparation: convert audio to WAV, clean metadata, and generate CSV files ready for ML.
-- Extraction of acoustic and musical descriptors (timbre, rhythm, melodic) from `audio_analysis/` (uses Essentia).
-- Search for similar samples based on descriptors and embeddings.
+- Extraction of acoustic and musical descriptors (timbre, rhythm, melodic) from `audio_analysis/` (librosa in real time; Essentia for the offline corpus descriptors).
+- Search for similar samples based on descriptors (Essentia KNN) and semantic embeddings (CLAP).
 - Backend API that serves recommendations and a frontend for visualization and interaction.
 
 **Dataset used in this repository**
-- The main collection is located in the `Dataset/` folder.
-	- `Dataset/audio_prueba`: example processed audio used for local testing.
-	- `Dataset/metadata_prueba`: metadata associated with those audio files.
-- The pipeline supports downloading collections from Zenodo (see `download_dataset/zenodo_downloader.py`) and the dependencies listed in `Dataset/readme.md` include `zenodo-get`. Therefore, the intended source for bulk data is Zenodo when using the downloader script; otherwise, you can place audio and metadata manually into the folders above.
+- The main collection lives in the `Dataset/` folder.
+	- `Dataset/audio_processed/`: the processed WAV corpus (48 kHz). **Not versioned in git** — download it with `Dataset/download_dataset/zenodo_downloader.py` or place your own audio there.
+	- `Dataset/Clean_csv/metadata.csv`: metadata for every sound (original Freesound name, author, license, tags, BPM).
+- The search databases derived from the corpus **are versioned**: KNN models (`audio_processing/Processing/models/`), descriptor JSONs (`audio_analysis/descriptors/`) and CLAP embeddings (`Dataset/embeddings_output.json`), so a fresh clone can run searches without retraining anything.
 
 **Repository highlights**
-- `audio_analysis/` — Descriptor extraction and generation of JSON files in `descriptors/` (melodic, timbre, rhythmic, music).
-- `Dataset/` — Audio conversion, JSON→CSV conversion, cleaning and validation (main pipeline in `Dataset/main.py`).
-- `backend/` — FastAPI backend that exposes recommendation endpoints for the UI.
+- `audio_analysis/` — Descriptor extraction (used both in real time by the backend for each query and in batch by `regenerate_descriptors.py` to build `descriptors/` and retrain the models).
+- `Dataset/` — Audio conversion, JSON→CSV conversion, cleaning and validation (main pipeline in `Dataset/main.py`), plus the Zenodo downloader.
+- `audio_processing/Processing/` — KNN similarity models (`train_models.py`, `inference.py`, `models/`).
+- `audio_processing/CLAP/` — CLAP semantic search: original prototype and `regenerate_clap_embeddings.py` to rebuild the embeddings database.
+- `backend/` — FastAPI backend exposing the recommendation and similarity-map endpoints (Essentia KNN + CLAP engines).
 - `graphic_interface_v1/` — Web interface (Vite + React/TypeScript) for uploading/recording audio and displaying results.
-- `Machine_Learning/` — Experiments, embeddings and models for similarity.
+- `Evaluation/` — Quantitative evaluation comparing Essentia KNN vs CLAP (methodology in `Evaluation/README.md`).
 
 **Quick installation and run guide**
+
+> Use WSL (or Linux): `essentia` is only distributed through pip for Linux, and the pinned versions in `requirements.txt` were verified on Python 3.12 under WSL.
+
 1. Create and activate a Python environment:
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate    # Windows PowerShell
-# or: source .venv/bin/activate    # WSL / Linux
+source .venv/bin/activate
 ```
 
-2. Install dependencies:
+2. Install dependencies (single requirements file for the whole project):
 
 ```bash
-pip install -r requeriments.txt
+pip install -r requirements.txt
 ```
 
-3. Prepare or download the dataset (optional):
-- Edit paths in `Dataset/main.py` to point to your audio/metadata folders.
-- To download collections from Zenodo, use `download_dataset/zenodo_downloader.py`.
-
-4. Run the Dataset pipeline:
+3. Download the audio corpus (only the WAVs are missing from git):
 
 ```bash
-cd Dataset
-python main.py
+python Dataset/download_dataset/zenodo_downloader.py
+# the files must end up in Dataset/audio_processed/ (see Dataset/readme.md)
 ```
 
-5. Extract acoustic descriptors:
+4. Run the backend API (from the repository root):
 
 ```bash
-cd audio_analysis
-python main.py
+uvicorn backend.app:app --host 0.0.0.0 --port 8000
 ```
 
-6. Run the backend API (from the repository root):
+   - The first start builds a feature cache for the corpus (a few minutes); later starts are fast.
+   - CLAP loads in the background: wait for `CLAP model loaded — real embedding search enabled` in the log before testing CLAP searches.
 
-```bash
-python -m uvicorn backend.app:app --host 127.0.0.1 --port 8000
-```
-
-7. Start the web interface (optional):
+5. Start the web interface (second terminal):
 
 ```bash
 cd graphic_interface_v1
 npm install
 npm run dev
+# opens http://localhost:4173
 ```
 
-**Important notes**
-- `essentia` does not provide official Windows binaries; using WSL is recommended for analysis with Essentia (`audio_analysis/README.md` and `Dataset/readme.md` include instructions).
-- Make sure `ffmpeg` is installed for audio conversions.
-- By default, the backend uses the files in `Dataset/audio_prueba` and `Dataset/metadata_prueba` for local recommendations; you can change that source by editing the configuration in `backend/app.py`.
+6. (Optional) Quantitative evaluation Essentia vs CLAP:
 
-Would you like me to also add:
-- step-by-step instructions specifically for Windows/WSL,
-- example API request snippets,
-- or a contribution and licensing section?
+```bash
+python Evaluation/evaluacion_cuantitativa.py \
+    --me-json    audio_analysis/descriptors/music_all.json \
+    --models-dir audio_processing/Processing/models \
+    --clap-json  Dataset/embeddings_output.json \
+    --top-k 5
+```
+
+**Rebuilding the search databases (only if the corpus changes)**
+
+The query-time extractors and the database must always come from the same functions, so both rebuild scripts reuse the production extractors:
+
+```bash
+# Descriptors + KNN models (resumable, writes the analysis reports to reports/)
+python audio_analysis/regenerate_descriptors.py --retrain
+
+# CLAP embeddings (resumable)
+python audio_processing/CLAP/regenerate_clap_embeddings.py
+```
+
+Restart the backend afterwards.
+
+**Important notes**
+- `essentia` does not provide official Windows binaries; use WSL (see `audio_analysis/README.md` and `Dataset/readme.md`).
+- The KNN `.joblib` models were trained with scikit-learn 1.9.0 (pinned in `requirements.txt`); unpickling them with another version may give inconsistent results.
+- Make sure `ffmpeg` is installed for audio conversions.
+- The backend reads the corpus from `Dataset/audio_processed/` and the metadata from `Dataset/Clean_csv/metadata.csv` (or `Dataset/metadata_filtered.csv` if present); both paths are configured at the top of `backend/app.py`.
