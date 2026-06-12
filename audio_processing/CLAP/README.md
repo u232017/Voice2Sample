@@ -1,6 +1,30 @@
-# 🎵 Módulo de Machine Learning - Voice2Signal
+# 🎵 Módulo CLAP - Voice2Sample
 
 **Búsqueda de sonidos por imitación vocal utilizando embeddings semánticos**
+
+## 📂 Contenido de la carpeta
+
+| Archivo | Propósito |
+|---------|-----------|
+| `modelo_ml.py` | Prototipo original autocontenido: carga CLAP, indexa `base_datos_audio/` y busca el mejor match (documentado en este README) |
+| `regenerate_clap_embeddings.py` | **Script de producción**: regenera `Dataset/embeddings_output.json` (la base de embeddings que usa el backend) procesando todo `Dataset/audio_processed/`. Es reanudable mediante checkpoint |
+| `export_embeddings_json.py` | Exporta los embeddings del prototipo a JSON |
+| `run_search.py` / `run_search_with_json.py` | Demos de búsqueda por terminal |
+
+> ⚠️ **El extractor de producción vive en `backend/clap_recommender.py`** (modelo `laion/clap-htsat-unfused`). `regenerate_clap_embeddings.py` importa ese mismo módulo, de forma que la base de embeddings y las consultas del usuario se generan siempre con el mismo extractor. El prototipo `modelo_ml.py` usa `laion/clap-htsat-fused` y se conserva como referencia y documentación del enfoque.
+
+### Regenerar la base de embeddings del backend
+
+Solo necesario si cambia el extractor o se añaden audios al dataset:
+
+```bash
+# Desde la raíz del repositorio
+python audio_processing/CLAP/regenerate_clap_embeddings.py
+```
+
+Escribe `Dataset/embeddings_output.json` y guarda un checkpoint (`Dataset/_clap_regen_checkpoint.json`): si se interrumpe, vuelve a lanzarlo y continúa donde estaba.
+
+---
 
 ---
 
@@ -48,47 +72,26 @@ Para aislar las dependencias y evitar conflictos en tu sistema, este módulo req
 
 ---
 
-### Dependencias (en `requeriments.txt`)
-```
-matplotlib
-numpy
-scikit-learn
-torch
-librosa
-transformers
-scipy
-```
+### Dependencias
+
+Todo el proyecto usa un único `requirements.txt` en la raíz del repositorio (incluye `torch`, `transformers`, `librosa`, `scikit-learn`, `numpy`...).
 
 ## 📦 Configuración
 
-### Paso 1: Ponerte en la carpeta de Machine_learning
-Abre la terminal integrada de VS Code (`Terminal > Nuevo Terminal`) y ejecuta:
+### Paso 1: Crear y activar el entorno virtual (desde la raíz del repo)
 ```bash
-CD Deep_learning
+python3 -m venv .venv
+source .venv/bin/activate      # En Windows PowerShell: .venv\Scripts\Activate.ps1
 ```
 
-### Paso 2: Crear y Activar el Entorno Virtual
-Ahora en la misma terminal pero en la carpeta Machine_learning:
+### Paso 2: Instalar dependencias
 ```bash
-1. Crear el entorno virtual
-python -m venv venv
-
-2. Activar entorno
-.\venv\Scripts\Activate.ps1
-
-Si salta error en letras rojas ejecutar primero:
-    Set-ExecutionPolicy Unrestricted -Scope CurrentUser
-
-    Volver a ejecutar .\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
-### Paso 3: Instalar dependencias
+### Paso 3: Ejecutar el prototipo
 ```bash
-pip install -r requeriments.txt
-```
-
-### Paso 4: Ejecutar el Modelo
-```bash
+cd audio_processing/CLAP
 python modelo_ml.py
 ```
 ---
@@ -419,7 +422,7 @@ Audio BD 2:         [0.5, 0.6, 0.7, ...]     → Distancia: 0.85 ✗ MUY DIFEREN
 ```
 ---
 
-**Documento versión:** 1.0  
-**Última actualización:** Abril 2026  
+**Documento versión:** 1.1  
+**Última actualización:** Junio 2026  
 **Autor:** Equipo de Machine Learning
 

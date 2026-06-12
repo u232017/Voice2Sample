@@ -1,219 +1,130 @@
 # 🎵 Audio Analysis - Extracción de Descriptores Musicales
 
-Proyecto para extraer descriptores musicales de archivos de audio usando Essentia.
+Módulo de extracción de descriptores musicales (ritmo, melodía y timbre). Cumple dos funciones:
 
-## 📋 Requisitos Previos
+1. **Extracción en tiempo real (librosa)**: los extractores `rhythmic_features.py`, `melodic_features.py` y `timbre_features.py` analizan cualquier audio al vuelo. El backend los usa para cada consulta del usuario, y `regenerate_descriptors.py` los usa en batch para construir la base de datos del dataset.
+2. **Pipeline batch original (Essentia)**: `main.py` + `general_features.py` extraen los 577 descriptores generales de Essentia (`music_all.json`), que se usan para las estadísticas del dataset y el modelo `knn_essentia` de la evaluación.
 
-- **Python 3.8+** instalado
-- **WSL (Windows Subsystem for Linux)** si estás en Windows
-- Archivo de audio de prueba (ej: `pruebawa.wav`)
+> ⚠️ **Regla de consistencia**: el dataset y la consulta deben pasar por las **mismas funciones de extracción**. Por eso `regenerate_descriptors.py` importa exactamente los mismos extractores que usa el backend en producción. Si se modifica un extractor, hay que regenerar los descriptores y reentrenar los modelos.
 
-## 🚀 Instalación y Configuración
-
-### 0. Instalar y activar wsl
-
-```bash
-#Instalar wsl
-wsl --install
-
-# Activar wsl
-wsl
-```
-
-### 1. Crear Entorno Virtual (Recomendado)
-
-```bash
-# Crear entorno virtual
-python3 -m venv .venv
-
-# Activar entorno virtual
-source .venv/bin/activate
-```
-
-### 2. Actualizar pip
-
-```bash
-# Actualizar pip a la última versión
-pip install --upgrade pip
-```
-
-### 3. Instalar Dependencias
-
-```bash
-# Instalar Essentia (librería principal para análisis de audio)
-pip install essentia
-
-# Instalar otras dependencias necesarias
-pip install numpy matplotlib seaborn scikit-learn
-```
-
-## 🎯 Cómo Ejecutar
-
-### Ejecutar Análisis Completo
-
-```bash
-# Ejecutar el script principal
-python3 main.py
-```
-
-Esto extraerá automáticamente todos los descriptores musicales y los guardará en archivos JSON separados en la carpeta `descriptors/`.
-
-### Archivos Generados
-
-Después de ejecutar, encontrarás estos archivos en la carpeta `descriptors/`:
-
-- `music_all.json` - JSON final fusionado con todos los descriptores generales de `descriptors/music/`
-- `timbre_descriptors.json` - Descriptores de timbre extraídos del JSON general
-- `rhythmic_descriptors.json` - Descriptores rítmicos extraídos del JSON general
-- `melodic_descriptors.json` - Descriptores melódicos extraídos del JSON general
-
-También se crea la carpeta intermedia `descriptors/music/` con un JSON por archivo de audio antes de fusionar.
 ## 📁 Estructura del Proyecto
 
 ```
 audio_analysis/
-├── main.py                    # Script principal de ejecución
-├── general_features.py        # Extracción de descriptores generales
-├── timbre_features.py         # Extracción de descriptores de timbre
-├── rhythmic_features.py       # Extracción de descriptores rítmicos
-├── melodic_features.py        # Extracción de descriptores melódicos
-├── descriptors/               # Carpeta con resultados JSON (generada)
-├── README.md                  # Este archivo
-└── requeriments.txt           # Lista de dependencias
+├── rhythmic_features.py        # Descriptores rítmicos (librosa, 22.05 kHz)
+├── melodic_features.py         # Descriptores melódicos (librosa, 48 kHz)
+├── timbre_features.py          # Descriptores de timbre (librosa, 48 kHz)
+├── regenerate_descriptors.py   # Regenera descriptors/ del dataset y reentrena los KNN
+├── general_features.py         # Descriptores generales con Essentia (pipeline batch)
+├── main.py                     # Pipeline batch original (Essentia, genera music_all.json)
+├── descriptors/                # Base de datos de descriptores del dataset (JSON)
+│   ├── rhythmic_descriptors.json
+│   ├── melodic_descriptors.json
+│   ├── timbre_descriptors.json
+│   └── music_all.json          # Descriptores Essentia (evaluación y estadísticas)
+└── README.md                   # Este archivo
 ```
 
-## 🔧 Funcionalidades
+## 🚀 Instalación
 
-### Descriptores Extraídos
+Todo el proyecto usa un único `requirements.txt` en la raíz del repositorio (verificado en Python 3.12 bajo WSL):
 
-1. **Descriptores Generales** (MusicExtractor)
-   - 577 características agregadas a partir de `MusicExtractor`
-   - Estadísticas `mean` de descriptores `lowlevel`, `rhythm`, `tonal` y `mfcc`
-   - Incluye tempo, energía, brillo espectral, armonía, dinamismo y más
+```bash
+# Desde la raíz del repositorio
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-2. **Descriptores de Timbre**
-   - MFCC (`lowlevel.mfcc.mean`, `lowlevel.mfcc.cov`)
-   - GFCC (`lowlevel.gfcc.mean`, `lowlevel.gfcc.cov`)
-   - Centroid espectral (`lowlevel.spectral_centroid.*`)
-   - Spread espectral (`lowlevel.spectral_spread.*`)
-   - Rolloff espectral (`lowlevel.spectral_rolloff.*`)
-   - Flux espectral (`lowlevel.spectral_flux.*`)
-   - Zero crossing rate (`lowlevel.zerocrossingrate.*`)
+> Essentia solo se distribuye por pip para Linux: usa **WSL** si estás en Windows (`wsl --install` y luego `wsl`). Solo es necesaria para el pipeline batch (`main.py` / `general_features.py`); los extractores en tiempo real funcionan con librosa en cualquier sistema.
 
-3. **Descriptores Rítmicos**
-   - BPM global (`rhythm.bpm`)
-   - Número de beats (`rhythm.beats_count`)
-   - Confianza rítmica basada en loudness (`rhythm.beats_loudness.mean`)
-   - Tasa de onsets (`rhythm.onset_rate`)
-   - Danceability (`rhythm.danceability`)
+## 🎯 Cómo Ejecutar
 
-4. **Descriptores Melódicos**
-   - Pitch promedio, mediano, máximo y mínimo (`lowlevel.pitch_salience.*`)
-   - `pitch_confidence` como desviación estándar de pitch salience
-   - HPCP crest promedio/mediano/máximo/mínimo (`tonal.hpcp_crest.*`)
-   - Entropía de HPCP (`tonal.hpcp_entropy.mean`)
-   - Fuerza de tonalidad según EDMA, Krumhansl y Temperley
+### Regenerar los descriptores del dataset (y reentrenar los KNN)
 
-## ❓ Por qué estos descriptores (y por qué en loops)
+Necesario solo si cambias algún extractor o añades audios al dataset:
 
-He escogido estos descriptores porque representan bien cada aspecto del audio y, además, se benefician del análisis por frames (loops), ya que permiten capturar cambios en el tiempo.
+```bash
+# Desde la raíz del repositorio
+python audio_analysis/regenerate_descriptors.py --retrain
+```
 
----
+- Procesa todos los audios de `Dataset/audio_processed/` en paralelo (configurable con `--workers`).
+- Es **reanudable**: guarda checkpoints cada pocos audios; si se interrumpe, vuelve a lanzarlo y continúa.
+- Escribe los JSON en `audio_analysis/descriptors/` y los informes por audio en `reports/`.
+- Con `--retrain` llama a `audio_processing/Processing/train_models.py` al terminar para reentrenar los 4 modelos KNN.
 
-### 🎼 Melódicos
-- **pitch_mean / pitch_median / pitch_max / pitch_min**: resumen la claridad de pitch detectada por `lowlevel.pitch_salience.*`  
-  👉 Capturan cómo cambia la presencia melódica en el audio, incluso cuando la señal es variable.  
+### Usar los extractores directamente
 
-- **pitch_confidence**: desviación estándar de `lowlevel.pitch_salience`  
-  👉 Mide cuánta variación hay en la detección de pitch; valores bajos indican estimaciones más estables.  
+```python
+from rhythmic_features import extract_rhythmic_descriptors
+from melodic_features import extract_melodic_features
+from timbre_features import extract_timbre_descriptors
 
-- **hpcp_crest_mean / hpcp_crest_median / hpcp_crest_max / hpcp_crest_min**: energía máxima de HPCP (`tonal.hpcp_crest.*`)  
-  👉 Refleja la fuerza armónica de la pista y cómo cambia la concentración de notas.  
+ritmo = extract_rhythmic_descriptors("mi_audio.wav")    # bpm, beats, onset_rate...
+melodia = extract_melodic_features("mi_audio.wav")      # pitch, hpcp, key strength...
+timbre = extract_timbre_descriptors("mi_audio.wav")     # mfcc, gfcc, spectral...
+```
 
-- **hpcp_entropy**: entropía de HPCP (`tonal.hpcp_entropy.mean`)  
-  👉 Indica si la armonía es más ordenada (poca entropía) o más dispersa.  
+### Pipeline batch original (Essentia)
 
-- **key_strength_edma / key_strength_krumhansl / key_strength_temperley**: fuerza de tonalidad según tres algoritmos distintos  
-  👉 Mide cuán clara es la tonalidad bajo diferentes reglas de detección musical.  
+`main.py` recorre los audios, extrae los descriptores generales con `MusicExtractor` de Essentia y fusiona los resultados en `descriptors/music_all.json` (con la carpeta intermedia `descriptors/music/`, un JSON por audio).
 
----
+```bash
+python3 main.py
+```
 
-### 🥁 Rítmicos
-- **bpm**: velocidad global calculada por `rhythm.bpm`  
-  👉 Describe la velocidad base de la pista y sirve de referencia para el ritmo.  
+## 🔧 Descriptores Extraídos
 
-- **beats**: recuento de beats detectados (`rhythm.beats_count`)  
-  👉 Muestra cuántos pulsos rítmicos se identifican en el audio; útil para medir densidad rítmica.  
+### Frecuencias de muestreo
 
-- **beat_confidence**: loudness promedio de los beats (`rhythm.beats_loudness.mean`)  
-  👉 Usa la energía de los beats como proxy de fiabilidad rítmica.  
+| Extractor | Sample rate | Motivo |
+|-----------|-------------|--------|
+| Rítmico | 22 050 Hz | El tempo no necesita alta resolución espectral; es mucho más rápido |
+| Melódico | 48 000 Hz | El dataset está a 48 kHz; remuestrear la query garantiza features comparables |
+| Timbre | 48 000 Hz | Igual que el melódico: las features espectrales dependen del sample rate |
 
-- **onset_rate**: tasa de transitorios detectados (`rhythm.onset_rate`)  
-  👉 Indica cuántos eventos de ataque ocurren por segundo, útil para percusión y articulación.  
+### 🥁 Rítmicos (`rhythmic_features.py`)
+- **bpm**: tempo global estimado con `librosa.feature.tempo` sobre la envolvente de onsets
+- **beats**: número de pulsos estimados a partir del tempo
+- **beat_confidence**: regularidad de los intervalos entre beats (1 = perfectamente regular)
+- **onset_rate**: transitorios detectados por segundo, útil para percusión y articulación
+- **danceability**: proxy combinando regularidad rítmica y densidad de onsets
 
-- **danceability**: medida de bailabilidad (`rhythm.danceability`)  
-  👉 Refleja qué tan “bailable” es la pista según su patrón rítmico.  
+### 🎼 Melódicos (`melodic_features.py`)
+- **pitch_mean / median / max / min**: estadísticas del pitch detectado con `librosa.pyin`
+- **pitch_confidence**: probabilidad media de los frames con voz/tono detectado
+- **hpcp_crest_mean / median / max / min**: concentración de energía por clase de pitch (chroma CQT), refleja la fuerza armónica
+- **hpcp_entropy**: entropía del chroma; armonía ordenada (baja) vs dispersa (alta)
+- **key_strength_edma / krumhansl / temperley**: claridad de la tonalidad según correlación con plantillas mayor/menor
 
----
-
-### 🎧 Tímbricos
-- **mfcc.mean / mfcc.cov**: coeficientes MFCC y su covarianza  
-  👉 Capturan la forma general del espectro y su variabilidad para distinguir sonoridades.  
-
-- **gfcc.mean / gfcc.cov**: coeficientes GFCC y su covarianza  
-  👉 Ofrecen una representación robusta frente al ruido, complementando los MFCC.  
-
-- **spectral_centroid.*:** brillo espectral en media, mediana, máximo, mínimo y desviación estándar  
-  👉 Mide hacia dónde se concentra la energía espectral.  
-
-- **spectral_spread.*:** dispersión espectral en media, mediana, máximo, mínimo y desviación estándar  
-  👉 Indica si la energía está concentrada o dispersa en el espectro.  
-
-- **spectral_rolloff.*:** rolloff espectral en media, mediana, máximo, mínimo y desviación estándar  
-  👉 Indica hasta qué frecuencia se concentra la mayor parte de la energía.  
-
-- **spectral_flux.*:** cambio espectral entre frames en media, mediana, máximo, mínimo y desviación estándar  
-  👉 Mide qué tan rápido varía el espectro, útil para detectar dinámicas y transiciones.  
-
-- **zerocrossingrate.*:** tasa de cruces por cero en media, mediana, máximo, mínimo y desviación estándar  
-  👉 Ayuda a distinguir sonidos tonales de sonidos más ruidosos o percusivos.  
-
----
+### 🎧 Tímbricos (`timbre_features.py`)
+- **mfcc.mean (×13)**: forma general del espectro, para distinguir sonoridades
+- **gfcc.mean / gfcc.cov (×13)**: representación complementaria robusta al ruido (proxy mel)
+- **spectral_centroid / spread / rolloff**: brillo, dispersión y concentración de la energía espectral
+- **spectral_flux**: velocidad de cambio del espectro entre frames
+- **zerocrossingrate**: distingue sonidos tonales de ruidosos/percusivos
 
 ### 🎯 Resumen
-He escogido estos descriptores porque:
-- describen bien **melodía, ritmo y timbre**  
-- permiten analizar la **evolución temporal** mediante loops  
-- capturan tanto información **instantánea (por frame)** como **global (agregada)**  
+Estos descriptores se escogieron porque:
+- describen bien **melodía, ritmo y timbre** de forma independiente, lo que permite los 4 modos de búsqueda
+- capturan tanto información **instantánea (por frame)** como **global (agregada)**
+- son rápidos de calcular en tiempo real para cada consulta del usuario
 
 ## ⚠️ Notas Importantes
 
-- Asegúrate de tener un archivo `pruebawa.wav` en la carpeta raíz
-- Los descriptores se calculan por frame (ventanas de 2048 muestras)
-- Los resultados se guardan automáticamente en JSON para fácil procesamiento posterior
-- El análisis puede tomar tiempo dependiendo del tamaño del archivo de audio
+- Las claves de los JSON generados (`lowlevel.mfcc.mean.0`, `pitch_mean`, `bpm`...) deben coincidir con las columnas con las que se entrenaron los modelos KNN (`audio_processing/Processing/models/columnas_*.joblib`).
+- Si un audio es silencioso o inválido, los extractores devuelven `None` y lo registran en el informe.
+- Test de sanidad tras regenerar: buscar un audio del propio dataset debe devolverlo a sí mismo en el puesto 1 con distancia 0.
 
 ## 🐛 Solución de Problemas
 
-### Error: "Audio file not found"
-- Verifica que `pruebawa.wav` esté en la carpeta correcta
-- Asegúrate de que el archivo no esté corrupto
-
 ### Error: "Module 'essentia' not found"
-- Activa el entorno virtual: `source .venv/bin/activate`
-- Reinstala Essentia: `pip install essentia`
+- Solo afecta al pipeline batch (`main.py`). Activa el entorno (`source .venv/bin/activate`) y reinstala desde la raíz: `pip install -r requirements.txt` (en WSL/Linux).
 
-### Error: "ndarray is not JSON serializable"
-- Ya está solucionado en el código actual
-- Los arrays numpy se convierten automáticamente a listas
-
-## 📚 Dependencias Técnicas
-
-- **Essentia** - Framework de análisis de audio
-- **NumPy** - Computación numérica
-- **JSON** - Serialización de datos (incluido en Python)
+### La búsqueda devuelve similitudes absurdas tras tocar un extractor
+- Dataset y query ya no son comparables. Regenera: `python audio_analysis/regenerate_descriptors.py --retrain`.
 
 ---
 
 **Proyecto desarrollado para análisis de señales musicales usando técnicas de machine learning.**
-

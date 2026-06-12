@@ -32,11 +32,16 @@ import sys
 #  Configuración por defecto
 # ─────────────────────────────────────────────────────────────
 
-DESCRIPTORS_DIR = "./descriptors"
-MODELS_DIR      = "./models"
+# Los descriptores del dataset viven en audio_analysis/descriptors/
+# (los genera audio_analysis/regenerate_descriptors.py)
+DESCRIPTORS_DIR = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), "..", "..", "audio_analysis", "descriptors"
+)
+MODELS_DIR      = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
 N_NEIGHBORS     = 10
 TOP_K_DEFAULT   = 5
-MODOS           = ["ritmo", "melodia", "timbre", "general", "essentia"]
+# "essentia" no es un modo de búsqueda (knn_essentia se entrena solo para la evaluación)
+MODOS           = ["ritmo", "melodia", "timbre", "general"]
 
 
 # ─────────────────────────────────────────────────────────────

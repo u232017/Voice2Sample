@@ -90,12 +90,14 @@ Audio Query                                 Resultados
 
 ### Entrada: Descriptores JSON Consolidados
 
+Los descriptores del dataset viven en **`audio_analysis/descriptors/`** (los genera `audio_analysis/regenerate_descriptors.py` con los mismos extractores que usa el backend en cada consulta):
+
 ```
-descriptors/
+audio_analysis/descriptors/
 ├── rhythmic_descriptors.json      # {audio_id: {bpm, beat_conf, ...}}
 ├── melodic_descriptors.json       # {audio_id: {pitch, hpcp, ...}}
 ├── timbre_descriptors.json        # {audio_id: {mfcc, gfcc, spectral...}}
-└── music_all.json                 # Descriptores Essentia pre-calculados
+└── music_all.json                 # Descriptores Essentia (solo para knn_essentia, usado en la evaluación)
 ```
 
 **Formato esperado** (ejemplo):
@@ -130,7 +132,8 @@ models/
 ├── columnas_ritmo.joblib          # Nombres de features (ritmo)
 ├── columnas_melodia.joblib        # Nombres de features (melodía)
 ├── columnas_timbre.joblib         # Nombres de features (timbre)
-└── columnas_general.joblib        # Nombres de features (combinado)
+├── columnas_general.joblib        # Nombres de features (combinado)
+└── knn_essentia / meta / columnas # Quinto modelo (music_all.json), solo para la evaluación
 ```
 
 ---
@@ -162,7 +165,7 @@ python main.py --solo_buscar --audio ./sample.wav --todos_los_modos
 ```
 
 **Configuración por defecto**:
-- Directorio de descriptores: `./descriptors`
+- Directorio de descriptores: `../../audio_analysis/descriptors`
 - Directorio de salida de modelos: `./models`
 - Número de vecinos: 10
 - Top-K resultados: 5
@@ -280,7 +283,7 @@ features = extraer_features("audio.wav", modo="timbre")
 
 1. **Python 3.8 o superior** instalado en tu sistema
 2. **Git** (para clonar el repositorio)
-3. **Descriptores JSON consolidados** en `./descriptors/`:
+3. **Descriptores JSON consolidados** en `audio_analysis/descriptors/` (ya versionados en el repo; se regeneran con `audio_analysis/regenerate_descriptors.py`):
    - `rhythmic_descriptors.json`
    - `melodic_descriptors.json`
    - `timbre_descriptors.json`
@@ -344,16 +347,8 @@ ls
 # Actualizar pip (recomendado)
 pip install --upgrade pip
 
-# Instalar todas las dependencias del proyecto
-pip install -r requirements.txt
-```
-
-**Salida esperada**:
-```
-Collecting numpy>=1.21.0,<2.0
-  Downloading numpy-1.24.3-cp38-cp38-linux_x86_64.whl (14.6 MB)
-  ...
-Successfully installed numpy-1.24.3 pandas-2.0.2 scipy-1.11.1 scikit-learn-1.3.0 joblib-1.3.1
+# Instalar todas las dependencias del proyecto (requirements.txt único en la raíz del repo)
+pip install -r ../../requirements.txt
 ```
 
 
@@ -458,5 +453,5 @@ Módulo: Processing (Entrenamiento e Inferencia)
 
 ---
 
-**Última actualización**: Mayo 2026  
-**Versión**: 2.0 (Refactorizado con 4 Modelos KNN Independientes)
+**Última actualización**: Junio 2026  
+**Versión**: 2.1 (4 modelos KNN de búsqueda + knn_essentia para evaluación; descriptores centralizados en `audio_analysis/descriptors/`)
