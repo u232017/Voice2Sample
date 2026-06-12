@@ -127,4 +127,4 @@ Estos descriptores se escogieron porque:
 
 ---
 
-**Proyecto desarrollado para análisis de señales musicales usando técnicas de machine learning.**
+**Hecho por el equipo de Voice2Sample.**

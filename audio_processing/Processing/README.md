@@ -446,12 +446,4 @@ Audio query: sample.wav
 
 ---
 
-## 📄 Licencia
-
-Proyecto: Voice2Sample — Query by Vocal Imitation  
-Módulo: Processing (Entrenamiento e Inferencia)
-
----
-
-**Última actualización**: Junio 2026  
-**Versión**: 2.1 (4 modelos KNN de búsqueda + knn_essentia para evaluación; descriptores centralizados en `audio_analysis/descriptors/`)
+**Hecho por el equipo de Voice2Sample.**
