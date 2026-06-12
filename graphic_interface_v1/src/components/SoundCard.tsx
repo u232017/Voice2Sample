@@ -86,7 +86,7 @@ export const SoundCard: React.FC<SoundCardProps> = ({ sound }) => {
 
         <div className="compact-result-title">
           <div>
-            <h3>{sound.name}</h3>
+            <h3 title={sound.name}>{sound.name}</h3>
             <p>{owner}</p>
           </div>
         </div>

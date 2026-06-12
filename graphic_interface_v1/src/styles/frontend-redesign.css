@@ -1894,6 +1894,15 @@ audio {
   font-size: 0.92rem;
   font-weight: 800;
   line-height: 1.2;
+  /* Los nombres del dataset son un único token sin espacios
+     (p. ej. 20140316_attackloop_120BPM_...): sin esto no pueden
+     romper línea y desbordan la tarjeta, empujando el % de
+     similitud fuera de la pantalla. Máximo 2 líneas con elipsis. */
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .compact-result-title p,
