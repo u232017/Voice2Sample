@@ -696,12 +696,14 @@ export function RecordUpload() {
                 <div className="results-rack-header workstation-results-header">
                   <div className="results-title-cluster">
                     <div>
-                      <span>Recommended samples</span>
+                      <div className="results-kicker-row">
+                        <span>Recommended samples</span>
+                        <small className="results-count-badge">
+                          {results.length} result{results.length === 1 ? '' : 's'}
+                        </small>
+                      </div>
                       <strong>Closest matches</strong>
                     </div>
-                    <small className="results-count-badge">
-                      {results.length} result{results.length === 1 ? '' : 's'}
-                    </small>
                   </div>
 
                   <div className="results-header-actions">
@@ -735,7 +737,7 @@ export function RecordUpload() {
                 </div>
 
                 <div className="recommendation-list">
-                  {results.slice(0, 4).map((sound) => (
+                  {results.map((sound) => (
                     <SoundCard key={sound.id} sound={sound} />
                   ))}
                 </div>

@@ -10,6 +10,25 @@
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
+// La tarjeta de análisis es informativa: analizar más de este tiempo no
+// mejora los descriptores mostrados y dispara el coste en WASM monohilo.
+// Si la selección es más larga, se analiza la ventana central.
+const MAX_ANALYSIS_SECONDS = 15;
+
+function limitAnalysisWindow(
+  samples: Float32Array,
+  sampleRate: number
+): Float32Array {
+  const maxSamples = Math.floor(MAX_ANALYSIS_SECONDS * sampleRate);
+
+  if (samples.length <= maxSamples) {
+    return samples;
+  }
+
+  const start = Math.floor((samples.length - maxSamples) / 2);
+  return samples.subarray(start, start + maxSamples);
+}
+
 type DescriptorProvenance = {
   source: 'essentia.js';
   note?: string;
@@ -286,8 +305,10 @@ function extractSpectralDescriptors(
     };
   }
 
+  // Hop grande a propósito: para el promedio de rolloff/flatness de la
+  // tarjeta no hace falta solapar frames, y reduce 4× las llamadas WASM.
   const frameSize = 2048;
-  const hopSize = 1024;
+  const hopSize = 4096;
   let rolloffSum = 0;
   let rolloffCount = 0;
   let flatnessSum = 0;
@@ -454,7 +475,9 @@ function extractMelodyDescriptors(
       2048,
       false,
       0.8,
-      128,
+      // hop 512 (≈12 ms): 4× menos frames que el default 128. Para el
+      // pitch promedio de la tarjeta la pérdida de resolución es irrelevante.
+      512,
       1,
       40,
       20000,
@@ -543,6 +566,36 @@ function extractMelodyDescriptors(
   }
 }
 
+function confidenceFromTicks(ticks: number[]): number | null {
+  if (ticks.length < 3) {
+    return null;
+  }
+
+  const intervals: number[] = [];
+
+  for (let index = 1; index < ticks.length; index += 1) {
+    const interval = ticks[index] - ticks[index - 1];
+
+    if (interval > 0) {
+      intervals.push(interval);
+    }
+  }
+
+  if (intervals.length < 2) {
+    return null;
+  }
+
+  const mean =
+    intervals.reduce((sum, value) => sum + value, 0) / intervals.length;
+  const variance =
+    intervals.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+    intervals.length;
+  const variation = Math.sqrt(variance) / mean;
+
+  // Beats perfectamente regulares → 1; variación del 50 % o más → 0.
+  return clamp(1 - variation * 2, 0, 1);
+}
+
 function extractRhythmDescriptors(
   essentia: EssentiaInstance,
   vector: unknown,
@@ -577,37 +630,48 @@ function extractRhythmDescriptors(
       rhythm,
       ['bpm']
     );
+
+    if (rhythm) {
+      confidence = confidenceFromTicks(
+        readVector(rhythm.ticks, essentia)
+      );
+    }
   } catch (error) {
     console.warn('Essentia.js could not calculate BPM in worker.', error);
   }
 
-  try {
-    const rhythm2013 = essentia.RhythmExtractor2013?.(
-      vector,
-      208,
-      'multifeature',
-      40
-    );
+  // RhythmExtractor2013 'multifeature' es el algoritmo más lento de la
+  // tarjeta de análisis: solo se usa como respaldo si el extractor
+  // rápido no encontró BPM.
+  if (bpm === null || bpm <= 0) {
+    try {
+      const rhythm2013 = essentia.RhythmExtractor2013?.(
+        vector,
+        208,
+        'multifeature',
+        40
+      );
 
-    const extractedConfidence = readNumber(
-      rhythm2013,
-      ['confidence']
-    );
+      const extractedConfidence = readNumber(
+        rhythm2013,
+        ['confidence']
+      );
 
-    if (extractedConfidence !== null) {
-      confidence = clamp(extractedConfidence, 0, 1);
+      if (extractedConfidence !== null) {
+        confidence = clamp(extractedConfidence, 0, 1);
+      }
+
+      const extractedBpm = readNumber(
+        rhythm2013,
+        ['bpm']
+      );
+
+      if (extractedBpm !== null && extractedBpm > 0) {
+        bpm = extractedBpm;
+      }
+    } catch (error) {
+      console.warn('Essentia.js could not calculate rhythm confidence in worker.', error);
     }
-
-    const extractedBpm = readNumber(
-      rhythm2013,
-      ['bpm']
-    );
-
-    if (!bpm && extractedBpm !== null && extractedBpm > 0) {
-      bpm = extractedBpm;
-    }
-  } catch (error) {
-    console.warn('Essentia.js could not calculate rhythm confidence in worker.', error);
   }
 
   try {
@@ -626,22 +690,30 @@ function extractRhythmDescriptors(
   };
 }
 
-async function loadEssentia(): Promise<EssentiaInstance> {
-  const [{ EssentiaWASM }, { default: Essentia }] = await Promise.all([
-    import('essentia.js/dist/essentia-wasm.es.js'),
-    import('essentia.js/dist/essentia.js-core.es.js'),
-  ]);
+// El módulo WASM y la instancia se cargan una única vez por worker:
+// recrearlos en cada análisis añadía segundos a cada ejecución.
+let essentiaPromise: Promise<EssentiaInstance> | null = null;
 
-  const EssentiaClass = Essentia as EssentiaConstructor;
+function loadEssentia(): Promise<EssentiaInstance> {
+  if (!essentiaPromise) {
+    essentiaPromise = Promise.all([
+      import('essentia.js/dist/essentia-wasm.es.js'),
+      import('essentia.js/dist/essentia.js-core.es.js'),
+    ]).then(([{ EssentiaWASM }, { default: Essentia }]) => {
+      const EssentiaClass = Essentia as EssentiaConstructor;
+      return new EssentiaClass(EssentiaWASM, false);
+    });
+  }
 
-  return new EssentiaClass(EssentiaWASM, false);
+  return essentiaPromise;
 }
 
 async function extractWithEssentia(
-  samples: Float32Array,
+  inputSamples: Float32Array,
   sampleRate: number
 ): Promise<WorkerBaseValues> {
   const essentia = await loadEssentia();
+  const samples = limitAnalysisWindow(inputSamples, sampleRate);
   const vector = essentia.arrayToVector(samples);
   const missing: string[] = [];
 

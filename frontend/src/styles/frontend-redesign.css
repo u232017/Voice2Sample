@@ -1756,6 +1756,13 @@ audio {
   display: grid;
   gap: 0.72rem;
   width: min(100%, 960px);
+  /* Con hasta 10 resultados, la lista hace scroll propio en vez de
+     estirar la página entera. La altura deja ver ~4 tarjetas completas. */
+  max-height: 1430px;
+  overflow-y: auto;
+  padding-right: 0.35rem;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(76, 255, 136, 0.35) transparent;
 }
 
 .compact-result-card {
@@ -2939,10 +2946,11 @@ audio {
 }
 
 .workstation-results-header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
   gap: 0.9rem;
-  align-items: start;
   margin-top: 0.25rem;
   margin-bottom: 0.92rem;
 }
@@ -2956,6 +2964,16 @@ audio {
 
 .results-title-cluster > div {
   min-width: 0;
+  display: grid;
+  gap: 0.4rem;
+  justify-items: start;
+}
+
+.results-kicker-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .results-count-badge {
@@ -2974,10 +2992,15 @@ audio {
 }
 
 .results-header-actions {
-  display: grid;
-  grid-template-columns: auto minmax(280px, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.72rem;
   align-items: stretch;
+  min-width: 0;
+}
+
+.results-header-actions .premium-map-trigger {
+  flex: 1 1 260px;
 }
 
 .results-context-pill {

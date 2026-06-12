@@ -399,9 +399,19 @@ class AudioAnalysisService {
 
   private extractWithEssentiaInstance(
     essentia: EssentiaInstance,
-    samples: Float32Array,
+    inputSamples: Float32Array,
     sampleRate: number
   ): BaseValues {
+    // Mismo recorte que el worker: analizar más de 15 s no mejora la
+    // tarjeta y dispara el coste en WASM monohilo.
+    const maxSamples = Math.floor(15 * sampleRate);
+    const samples =
+      inputSamples.length > maxSamples
+        ? inputSamples.subarray(
+            Math.floor((inputSamples.length - maxSamples) / 2),
+            Math.floor((inputSamples.length - maxSamples) / 2) + maxSamples
+          )
+        : inputSamples;
     const vector = essentia.arrayToVector(samples);
     const missing: string[] = [];
 
@@ -523,8 +533,10 @@ class AudioAnalysisService {
       };
     }
 
+    // Sin solapamiento: para el promedio de rolloff/flatness de la tarjeta
+    // basta, y reduce 4× las llamadas WASM (igual que en essentiaWorker).
     const frameSize = 2048;
-    const hopSize = 1024;
+    const hopSize = 4096;
     let rolloffSum = 0;
     let rolloffCount = 0;
     let flatnessSum = 0;
@@ -628,7 +640,9 @@ class AudioAnalysisService {
         2048,
         false,
         0.8,
-        128,
+        // hop 512 (≈12 ms): 4× menos frames que el default 128, igual que
+        // en essentiaWorker.
+        512,
         1,
         40,
         20000,
@@ -717,6 +731,36 @@ class AudioAnalysisService {
     }
   }
 
+  private confidenceFromTicks(ticks: number[]): number | null {
+    if (ticks.length < 3) {
+      return null;
+    }
+
+    const intervals: number[] = [];
+
+    for (let index = 1; index < ticks.length; index += 1) {
+      const interval = ticks[index] - ticks[index - 1];
+
+      if (interval > 0) {
+        intervals.push(interval);
+      }
+    }
+
+    if (intervals.length < 2) {
+      return null;
+    }
+
+    const mean =
+      intervals.reduce((sum, value) => sum + value, 0) / intervals.length;
+    const variance =
+      intervals.reduce((sum, value) => sum + (value - mean) ** 2, 0) /
+      intervals.length;
+    const variation = Math.sqrt(variance) / mean;
+
+    // Beats perfectamente regulares → 1; variación del 50 % o más → 0.
+    return clamp(1 - variation * 2, 0, 1);
+  }
+
   private extractRhythmDescriptors(
     essentia: EssentiaInstance,
     vector: unknown,
@@ -751,37 +795,47 @@ class AudioAnalysisService {
         rhythm,
         ['bpm']
       );
+
+      if (rhythm) {
+        confidence = this.confidenceFromTicks(
+          this.readVector(rhythm.ticks, essentia)
+        );
+      }
     } catch (error) {
       console.warn('Essentia.js could not calculate BPM.', error);
     }
 
-    try {
-      const rhythm2013 = essentia.RhythmExtractor2013?.(
-        vector,
-        208,
-        'multifeature',
-        40
-      );
+    // RhythmExtractor2013 'multifeature' es el algoritmo más lento del
+    // análisis: solo como respaldo si el extractor rápido no encontró BPM.
+    if (bpm === null || bpm <= 0) {
+      try {
+        const rhythm2013 = essentia.RhythmExtractor2013?.(
+          vector,
+          208,
+          'multifeature',
+          40
+        );
 
-      const extractedConfidence = this.readNumber(
-        rhythm2013,
-        ['confidence']
-      );
+        const extractedConfidence = this.readNumber(
+          rhythm2013,
+          ['confidence']
+        );
 
-      if (extractedConfidence !== null) {
-        confidence = clamp(extractedConfidence, 0, 1);
+        if (extractedConfidence !== null) {
+          confidence = clamp(extractedConfidence, 0, 1);
+        }
+
+        const extractedBpm = this.readNumber(
+          rhythm2013,
+          ['bpm']
+        );
+
+        if (extractedBpm !== null && extractedBpm > 0) {
+          bpm = extractedBpm;
+        }
+      } catch (error) {
+        console.warn('Essentia.js could not calculate rhythm confidence.', error);
       }
-
-      const extractedBpm = this.readNumber(
-        rhythm2013,
-        ['bpm']
-      );
-
-      if (!bpm && extractedBpm !== null && extractedBpm > 0) {
-        bpm = extractedBpm;
-      }
-    } catch (error) {
-      console.warn('Essentia.js could not calculate rhythm confidence.', error);
     }
 
     try {
