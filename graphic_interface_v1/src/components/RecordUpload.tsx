@@ -297,28 +297,6 @@ export function RecordUpload() {
           : undefined,
       trimSelection: trimSelection || undefined,
       frontendAnalysis: analysis,
-      essentiaPayload:
-        recommendationModel === 'essentia' && analysis && trimSelection
-          ? {
-              model: 'essentia' as const,
-              focus,
-              trim: trimSelection,
-              descriptors: analysis.descriptors,
-              suggestedQuery: audioAnalysisService.createEssentiaQuery(
-                analysis.descriptors,
-                focus,
-                currentAudio?.name
-              ),
-            }
-          : null,
-      clapPayload:
-        recommendationModel === 'clap' && trimSelection
-          ? {
-              model: 'clap' as const,
-              trim: trimSelection,
-              note: 'CLAP search is expected to be handled by the backend using audio embeddings.' as const,
-            }
-          : null,
     };
   };
 

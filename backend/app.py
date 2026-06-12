@@ -61,7 +61,13 @@ except Exception as _clap_e:
 ROOT_DIR = Path(__file__).resolve().parents[1]
 DATASET_DIR = ROOT_DIR / "Dataset"
 DATASET_AUDIO_DIR = DATASET_DIR / "audio_processed"
-DATASET_METADATA_PATH = DATASET_DIR / "metadata_filtered.csv"
+# metadata_filtered.csv tiene prioridad si existe; si no, el CSV completo
+# de Clean_csv (contiene id, name original de Freesound, username, licencia, bpm…)
+_METADATA_CANDIDATES = (
+    DATASET_DIR / "metadata_filtered.csv",
+    DATASET_DIR / "Clean_csv" / "metadata.csv",
+)
+DATASET_METADATA_PATH = next((p for p in _METADATA_CANDIDATES if p.exists()), _METADATA_CANDIDATES[0])
 CACHE_DIR = ROOT_DIR / "backend" / "cache"
 DATASET_FEATURE_CACHE = CACHE_DIR / "dataset_features.json"
 UPLOAD_TMP_DIR = ROOT_DIR / "backend" / "tmp"
@@ -153,12 +159,10 @@ def _dataset_sound_payload(item: Any, similarity: float | None = None, distance:
 
 # Map frontend focus names to inference.py mode names
 _FOCUS_TO_MODO = {
-    "general":  "general",
-    "melodic":  "melodia",
-    "bpm":      "ritmo",
-    "timbre":   "timbre",
-    "energy":   "general",   # no dedicated energy model, use general
-    "essentia": "essentia",
+    "general": "general",
+    "melodic": "melodia",
+    "bpm":     "ritmo",
+    "timbre":  "timbre",
 }
 
 

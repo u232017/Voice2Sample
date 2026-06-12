@@ -628,6 +628,17 @@ def clean_name_from_path(path: Path) -> str:
 
 def tags_from_metadata(metadata: dict[str, Any], fallback_name: str) -> list[str]:
     tags = metadata.get("tags")
+
+    # En metadata.csv los tags llegan como string "['122', 'bassline', ...]"
+    if isinstance(tags, str) and tags.strip():
+        try:
+            import ast
+            parsed = ast.literal_eval(tags)
+            if isinstance(parsed, (list, tuple)):
+                tags = list(parsed)
+        except (ValueError, SyntaxError):
+            tags = [t.strip(" '\"[]") for t in tags.split(",") if t.strip(" '\"[]")]
+
     if isinstance(tags, list) and tags:
         return [str(tag) for tag in tags[:8]]
 

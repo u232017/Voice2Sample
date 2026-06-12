@@ -39,7 +39,7 @@ from feature_extractors import extraer_features
 #  Constantes
 # ─────────────────────────────────────────────────────────────
 
-MODOS_VALIDOS = ("ritmo", "melodia", "timbre", "general", "essentia")
+MODOS_VALIDOS = ("ritmo", "melodia", "timbre", "general")
 
 
 # ─────────────────────────────────────────────────────────────

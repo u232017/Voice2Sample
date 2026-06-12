@@ -1,0 +1,909 @@
+Dataset: 2503 audios | workers=8
+Checkpoint: 0 ya procesados, 2503 pendientes
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=604
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=733
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=741
+  warnings.warn(
+  25/2503 | 0.33 audios/s | ETA 127 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=917
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=605
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=586
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=576
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=600
+  warnings.warn(
+  50/2503 | 0.47 audios/s | ETA 87 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=587
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=592
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=589
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=615
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=581
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=585
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=597
+  warnings.warn(
+  75/2503 | 0.57 audios/s | ETA 71 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=585
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=618
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=588
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=618
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=581
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=592
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=583
+  warnings.warn(
+  100/2503 | 0.60 audios/s | ETA 67 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=572
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=767
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=596
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=707
+  warnings.warn(
+  125/2503 | 0.61 audios/s | ETA 65 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=925
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=921
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=925
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=925
+  warnings.warn(
+  150/2503 | 0.60 audios/s | ETA 65 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=954
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=954
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/pitch.py:103: UserWarning: Trying to estimate tuning from empty frequency set.
+  return pitch_tuning(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=903
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=961
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=903
+  warnings.warn(
+  175/2503 | 0.62 audios/s | ETA 62 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=569
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=591
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=612
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=818
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=826
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=825
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/pitch.py:103: UserWarning: Trying to estimate tuning from empty frequency set.
+  return pitch_tuning(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=596
+  warnings.warn(
+  200/2503 | 0.65 audios/s | ETA 59 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=650
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=639
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=985
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=870
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=677
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=569
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=647
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=905
+  warnings.warn(
+  225/2503 | 0.66 audios/s | ETA 57 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=891
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=611
+  warnings.warn(
+  250/2503 | 0.63 audios/s | ETA 59 min
+  275/2503 | 0.61 audios/s | ETA 60 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=922
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=872
+  warnings.warn(
+  300/2503 | 0.61 audios/s | ETA 60 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=936
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=954
+  warnings.warn(
+  325/2503 | 0.60 audios/s | ETA 60 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=848
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=849
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=849
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=847
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=848
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=849
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=849
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=851
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=850
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=851
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=851
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=850
+  warnings.warn(
+  350/2503 | 0.62 audios/s | ETA 58 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=825
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=669
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=663
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=569
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=596
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=688
+  warnings.warn(
+  375/2503 | 0.61 audios/s | ETA 58 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=825
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=898
+  warnings.warn(
+  400/2503 | 0.62 audios/s | ETA 57 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=898
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=948
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=956
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=601
+  warnings.warn(
+  425/2503 | 0.62 audios/s | ETA 56 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=601
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=672
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+  450/2503 | 0.62 audios/s | ETA 55 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=984
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=984
+  warnings.warn(
+  475/2503 | 0.61 audios/s | ETA 55 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=638
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=671
+  warnings.warn(
+  500/2503 | 0.60 audios/s | ETA 55 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=676
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=799
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=619
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=627
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=592
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=623
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=588
+  warnings.warn(
+  525/2503 | 0.60 audios/s | ETA 55 min
+  550/2503 | 0.59 audios/s | ETA 55 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=620
+  warnings.warn(
+  575/2503 | 0.58 audios/s | ETA 55 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=617
+  warnings.warn(
+  600/2503 | 0.59 audios/s | ETA 54 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=620
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=689
+  warnings.warn(
+  625/2503 | 0.58 audios/s | ETA 54 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=832
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+  650/2503 | 0.57 audios/s | ETA 54 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=951
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=832
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=824
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=622
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=975
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=629
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=657
+  warnings.warn(
+  675/2503 | 0.58 audios/s | ETA 53 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=922
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1006
+  warnings.warn(
+  700/2503 | 0.57 audios/s | ETA 53 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=688
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/pitch.py:103: UserWarning: Trying to estimate tuning from empty frequency set.
+  return pitch_tuning(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=619
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=620
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=619
+  warnings.warn(
+  725/2503 | 0.57 audios/s | ETA 52 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=620
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=619
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=620
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/pitch.py:103: UserWarning: Trying to estimate tuning from empty frequency set.
+  return pitch_tuning(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=620
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=627
+  warnings.warn(
+  750/2503 | 0.56 audios/s | ETA 52 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=629
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=964
+  warnings.warn(
+  775/2503 | 0.56 audios/s | ETA 51 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=926
+  warnings.warn(
+  800/2503 | 0.56 audios/s | ETA 50 min
+  825/2503 | 0.57 audios/s | ETA 49 min
+  850/2503 | 0.57 audios/s | ETA 49 min
+  875/2503 | 0.57 audios/s | ETA 48 min
+  900/2503 | 0.57 audios/s | ETA 47 min
+  925/2503 | 0.57 audios/s | ETA 46 min
+  950/2503 | 0.57 audios/s | ETA 45 min
+  975/2503 | 0.57 audios/s | ETA 45 min
+  1000/2503 | 0.57 audios/s | ETA 44 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=682
+  warnings.warn(
+  1025/2503 | 0.57 audios/s | ETA 43 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=601
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=665
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=663
+  warnings.warn(
+  1050/2503 | 0.57 audios/s | ETA 43 min
+  1075/2503 | 0.55 audios/s | ETA 43 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=939
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=626
+  warnings.warn(
+  1100/2503 | 0.55 audios/s | ETA 43 min
+  1125/2503 | 0.55 audios/s | ETA 42 min
+  1150/2503 | 0.55 audios/s | ETA 41 min
+  1175/2503 | 0.55 audios/s | ETA 40 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=629
+  warnings.warn(
+  1200/2503 | 0.55 audios/s | ETA 39 min
+  1225/2503 | 0.55 audios/s | ETA 38 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=997
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1023
+  warnings.warn(
+  1250/2503 | 0.55 audios/s | ETA 38 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=607
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=583
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+  1275/2503 | 0.56 audios/s | ETA 37 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=835
+  warnings.warn(
+  1300/2503 | 0.56 audios/s | ETA 36 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=825
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=825
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=707
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=937
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=708
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=708
+  warnings.warn(
+  1325/2503 | 0.56 audios/s | ETA 35 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=708
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=592
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=592
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=618
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=873
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=656
+  warnings.warn(
+  1350/2503 | 0.56 audios/s | ETA 34 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=925
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=915
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=833
+  warnings.warn(
+  1375/2503 | 0.55 audios/s | ETA 34 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=791
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=751
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=742
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=742
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=742
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=751
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=751
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=742
+  warnings.warn(
+  1400/2503 | 0.55 audios/s | ETA 33 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=746
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=587
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=577
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=615
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=623
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=625
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=676
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=576
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=676
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=618
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=757
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=621
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+  1425/2503 | 0.56 audios/s | ETA 32 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=840
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=777
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=582
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=825
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1023
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=633
+  warnings.warn(
+  1450/2503 | 0.56 audios/s | ETA 31 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1013
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=573
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=826
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=581
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=637
+  warnings.warn(
+  1475/2503 | 0.56 audios/s | ETA 31 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=628
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=661
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=645
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=645
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=645
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=645
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=645
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=629
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=645
+  warnings.warn(
+  1500/2503 | 0.56 audios/s | ETA 30 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=823
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=895
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=820
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=763
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=883
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=652
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=581
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=581
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=581
+  warnings.warn(
+  1525/2503 | 0.56 audios/s | ETA 29 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=564
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=624
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=629
+  warnings.warn(
+  1550/2503 | 0.56 audios/s | ETA 28 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=678
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=681
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=679
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=681
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=681
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=677
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=667
+  warnings.warn(
+  1575/2503 | 0.56 audios/s | ETA 28 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=715
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=715
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=715
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=715
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=618
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=618
+  warnings.warn(
+  1600/2503 | 0.56 audios/s | ETA 27 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=578
+  warnings.warn(
+  1625/2503 | 0.55 audios/s | ETA 26 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1001
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=766
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=988
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=737
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=798
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=753
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=736
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=856
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=746
+  warnings.warn(
+  1650/2503 | 0.55 audios/s | ETA 26 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=873
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=616
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=616
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=616
+  warnings.warn(
+  1675/2503 | 0.55 audios/s | ETA 25 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=616
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=616
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=616
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=616
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=615
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=579
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=575
+  warnings.warn(
+  1700/2503 | 0.55 audios/s | ETA 24 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1021
+  warnings.warn(
+  1725/2503 | 0.55 audios/s | ETA 23 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=924
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=921
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=921
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=921
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=780
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=635
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=979
+  warnings.warn(
+  1750/2503 | 0.55 audios/s | ETA 23 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=738
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=981
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=746
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=664
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=984
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=984
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=984
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=983
+  warnings.warn(
+  1775/2503 | 0.56 audios/s | ETA 22 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=976
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=903
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=904
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=898
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=926
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=985
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=926
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=782
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=916
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+  1800/2503 | 0.56 audios/s | ETA 21 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=914
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=936
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=932
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=936
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=936
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=936
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=936
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=936
+  warnings.warn(
+  1825/2503 | 0.56 audios/s | ETA 20 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=915
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=915
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=916
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=915
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=915
+  warnings.warn(
+  1850/2503 | 0.57 audios/s | ETA 19 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=617
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=586
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+  1875/2503 | 0.57 audios/s | ETA 18 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=674
+  warnings.warn(
+  1900/2503 | 0.57 audios/s | ETA 17 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=673
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=672
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=672
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=671
+  warnings.warn(
+  1925/2503 | 0.58 audios/s | ETA 17 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=626
+  warnings.warn(
+  1950/2503 | 0.58 audios/s | ETA 16 min
+  1975/2503 | 0.59 audios/s | ETA 15 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=672
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=671
+  warnings.warn(
+  2000/2503 | 0.59 audios/s | ETA 14 min
+  2025/2503 | 0.60 audios/s | ETA 13 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=592
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=613
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=728
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=692
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=600
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=605
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=1017
+  warnings.warn(
+  2050/2503 | 0.60 audios/s | ETA 13 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=813
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=857
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=864
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=819
+  warnings.warn(
+  2075/2503 | 0.60 audios/s | ETA 12 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=702
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=702
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=702
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=702
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=671
+  warnings.warn(
+  2100/2503 | 0.61 audios/s | ETA 11 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=661
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=675
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=672
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=669
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=672
+  warnings.warn(
+  2125/2503 | 0.61 audios/s | ETA 10 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=661
+  warnings.warn(
+  2150/2503 | 0.61 audios/s | ETA 10 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=670
+  warnings.warn(
+  2175/2503 | 0.62 audios/s | ETA 9 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=661
+  warnings.warn(
+  2200/2503 | 0.62 audios/s | ETA 8 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=663
+  warnings.warn(
+  2225/2503 | 0.63 audios/s | ETA 7 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=565
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=566
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=566
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=566
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=566
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=565
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+  2250/2503 | 0.63 audios/s | ETA 7 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=566
+  warnings.warn(
+  2275/2503 | 0.64 audios/s | ETA 6 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=563
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=567
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=568
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=953
+  warnings.warn(
+  2300/2503 | 0.64 audios/s | ETA 5 min
+  2325/2503 | 0.63 audios/s | ETA 5 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+  2350/2503 | 0.64 audios/s | ETA 4 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=744
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=710
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=711
+  warnings.warn(
+  2375/2503 | 0.64 audios/s | ETA 3 min
+  2400/2503 | 0.64 audios/s | ETA 3 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=651
+  warnings.warn(
+  2425/2503 | 0.64 audios/s | ETA 2 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=580
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=580
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=580
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=580
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=580
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=580
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=580
+  warnings.warn(
+  2450/2503 | 0.64 audios/s | ETA 1 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=676
+  warnings.warn(
+  2475/2503 | 0.64 audios/s | ETA 1 min
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=726
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=654
+  warnings.warn(
+/mnt/c/Users/Portátil/Documents/GitHub/Voice2Sample/.venv/lib/python3.12/site-packages/librosa/core/spectrum.py:266: UserWarning: n_fft=1024 is too large for input signal of length=676
+  warnings.warn(
+  2500/2503 | 0.64 audios/s | ETA 0 min
+
+Extracción terminada: 2503 audios OK, 0 errores en 65.1 min
+
+Escribiendo descriptores…
+  backup: rhythmic_descriptors.json -> rhythmic_descriptors.json.pre_regen.bak
+  ✓ rhythmic_descriptors.json (2503 audios)
+  backup: melodic_descriptors.json -> melodic_descriptors.json.pre_regen.bak
+  ✓ melodic_descriptors.json (2503 audios)
+  backup: timbre_descriptors.json -> timbre_descriptors.json.pre_regen.bak
+  ✓ timbre_descriptors.json (2503 audios)
+
+Reentrenando modelos KNN…
+  Cargados 2503 audios | 5 features  ← rhythmic_descriptors.json
+  ✓  knn_ritmo.joblib              2503 audios | 5 features | k=10
+  Cargados 2503 audios | 13 features  ← melodic_descriptors.json
+  ✓  knn_melodia.joblib            2503 audios | 13 features | k=10
+  Cargados 2503 audios | 44 features  ← timbre_descriptors.json
+  ✓  knn_timbre.joblib             2503 audios | 44 features | k=10
+  Cargados 2503 audios | 5 features  ← rhythmic_descriptors.json
+  Cargados 2503 audios | 13 features  ← melodic_descriptors.json
+  Cargados 2503 audios | 44 features  ← timbre_descriptors.json
+  General: 2503 audios | 62 features totales
+  ✓  knn_general.joblib            2503 audios | 62 features | k=10
+
+✅ Modelos reentrenados. Reinicia el backend para que los cargue.

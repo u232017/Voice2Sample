@@ -51,53 +51,6 @@ def _extraer_timbre(audio_file: str) -> dict:
     return result
 
 
-def _extraer_essentia(audio_file: str) -> dict:
-    """
-    Usa los descriptores de Essentia (music_all.json) directamente.
-    Solo se aplana el JSON ya extraído por Essentia; no requiere
-    llamar a ninguna función de audio_analysis/.
-
-    Si el audio de query no está en music_all.json (caso típico en
-    producción), lanza ValueError con instrucción de cómo añadirlo.
-    """
-    import json
-
-    json_essentia = os.path.join(
-        os.path.dirname(__file__), "descriptors", "music_all.json"
-    )
-    if not os.path.exists(json_essentia):
-        raise FileNotFoundError(
-            f"No se encontró music_all.json en {json_essentia}. "
-            "Genera primero los descriptores de Essentia."
-        )
-
-    with open(json_essentia, "r", encoding="utf-8") as f:
-        datos = json.load(f)
-
-    audio_id = os.path.splitext(os.path.basename(audio_file))[0]
-
-    if audio_id not in datos:
-        raise ValueError(
-            f"El audio '{audio_id}' no está en music_all.json. "
-            "Añádelo ejecutando el pipeline de Essentia sobre este archivo."
-        )
-
-    def _aplanar(valor, prefijo=""):
-        resultado = {}
-        if isinstance(valor, dict):
-            for k, v in valor.items():
-                sub = f"{prefijo}{k}_" if prefijo else f"{k}_"
-                resultado.update(_aplanar(v, prefijo=sub))
-        elif isinstance(valor, (list, tuple)):
-            for i, v in enumerate(valor):
-                resultado.update(_aplanar(v, prefijo=f"{prefijo}{i}_"))
-        elif isinstance(valor, (int, float)) and not isinstance(valor, bool):
-            resultado[prefijo.rstrip("_")] = float(valor)
-        return resultado
-
-    return _aplanar(datos[audio_id])
-
-
 def _extraer_general(audio_file: str) -> dict:
     """
     Concatena ritmo + melodía + timbre en un único dict.
@@ -126,7 +79,6 @@ _EXTRACTORES = {
     "melodia":  _extraer_melodia,
     "timbre":   _extraer_timbre,
     "general":  _extraer_general,
-    "essentia": _extraer_essentia,
 }
 
 

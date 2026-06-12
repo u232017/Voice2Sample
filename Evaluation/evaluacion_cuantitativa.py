@@ -69,7 +69,7 @@ Fórmulas implementadas
 Uso
 ---
     python Evaluation/evaluacion_cuantitativa.py \\
-        --me-json    audio_processing/Processing/descriptors/music_all.json \\
+        --me-json    audio_analysis/descriptors/music_all.json \\
         --models-dir audio_processing/Processing/models \\
         --clap-json  Dataset/embeddings_output.json \\
         --top-k      5 \\

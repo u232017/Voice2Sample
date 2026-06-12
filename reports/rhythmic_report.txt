@@ -34,3 +34,11 @@ Traceback (most recent call last):
     raise FileNotFoundError(f"No existe: {temporal_file}")
 FileNotFoundError: No existe: descriptors/music/input.json
 
+
+──── ANÁLISIS COMPLETO DEL DATASET (2026-06-11) ──────────────
+Regeneración de descriptores con extractores librosa en tiempo real
+(audio_analysis/) para garantizar consistencia consulta-dataset.
+Audios procesados: 2503 | OK: 2503 | Errores: 0
+Duración total del lote: 65.1 min (8 workers, ~1.56 s/audio efectivo)
+Modelos KNN reentrenados: ritmo (5 features), melodia (13), timbre (44),
+general (62). Detalle del lote en regen_descriptors.log.

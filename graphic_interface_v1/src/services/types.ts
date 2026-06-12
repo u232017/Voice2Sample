@@ -199,20 +199,6 @@ export interface AudioAnalysisResult {
   hasApproximations: false;
 }
 
-export interface EssentiaSearchPayload {
-  model: 'essentia';
-  focus: SimilarityFocus;
-  trim: AudioTrimSelection;
-  descriptors: EssentiaDescriptorSummary;
-  suggestedQuery: string;
-}
-
-export interface ClapSearchPayload {
-  model: 'clap';
-  trim: AudioTrimSelection;
-  note: 'CLAP search is expected to be handled by the backend using audio embeddings.';
-}
-
 export interface FreesoundSearchRequest {
   query: string;
   filters: FreesoundSearchFilters;
@@ -221,8 +207,6 @@ export interface FreesoundSearchRequest {
   focus?: SimilarityFocus;
   trimSelection?: AudioTrimSelection;
   frontendAnalysis?: AudioAnalysisResult | null;
-  essentiaPayload?: EssentiaSearchPayload | null;
-  clapPayload?: ClapSearchPayload | null;
 }
 
 export interface SoundMapPoint extends FreesoundSound {
