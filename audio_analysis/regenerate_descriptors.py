@@ -44,7 +44,7 @@ CHECKPOINT_EVERY = 25
 
 AUDIO_DIR_DEFAULT = os.path.join(_AQUI, "..", "Dataset", "audio_processed")
 DESCRIPTORS_DIR_DEFAULT = os.path.join(_AQUI, "descriptors")
-MODELS_DIR_DEFAULT = os.path.join(_AQUI, "..", "audio_processing", "Processing", "models")
+MODELS_DIR_DEFAULT = os.path.join(_AQUI, "..", "search_engines", "acoustic_search", "models")
 REPORTS_DIR_DEFAULT = os.path.join(_AQUI, "..", "reports")
 
 # Informes de estadísticas del análisis del dataset (requisito del proyecto).
@@ -87,7 +87,7 @@ def _load_checkpoint(path: str) -> dict:
 def _save_checkpoint(path: str, data: dict) -> None:
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False)
+        json.dump(data, f, ensure_ascii=False, indent=2)
     os.replace(tmp, path)
 
 
@@ -212,14 +212,14 @@ def main() -> None:
         destino = os.path.join(args.descriptors_dir, nombre)
         _backup(destino)
         with open(destino, "w", encoding="utf-8") as f:
-            json.dump(datos, f, ensure_ascii=False)
+            json.dump(datos, f, ensure_ascii=False, indent=2)
         print(f"  ✓ {nombre} ({len(datos)} audios)")
 
     # ── Reentrenar KNN ────────────────────────────────────────────────────────
     if args.retrain:
         print("\nReentrenando modelos KNN…")
-        # train_models.py vive en audio_processing/Processing/
-        sys.path.insert(0, os.path.join(_AQUI, "..", "audio_processing", "Processing"))
+        # train_models.py vive en search_engines/acoustic_search/
+        sys.path.insert(0, os.path.join(_AQUI, "..", "search_engines", "acoustic_search"))
         from train_models import cargar_descriptores, combinar_descriptores, construir_y_guardar_knn
 
         os.makedirs(os.path.join(args.models_dir, "backup_pre_regen"), exist_ok=True)

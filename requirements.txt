@@ -1,17 +1,3 @@
-# ══════════════════════════════════════════════════════════════════
-#  Voice2Sample — dependencias Python (proyecto completo)
-#
-#  Versiones verificadas en el entorno de desarrollo:
-#  Python 3.12 sobre WSL (Ubuntu). Instalación:
-#
-#      python -m venv .venv
-#      source .venv/bin/activate
-#      pip install -r requirements.txt
-#
-#  Nota: essentia solo se distribuye por pip para Linux/WSL.
-#  El frontend (graphic_interface_v1/) usa npm: cd graphic_interface_v1 && npm install
-# ══════════════════════════════════════════════════════════════════
-
 # ── API backend (FastAPI) ───────────────────────────────────────────
 fastapi==0.136.3
 uvicorn[standard]==0.49.0
@@ -22,7 +8,7 @@ numpy==1.26.4
 scipy==1.17.1
 soundfile==0.14.0
 
-# ── Modelo Essentia KNN (búsqueda por descriptores acústicos) ───────
+# ── Modelo Acoustic Search KNN (búsqueda por descriptores acústicos) ───────
 # Los .joblib de models/ se entrenaron con scikit-learn 1.9.0;
 # despicklearlos con otra versión puede dar resultados inconsistentes.
 scikit-learn==1.9.0

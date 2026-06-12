@@ -1,0 +1,9 @@
+:root {
+  --font-display: Bahnschrift, "Arial Narrow", "Franklin Gothic Medium", sans-serif;
+  --font-body: Aptos, "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-mono: Consolas, "Roboto Mono", monospace;
+}
+
+body {
+  font-family: var(--font-body);
+}

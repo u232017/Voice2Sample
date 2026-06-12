@@ -23,8 +23,8 @@ from .dataset_recommender import (
 )
 
 # BuscadorSimilitud uses the pre-trained KNN joblibs
-MODELS_DIR = Path(__file__).resolve().parents[1] / "audio_processing" / "Processing" / "models"
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "audio_processing" / "Processing"))
+MODELS_DIR = Path(__file__).resolve().parents[1] / "search_engines" / "acoustic_search" / "models"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "search_engines" / "acoustic_search"))
 try:
     from inference import BuscadorSimilitud
     _buscador = BuscadorSimilitud(models_dir=str(MODELS_DIR))
@@ -171,7 +171,7 @@ def _rescale_similarities(payloads: list[dict[str, Any]]) -> list[dict[str, Any]
     Normaliza las similitudes de los resultados para que sean legibles en la UI.
 
     El problema: `1/(1+d)` sobre distancias euclídeas en espacios de alta
-    dimensión (1 126 features del KNN de Essentia) produce valores en [0.01, 0.10]
+    dimensión (1 126 features del KNN acústico) produce valores en [0.01, 0.10]
     que aparecen como "1 %–3 %" en la tarjeta de resultado. CLAP con similitud
     coseno ya produce valores en [0.50, 0.99], que son correctos.
 
@@ -200,7 +200,7 @@ def _dataset_recommendations(
     audio_path: Path,
     limit: int,
     focus: str = "general",    # valor frontend: "general" | "melodic" | "bpm" | "timbre"
-    model: str = "essentia",
+    model: str = "acoustic",
 ) -> tuple[list[dict[str, Any]], str]:
     """
     Devuelve (payloads, engine_usado).
@@ -221,7 +221,7 @@ def _dataset_recommendations(
             # El modelo CLAP requiere torch + transformers + librosa instalados.
             # Si no están disponibles (o el hilo de carga no ha terminado),
             # lo indicamos explícitamente en lugar de silenciar la caída.
-            print("[Voice2Sample] CLAP solicitado pero no disponible — usando Essentia KNN")
+            print("[Voice2Sample] CLAP solicitado pero no disponible — usando Acoustic Search (KNN)")
         else:
             try:
                 clap_results = clap_recommend(audio_path, limit=limit)
@@ -235,7 +235,7 @@ def _dataset_recommendations(
                         print(f"[Voice2Sample] CLAP: {len(payloads)} resultados (coseno)")
                         return payloads, "clap"
             except Exception as exc:
-                print(f"[Voice2Sample] CLAP error: {exc} — usando Essentia KNN")
+                print(f"[Voice2Sample] CLAP error: {exc} — usando Acoustic Search (KNN)")
 
     # ── Essentia KNN sobre descriptores acústicos ──────────────────────────────
     # _FOCUS_TO_MODO convierte el nombre frontend al modo interno del KNN.
@@ -251,8 +251,8 @@ def _dataset_recommendations(
                 if item is not None:
                     payloads.append(_dataset_sound_payload(item, r["similitud"], r["distancia"]))
             if payloads:
-                print(f"[Voice2Sample] Essentia KNN ({modo}): {len(payloads)} resultados")
-                return _rescale_similarities(payloads), f"essentia-knn-{modo}"
+                print(f"[Voice2Sample] Acoustic Search KNN ({modo}): {len(payloads)} resultados")
+                return _rescale_similarities(payloads), f"acoustic-knn-{modo}"
             print(f"[Voice2Sample] KNN sin coincidencias (modo={modo}), cayendo a euclídeo")
         except Exception as exc:
             print(f"[Voice2Sample] KNN error ({modo}): {exc} — cayendo a euclídeo")
@@ -261,7 +261,7 @@ def _dataset_recommendations(
     # rank_similar_items acepta el mismo vocabulario de focus que el frontend.
     ranked = rank_similar_items(audio_path, items, limit, focus)
     payloads = [_dataset_sound_payload(item, sim, dist) for item, dist, sim in ranked]
-    return _rescale_similarities(payloads), "essentia-euclidean"
+    return _rescale_similarities(payloads), "acoustic-euclidean"
 
 
 def _dataset_map_payload(
@@ -327,13 +327,13 @@ async def recommendations(
     trim_start: float | None = Form(default=None),
     trim_end: float | None = Form(default=None),
     focus: str = Form(default="general"),
-    model: str = Form(default="essentia"),
-    limit: int = Form(default=4),
+    model: str = Form(default="acoustic"),
+    limit: int = Form(default=10),
 ) -> dict[str, Any]:
     suffix = Path(audio.filename or "input.wav").suffix or ".wav"
-    limit = min(max(limit, 1), 4)
+    limit = min(max(limit, 1), 10)
     focus = focus.lower() if focus else "general"
-    model = model.lower() if model else "essentia"
+    model = model.lower() if model else "acoustic"
 
     temp_dir = UPLOAD_TMP_DIR / f"voice2sample_{uuid.uuid4().hex}"
     temp_dir.mkdir(parents=True, exist_ok=False)
