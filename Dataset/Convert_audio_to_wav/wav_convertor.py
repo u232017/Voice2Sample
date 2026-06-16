@@ -1,5 +1,7 @@
 from pathlib import Path
 import subprocess
+import numpy as np
+import soundfile as sf
 from collections import defaultdict
 
 
@@ -19,6 +21,16 @@ SUPPORTED_FORMATS = {
     ".aiff"
 }
 
+# ==================== ENERGY NORMALIZATION ====================
+
+def normalize_rms(audio, target_rms=0.1):
+
+    rms = np.sqrt(np.mean(audio**2))
+
+    if rms < 1e-8:
+        return audio
+
+    return audio * (target_rms / rms)
 
 # ==================== PROCESS AUDIO ====================
 
@@ -48,6 +60,24 @@ def process_audio(input_path, output_path, target_sample_rate):
         stderr=subprocess.DEVNULL,
         check=True)
 
+        # Load processed audio
+        audio, sr = sf.read(output_path)
+
+        if audio.size == 0:
+            print(f"⚠ Audio vacío: {input_path.name}")
+            return False
+
+        # RMS normalization
+        audio = normalize_rms(audio, target_rms=0.1)
+
+        # Prevent clipping
+        peak = np.max(np.abs(audio))
+        if peak > 1.0:
+            audio = audio / peak
+
+        # Save final file
+        sf.write(output_path, audio, sr)
+        
         return True
 
     except Exception as e:

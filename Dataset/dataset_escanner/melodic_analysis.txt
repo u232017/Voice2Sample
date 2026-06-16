@@ -1,0 +1,30 @@
+============================================================
+MELODIC CHARACTERISTIC ANALYSIS
+============================================================
+
+FEATURES USED:
+
+- pitch_mean -> measures pitch salience (higher = stronger melodic presence)
+- pitch_var -> measures pitch stability (lower = more stable melody)
+- hpcp_crest_mean -> harmonic concentration (higher = clearer tonal organization)
+- hpcp_entropy_mean -> harmonic disorder (lower = more melodic coherence)
+- average key strength -> tonal certainty (higher = stronger musical key)
+
+CONFIDENCE TIERS:
+
+HIGH   : score >= 0.75
+MEDIUM : 0.45 <= score < 0.75
+LOW    : score < 0.45
+
+COUNTS:
+
+HIGH   : 22 audios
+MEDIUM : 1903 audios
+LOW    : 577 audios
+
+TOP 3 MOST MELODIC AUDIOS:
+
+1. Audio ID: 43227 | Score: 0.8404 | Confidence: HIGH
+2. Audio ID: 189273 | Score: 0.8397 | Confidence: HIGH
+3. Audio ID: 43238 | Score: 0.8178 | Confidence: HIGH
+

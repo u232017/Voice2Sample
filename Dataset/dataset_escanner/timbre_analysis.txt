@@ -1,0 +1,31 @@
+============================================================
+TIMBRE CHARACTERISTIC ANALYSIS
+============================================================
+
+FEATURES USED:
+
+- MFCC energy -> spectral envelope complexity
+- GFCC energy -> perceptual spectral texture
+- spectral_flux -> spectral variation over time
+- spectral_spread -> spectral bandwidth richness
+- spectral_centroid -> spectral brightness
+- zerocrossingrate -> noisiness/percussiveness
+
+CONFIDENCE TIERS:
+
+HIGH   : score >= 0.75
+MEDIUM : 0.45 <= score < 0.75
+LOW    : score < 0.45
+
+COUNTS:
+
+HIGH   : 0 audios
+MEDIUM : 75 audios
+LOW    : 2427 audios
+
+TOP 3 MOST TIMBRALLY RICH AUDIOS:
+
+1. Audio ID: 201014 | Score: 0.6155 | Confidence: MEDIUM
+2. Audio ID: 115267 | Score: 0.6144 | Confidence: MEDIUM
+3. Audio ID: 114937 | Score: 0.6132 | Confidence: MEDIUM
+

@@ -1,0 +1,24 @@
+============================================================
+BPM ANALYSIS
+============================================================
+
+BPM RANGES
+
+Very Slow (<60 BPM): 1 audios
+Slow (60-90 BPM): 92 audios
+Medium (90-120 BPM): 906 audios
+Fast (120-150 BPM): 1063 audios
+Very Fast (>150 BPM): 440 audios
+
+TOP 3 FASTEST AUDIOS
+
+1. 63469 | BPM: 224.69
+2. 173416 | BPM: 215.33
+3. 4623 | BPM: 206.72
+
+TOP 3 SLOWEST AUDIOS
+
+1. 21062 | BPM: 0.00
+2. 31717 | BPM: 60.25
+3. 220572 | BPM: 64.78
+

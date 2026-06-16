@@ -1,0 +1,19 @@
+=== TIMBRE DESCRIPTOR IMPORTANCE (PCA) ===
+
+MFCC                       54.47%
+GFCC                       28.42%
+Spectral Centroid           4.45%
+Spectral Rolloff            4.36%
+Spectral Flux               4.05%
+Zero Crossing Rate          2.16%
+Spectral Spread             2.08%
+
+Interpretation
+
+Most informative: MFCC
+MFCCs describe the spectral envelope and overall timbral colour. They usually carry the largest amount of discriminative information.
+
+Least informative: Spectral Spread
+Measures how broadly energy is distributed across frequencies.
+
+The ranking is based on PCA contribution after removing highly correlated features. Descriptors with higher percentages contribute more unique information to the dataset.
