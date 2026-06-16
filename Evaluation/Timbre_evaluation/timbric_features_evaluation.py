@@ -7,7 +7,9 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 
 
-DESCRIPTORS_PATH = "timbre_descriptors.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DESCRIPTORS_PATH = os.path.join(BASE_DIR, "timbre_descriptors.json")
+OUTPUT_REPORT_PATH = os.path.join(BASE_DIR, "timbre_descriptor_importance.txt")
 
 # ============================================================
 # LOAD JSON
@@ -329,10 +331,9 @@ def create_report(group_scores):
 
 def save_report(lines, output_path):
 
-    os.makedirs(
-        os.path.dirname(output_path),
-        exist_ok=True
-    )
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
 
     with open(
         output_path,
@@ -379,9 +380,7 @@ def analyze_timbre_importance():
         group_scores
     )
 
-    output_path = (
-        "timbre_descriptor_importance.txt"
-    )
+    output_path = OUTPUT_REPORT_PATH
 
     save_report(
         report,
